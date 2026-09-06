@@ -82,7 +82,6 @@ static int disjoint(const uint64_t *a, const uint64_t *b)
 
 /* ---- exact cover --------------------------------------------------------- */
 static uint64_t *M;              /* pool masks, W words each */
-static long long POOL;
 static long long *cover_count;   /* per-pool-member cover tally (census mode) */
 static long long nodes_by_depth[KMAXN + 2];
 static long long nsol;
@@ -224,7 +223,6 @@ int main(int argc, char **argv)
             else usage(2);
         long long NT;
         unsigned char *cat = load(argv[3], &NT, RB);
-        POOL = NT;
         M = malloc(sizeof(uint64_t) * (size_t)NT * W);
         for (long long i = 0; i < NT; i++) mask_of(cat + i * RB, M + i * W);
         cover_count = calloc((size_t)NT, sizeof(long long));
@@ -332,7 +330,6 @@ int main(int argc, char **argv)
             mask_of(pool + i * RB, M + i * W);
             if (!disjoint(M + i * W, qm)) meets++;
         }
-        POOL = P;
 
         double w0 = now_s();
         long long covers = 0, nodes = 0;

@@ -188,10 +188,12 @@ So `g(c0) = c0` for every `g ∈ G`.
 (iii)  `g` is a bijection of the cell set, so `T_1, ..., T_9` are pairwise
 disjoint supports covering the cube iff `gT_1, ..., gT_9` are.
 
-Finally the order.  The parametrisation `(pi, eps, tau) -> g` is 2-to-1: taking
-`eps = (rev, rev, rev)` with `tau = id` gives the same cell map as `eps = id`
-with `tau = rev` (both send `x_i` to `r(x_i)`), and `rev ∈ C(rev)`; that pair is
-the whole kernel.  Hence `|G| = 6 * 8 * |C(rev)| / 2`.  A `tau` commuting with
+Finally the order.  The parametrisation `(pi, eps, tau) -> g` is 2-to-1:
+`eps = (rev, rev, rev)` with `tau = id` names the same cell map as `eps = id`
+with `tau = rev` (both send `x_i` to `r(x_i)`, and `rev ∈ C(rev)`), and pairing
+each triple with the one obtained by flipping all three `eps` and composing
+`tau` with `rev` is a fixed-point-free involution on the `6 * 8 * |C(rev)|`
+triples that leaves `g` unchanged.  Hence `|G| = 6 * 8 * |C(rev)| / 2`.  A `tau` commuting with
 `rev` must permute the `floor(n/2)` pairs `{t, r(t)}` as blocks, possibly
 flipping each, and must fix the middle point when `n` is odd, so
 `|C(rev)| = 2^{floor(n/2)} * floor(n/2)!` — `384` at `n = 8, 9`.  The program

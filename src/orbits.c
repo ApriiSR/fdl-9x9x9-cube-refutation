@@ -61,9 +61,8 @@ static int ntau;
 static void build_taus(void)
 {
     int h = N / 2;
-    int perm[MAXN], usedb[MAXN];
+    int perm[MAXN];
     ntau = 0;
-    memset(usedb, 0, sizeof usedb);
 
     /* all permutations of the h blocks, times all 2^h flips */
     long long nperm = 1;
