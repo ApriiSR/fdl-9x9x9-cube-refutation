@@ -265,8 +265,9 @@ static void usage(int rc)
 
 int main(int argc, char **argv)
 {
-    if (argc < 3) usage(2);
+    if (argc < 2) usage(2);
     if (!strcmp(argv[1], "--help") || !strcmp(argv[1], "-h")) usage(0);
+    if (argc < 3) usage(2);
     N = atoi(argv[1]);
     if (N < 2 || N > MAXN) { fprintf(stderr, "n out of range 2..%d\n", MAXN); return 2; }
     NI = fdlh_build_lines(N, lines);
