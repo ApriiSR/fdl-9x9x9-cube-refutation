@@ -532,7 +532,10 @@ moved with it (the order-8 suite 36 s against 51 s, the numpy pool re-derivation
 instrument.  So **7 h 34 m is a floor, not a promise** — an unlucky session
 would be nearer 11 h — and the two-run spreads above are given rather than
 averaged.  Ratios measured *within* one run are not affected, which is why the
-speed-up below is quoted that way.
+speed-up below is quoted that way.  The printed ETA reports the machine it is
+actually on rather than this table: started in the slower session, `full` read
+`ETA 10h19m` off its first 211 shards, against the 7 h 27 m the 1 024-shard
+sample projected in the faster one.
 
 **Where `symmetric`'s time goes** (B, measured, the faster of the two runs):
 
@@ -641,8 +644,17 @@ what worker count the interrupted run used: each worker appends to its own
 manifest, the manifests are merged at the start of the next run, and the merge
 is handed to every worker.  A payload is written to a temporary name, flushed
 and renamed before its manifest line is appended, so an interrupted run leaves
-no half-written shard.  Once 200 shards — or a quarter of them, whichever comes
-first — have finished, the sweep prints its own throughput and an ETA.
+no half-written shard.  Both were exercised rather than assumed: `full` killed
+at 216 shards and restarted at 4 workers instead of 6 reads `216 already
+finished` and leaves no `.part` files behind, and a `symmetric` run stopped by
+a deliberately tiny `--cap` and resumed at 3 workers instead of 6 completes to
+the canonical hash with the same search-node count as a single-pass run.
+
+A shard that hits `--cap` is reported, is not marked done, and leaves no
+payload; if any shard is unfinished when the sweep ends, the run stops with the
+list rather than assembling a catalogue that is quietly short of a shard.  Once
+200 shards — or a quarter of them, whichever comes first — have finished, the
+sweep prints its own throughput and an ETA.
 
 Requirements: a C99 compiler, GNU make, `bash`, and Python 3 with **numpy** (the
 only Python dependency).  If numpy lives in a virtualenv, set
