@@ -1,7 +1,7 @@
 # Build the five programs.  C99, no libraries beyond libc; the Python side
 # needs only numpy.
 CC      ?= cc
-CFLAGS  ?= -O2 -Wall -Wextra -std=c99
+CFLAGS  ?= -O2 -Wall -Wextra -std=c99 -D_POSIX_C_SOURCE=200809L
 BIN      = bin
 PROGS    = $(BIN)/enum $(BIN)/shards $(BIN)/orbits $(BIN)/pools $(BIN)/pack
 
