@@ -102,7 +102,7 @@ static void search(uint64_t *cov, int depth, const int *surv, int nsurv)
     nodes_by_depth[depth]++;
     if (depth > max_depth_seen) max_depth_seen = depth;
     if (depth == N) { nsol++; if (cover_count) for (int a = 0; a < N; a++) cover_count[chosen[a]]++; return; }
-    if (cap_seconds > 0.0 && ++node_check >= 256) {
+    if (cap_seconds > 0.0 && ++node_check >= 64) {
         node_check = 0;
         if (now_s() - t_start > cap_seconds) { timed_out = 1; return; }
     }
@@ -155,11 +155,15 @@ static int popcnt(const uint64_t *a)
 }
 
 static int best_clique;
+static int cur_set[64], best_set[64];
 static void bk(uint64_t *cand, int size)
 {
     int nc = popcnt(cand);
     if (size + nc <= best_clique) return;
-    if (!nc) { if (size > best_clique) best_clique = size; return; }
+    if (!nc) {
+        if (size > best_clique) { best_clique = size; memcpy(best_set, cur_set, sizeof(int) * (size_t)size); }
+        return;
+    }
     for (int w = 0; w < AW; w++) {
         uint64_t bits = cand[w];
         while (bits) {
@@ -169,12 +173,13 @@ static void bk(uint64_t *cand, int size)
             if (size + popcnt(cand) <= best_clique) return;
             uint64_t *nx = malloc(sizeof(uint64_t) * (size_t)AW);
             for (int u = 0; u < AW; u++) nx[u] = cand[u] & adj[(size_t)v * AW + u];
+            if (size < 64) cur_set[size] = v;
             bk(nx, size + 1);
             free(nx);
             cand[w] &= ~((uint64_t)1 << b);      /* v exhausted; drop it */
         }
     }
-    if (size > best_clique) best_clique = size;
+    if (size > best_clique) { best_clique = size; memcpy(best_set, cur_set, sizeof(int) * (size_t)size); }
 }
 
 static void usage(int rc)
@@ -196,7 +201,11 @@ static void usage(int rc)
 "          --cap SECONDS  wall-clock cap per query; a query that hits it is\n"
 "                         reported as BUDGET, never as EXHAUSTED\n"
 "          --no-clique    skip the clique computation (exhaustion only)\n"
-"          --no-search    skip the exact cover (clique only)\n");
+"          --no-search    skip the exact cover (clique only)\n"
+"  pack <n> witness <queries.bin> <pooldir> <j> <out.json>\n"
+"        Write query j together with a maximum clique of its pool graph, as an\n"
+"        explicit packing of pairwise disjoint supports (check.py witness\n"
+"        re-checks it from the definition).\n");
     exit(rc);
 }
 
@@ -225,6 +234,7 @@ int main(int argc, char **argv)
         cand_store = malloc(sizeof(int) * (size_t)cand_stride * (2 * N + 2));
         uint64_t cov[MAXW];
         memset(cov, 0, sizeof cov);
+        node_check = 63;
         t_start = now_s();
         search(cov, 0, surv, (int)NT);
         double wall = now_s() - t_start;
@@ -235,8 +245,8 @@ int main(int argc, char **argv)
         printf("]}\n");
         FILE *f = fopen(argv[4], "w");
         if (!f) { perror(argv[4]); return 1; }
-        fprintf(f, "{\"n\":%d,\"catalogue\":%lld,\"covers\":%lld,\"status\":\"%s\",\"wall\":%.3f,\n",
-                N, NT, nsol, timed_out ? "BUDGET" : "EXHAUSTED", wall);
+        fprintf(f, "{\"n\":%d,\"catalogue\":%lld,\"covers\":%lld,\"status\":\"%s\",\n",
+                N, NT, nsol, timed_out ? "BUDGET" : "EXHAUSTED");
         fprintf(f, " \"nodes_by_depth\":[");
         for (int d = 0; d <= N; d++) fprintf(f, "%lld%s", nodes_by_depth[d], d < N ? "," : "");
         fprintf(f, "],\n \"covers_containing\":[");
@@ -244,6 +254,50 @@ int main(int argc, char **argv)
         fprintf(f, "]}\n");
         if (fclose(f)) { perror(argv[4]); return 1; }
         return timed_out ? 1 : 0;
+    }
+
+    if (!strcmp(argv[2], "witness")) {
+        if (argc < 7) usage(2);
+        long long NQ2;
+        unsigned char *qry2 = load(argv[3], &NQ2, RB);
+        long long j = atoll(argv[5]);
+        if (j < 0 || j >= NQ2) { fprintf(stderr, "query index out of range\n"); return 2; }
+        char path[1024];
+        snprintf(path, sizeof path, "%s/pool_%lld.bin", argv[4], j);
+        long long P;
+        unsigned char *pool = load(path, &P, RB);
+        M = malloc(sizeof(uint64_t) * (size_t)(P ? P : 1) * W);
+        for (long long i = 0; i < P; i++) mask_of(pool + i * RB, M + i * W);
+        AW = (int)((P + 63) / 64); if (!AW) AW = 1;
+        adj = calloc((size_t)(P ? P : 1) * AW, sizeof(uint64_t));
+        for (long long x = 0; x < P; x++)
+            for (long long y = x + 1; y < P; y++)
+                if (disjoint(M + (size_t)x * W, M + (size_t)y * W)) {
+                    adj[(size_t)x * AW + (y >> 6)] |= (uint64_t)1 << (y & 63);
+                    adj[(size_t)y * AW + (x >> 6)] |= (uint64_t)1 << (x & 63);
+                }
+        best_clique = 0;
+        uint64_t *all = calloc((size_t)AW, sizeof(uint64_t));
+        for (long long x = 0; x < P; x++) all[x >> 6] |= (uint64_t)1 << (x & 63);
+        bk(all, 0);
+        FILE *f = fopen(argv[6], "w");
+        if (!f) { perror(argv[6]); return 1; }
+        fprintf(f, "{\"n\":%d,\"query\":%lld,\"pool\":%lld,\"clique\":%d,"
+                   "\"packing\":%d,\"members\":[%lld", N, j, P, best_clique, best_clique + 1, j);
+        for (int i = 0; i < best_clique; i++) fprintf(f, ",%d", best_set[i]);
+        fprintf(f, "],\n \"squares\":[\n");
+        for (int i = 0; i <= best_clique; i++) {
+            const unsigned char *r = (i == 0) ? qry2 + j * RB : pool + (size_t)best_set[i - 1] * RB;
+            fprintf(f, "  [");
+            for (int c = 0; c < RB; c++) fprintf(f, "%d%s", r[c], c + 1 < RB ? "," : "");
+            fprintf(f, "]%s\n", i < best_clique ? "," : "");
+        }
+        fprintf(f, " ]}\n");
+        if (fclose(f)) { perror(argv[6]); return 1; }
+        printf("{\"query\":%lld,\"pool\":%lld,\"max_companion_clique\":%d,\"packing\":%d}\n",
+               j, P, best_clique, best_clique + 1);
+        free(all);
+        return 0;
     }
 
     if (strcmp(argv[2], "roots") || argc < 6) usage(2);
@@ -285,7 +339,7 @@ int main(int argc, char **argv)
         int maxd = 0, budget = 0;
         if (do_search) {
             memset(nodes_by_depth, 0, sizeof nodes_by_depth);
-            nsol = 0; max_depth_seen = 0; timed_out = 0; node_check = 0;
+            nsol = 0; max_depth_seen = 0; timed_out = 0; node_check = 63;
             cover_count = NULL;
             cand_stride = (int)(P ? P : 1);
             cand_store = malloc(sizeof(int) * (size_t)cand_stride * (2 * N + 2));

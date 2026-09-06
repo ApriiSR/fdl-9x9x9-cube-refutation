@@ -207,7 +207,7 @@ static int run_one(const int *p, int collect, long long *count,
                    long long *nodes, double *wall)
 {
     build_matrix();
-    nfixed = 0; nsol = 0; nnodes = 0; timed_out = 0; node_check = 0;
+    nfixed = 0; nsol = 0; nnodes = 0; timed_out = 0; node_check = 255;
     nrecs = 0; do_collect = collect;
     if (p) {
         if (!admissible_row0(p)) return 2;

@@ -56,11 +56,15 @@ def main_lines(n):
 
 
 def load_records(path, n):
+    """Records as an (M, n*n) uint8 array, memory-mapped: the order-9 catalogue
+    is 1.1 GiB and several of these run side by side."""
     w = n * n
     size = os.path.getsize(path)
     if size % w:
         sys.exit(f'{path}: size {size} is not a multiple of {w}')
-    return np.fromfile(path, dtype=np.uint8).reshape(size // w, w)
+    if size == 0:
+        return np.zeros((0, w), dtype=np.uint8)
+    return np.memmap(path, dtype=np.uint8, mode='r', shape=(size // w, w))
 
 
 def cells_of(recs, n):
@@ -87,6 +91,8 @@ def cmd_verify(a):
     idx = np.arange(M)
     if a.sample and a.sample < M:
         idx = np.sort(np.random.default_rng(a.seed).choice(M, a.sample, replace=False))
+    if a.parts > 1:
+        idx = idx[a.part::a.parts]
     L = main_lines(n)
     bad_cells = bad_lines = 0
     for lo in range(0, len(idx), 4096):
@@ -177,7 +183,8 @@ def cmd_pools(a):
     qms = masks_of(qry, n)
     bad = 0
     sizes = []
-    for j in range(qry.shape[0]):
+    todo = range(a.part, qry.shape[0], a.parts)
+    for j in todo:
         qm = qms[j]
         sel = np.all((cm & qm) == 0, axis=1)
         want = cat[sel]
@@ -190,9 +197,9 @@ def cmd_pools(a):
             print(f'pool {j}: disk {have.shape[0]} rescan {want.shape[0]} '
                   f'only_on_disk {len(hs - ws)} only_in_rescan {len(ws - hs)}')
             bad += 1
-        if (j + 1) % 250 == 0:
-            print(f'  {j + 1}/{qry.shape[0]}', flush=True)
-    print(json.dumps(dict(catalogue=int(cat.shape[0]), queries=int(qry.shape[0]),
+        if len(sizes) % 250 == 0:
+            print(f'  {len(sizes)}/{len(todo)}', flush=True)
+    print(json.dumps(dict(catalogue=int(cat.shape[0]), queries=len(sizes),
                           disagreements=bad, pool_min=min(sizes), pool_max=max(sizes),
                           pool_mean=round(sum(sizes) / len(sizes), 1))))
     return 0 if bad == 0 else 1
@@ -249,6 +256,8 @@ def main():
     p.add_argument('n', type=int); p.add_argument('file')
     p.add_argument('--sample', type=int, default=0, help='check K random records, not all')
     p.add_argument('--seed', type=int, default=20260906)
+    p.add_argument('--part', type=int, default=0)
+    p.add_argument('--parts', type=int, default=1, help='check only records part::parts')
     p.set_defaults(fn=cmd_verify)
 
     p = sub.add_parser('a007016', help='admissible row-0 count in closed form')
@@ -261,6 +270,8 @@ def main():
     p = sub.add_parser('pools', help='re-derive every companion pool and compare')
     p.add_argument('n', type=int); p.add_argument('catalogue')
     p.add_argument('queries'); p.add_argument('pooldir')
+    p.add_argument('--part', type=int, default=0)
+    p.add_argument('--parts', type=int, default=1, help='check only queries part::parts')
     p.set_defaults(fn=cmd_pools)
 
     p = sub.add_parser('witness', help='check an explicit packing from the definition')
