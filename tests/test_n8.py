@@ -10,8 +10,14 @@ can be checked against an answer that was not produced by this code:
     it -- computed once by the census and once, support by support, by the
     same root search that is run at order 9.
 
-The suite also checks that the time caps fire, which is the control a negative
-result most needs: a cap that never expires looks exactly like an exhaustion.
+It also runs the whole of `verify.sh symmetric` at order 8: 25 of the 5 568
+shards enumerated, the rest produced by the plane-fixing subgroup of Lemma 6,
+and the result required to be the census byte for byte.
+
+The suite also checks that the time caps fire, and that the mapping's guard
+fires, which is the control a negative result most needs: a cap that never
+expires looks exactly like an exhaustion, and a check that never rejects looks
+exactly like agreement.
 
 Usage:  python3 tests/test_n8.py [--workers W] [--keep]
 """
@@ -232,7 +238,60 @@ def main():
     R = json.loads(open(f'{tmp}/capr.jsonl').read().strip())
     check('pack roots: the per-query cap fires', R['status'] == 'BUDGET', str(rc.returncode))
 
-    # ---- 10. determinism -------------------------------------------------
+    # ---- 10. the plane-fixing subgroup, and the symmetric mode ----------
+    g = run([f'{BIN}/symmetry', '8', 'group'])
+    check('the plane-fixing subgroup has order 384, index 24, and is closed',
+          g.returncode == 0 and '|H|=384' in g.stdout and 'index=24' in g.stdout
+          and 'leaving the plane: 0' in g.stdout,
+          g.stdout.splitlines()[0] if g.stdout else '')
+
+    symorb, symreps = f'{tmp}/n8_shard_orbits.jsonl', f'{tmp}/n8_reps.txt'
+    o = run([f'{BIN}/symmetry', '8', 'orbits', shardfile, symorb, symreps])
+    SO = json.loads(o.stdout)
+    check('the 5 568 shards are 25 orbits, and every image is an admissible '
+          'row that is in the shard list',
+          o.returncode == 0 and SO['orbits'] == 25 and SO['sum_orbit_sizes'] == 5568
+          and SO['representatives'] == 25,
+          json.dumps(SO['orbit_size_histogram']))
+
+    symdir = f'{tmp}/symshards'
+    os.makedirs(symdir, exist_ok=True)
+    run([f'{BIN}/enum', '8', 'shards', symreps, symdir, f'{tmp}/symman_reps.jsonl'])
+    e = run([f'{BIN}/symmetry', '8', 'expand', symorb, symdir, f'{tmp}/symman_map.jsonl'])
+    with open(f'{tmp}/symman.jsonl', 'w') as f:
+        f.write(open(f'{tmp}/symman_reps.jsonl').read())
+        f.write(open(f'{tmp}/symman_map.jsonl').read())
+    symcat = f'{tmp}/n8_supports_sym.bin'
+    run([PY, f'{ROOT}/src/catalogue.py', 'pack', '8', f'{tmp}/symman.jsonl', symdir, symcat])
+    check('the symmetric mode reproduces the whole order-8 census from 25 of '
+          'the 5 568 shards, byte for byte',
+          e.returncode == 0 and os.path.exists(symcat)
+          and sha256(symcat) == sha256(cat8) == sha256(ref),
+          f'{json.loads(e.stdout)["records"]} records mapped' if e.stdout else '')
+
+    # A mapping that is never rejected is not a check.  Point one shard at a
+    # different element of the subgroup and the guard must fire: in an orbit of
+    # full size the stabiliser is trivial, so any other element lands the
+    # representative's records on a different row 0.
+    lines = [json.loads(l) for l in open(symorb)]
+    big = {r['orbit'] for r in lines
+           if sum(1 for x in lines if x['orbit'] == r['orbit']) == 384}
+    def repsize(i):
+        q = os.path.join(symdir, f'{i // 1000:03d}', f's{i:05d}.bin')
+        return os.path.getsize(q) if os.path.exists(q) else 0
+    victim = next(r for r in lines
+                  if r['orbit'] in big and r['rep'] != r['idx'] and repsize(r['rep']))
+    victim['g'] = (victim['g'] + 1) % 384
+    with open(f'{tmp}/bad_orbits.jsonl', 'w') as f:
+        f.write(json.dumps(victim, separators=(',', ':')) + '\n')
+    b = run([f'{BIN}/symmetry', '8', 'expand', f'{tmp}/bad_orbits.jsonl', symdir,
+             f'{tmp}/badman.jsonl'])
+    check('symmetry expand rejects a record image that does not carry the '
+          "shard's own row 0",
+          b.returncode != 0 and 'row 0' in b.stderr,
+          b.stderr.strip().splitlines()[0] if b.stderr.strip() else 'no message')
+
+    # ---- 11. determinism -------------------------------------------------
     run([f'{BIN}/enum', '8', 'one', f'{tmp}/d1.bin'] + open(shardfile).readline().split()[1:])
     run([f'{BIN}/enum', '8', 'one', f'{tmp}/d2.bin'] + open(shardfile).readline().split()[1:])
     check('a shard is byte-identical when re-enumerated',

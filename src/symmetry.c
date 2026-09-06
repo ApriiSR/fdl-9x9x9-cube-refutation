@@ -474,8 +474,9 @@ static int cmd_expand(const char *orbfile, const char *sharddir, const char *man
         J.rep = atoi(q + 6);
         if (!(q = strstr(line, "\"g\":"))) continue;
         J.g = atoi(q + 4);
-        if (!(q = strstr(line, "\"row0\":["))) continue;
-        q += 8;
+        if (!(q = strstr(line, "\"row0\""))) continue;
+        if (!(q = strchr(q, '['))) continue;
+        q++;
         for (int j = 0; j < N; j++) { J.row[j] = (unsigned char)atoi(q); q = strchr(q, ','); if (q) q++; else if (j + 1 < N) return 1; }
         if (J.rep == J.idx) continue;                 /* enumerated directly */
         if ((seen++ % slice_w) != slice_k) continue;

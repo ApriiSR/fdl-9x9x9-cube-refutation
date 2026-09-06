@@ -29,7 +29,7 @@ three verification modes cheap.
 
 ```
 make                      # six C programs, no libraries
-./verify.sh test          # the order-8 controls              (26 s)
+./verify.sh test          # the order-8 controls              (36 s)
 ./verify.sh full          # everything, from nothing    (2 h 41 m on 14 cores)
 ./verify.sh symmetric     # the same, one shard per symmetry orbit  (12 min)
 ./verify.sh fast --catalogue n9_supports.bin   # everything downstream of the
@@ -400,7 +400,7 @@ is checked by `verify.sh`.
 
 | # | step | program | input | expected output |
 |---|------|---------|-------|-----------------|
-| 1 | order-8 controls | `tests/test_n8.py` | — | 23 checks pass (below) |
+| 1 | order-8 controls | `tests/test_n8.py` | — | 27 checks pass (below) |
 | 2 | shard universe | `shards 9 list` | — | 48 912 admissible rows = A007016(9) |
 | 3 | enumerate `T(9)` | `enum 9 shards` | shard list | 48 912 shards EXHAUSTED, 14 616 576 supports |
 | 3a | *(`symmetric` only)* the plane-fixing subgroup | `symmetry 9 group` | — | `\|H\| = 384`, index 24, closed under composition |
@@ -440,7 +440,7 @@ byte; the raw per-query output with wall times is left beside it as
 
 Order 8 is where a cube is known to exist and its census is known
 independently, so the whole pipeline is exercised at an order where the answers
-were not produced by this code.  `./verify.sh test` runs 23 checks; the
+were not produced by this code.  `./verify.sh test` runs 27 checks; the
 substantive ones are
 
 * `T(8)` enumerated from nothing is **13 056** supports, set-equal *and*
@@ -463,10 +463,21 @@ substantive ones are
   all of them are run, and eight sampled ones are also printed individually;
 * the packing ceiling and the search agree at order 8 too: a support lies in a
   cover **iff** its pool graph has a 7-clique;
+* the whole of `verify.sh symmetric` is run at order 8: the plane-fixing
+  subgroup has order 384 and index 24 and is closed under composition, the
+  5 568 shards fall into **25** orbits with every one of the `5 568 x 384`
+  images admissible and present in the shard list, and mapping the 5 543
+  non-representative shards from the 25 that were enumerated reproduces the
+  census **byte for byte**;
 * all four wall-clock caps are tested to fire, with the shard-level cap shown to
   leave no payload behind, not to mark the shard done, and to have it redone on
   the next pass.  A stopping rule that never fires looks exactly like an
-  exhaustion, which is the failure mode a negative result most needs excluded.
+  exhaustion, which is the failure mode a negative result most needs excluded;
+* and, in the same spirit, the mapping's own guard is tested to fire: one shard
+  is pointed at a different element of the subgroup — in a full-size orbit, so
+  the stabiliser is trivial and any other element does land the records
+  elsewhere — and `symmetry expand` must refuse it.  A check that never rejects
+  looks exactly like agreement.
 
 ### How long it takes
 
@@ -481,7 +492,7 @@ Two machines, both arm64.
 
 | mode | A (20-core Linux, 14 workers) | B (16-core laptop, 6 workers) |
 |---|---|---|
-| `test` | 12 s *(measured)* | 26 s *(measured)* |
+| `test` | 12 s *(measured)* | 36 s *(measured)* |
 | `full` | **2 h 41 m 28 s** *(measured)* | **≈ 7 h 34 m** *(projected — see below)* |
 | `symmetric` | ≈ 8 m 30 s *(projected from A's own steps)* | **11 m 32 s** *(measured)* |
 | `fast` | ≈ 7 m *(projected from A's own steps)* | **6 m 21 s** *(measured)* |
@@ -516,7 +527,7 @@ not).
 
 | step | wall | cost |
 |---|---:|---|
-| order-8 controls, 23 checks | 27 s | |
+| order-8 controls, 27 checks | 36 s | |
 | shard universe (twice, brute force over 9!) and the shard orbits | 2 s | `symmetry orbits` itself is 0.1 s |
 | control (a): the whole n = 8 census, symmetrically | 2 s | 25 shards enumerated of 5 568 |
 | enumerate the **157** orbit representatives | 92 s | **486 core-seconds**, 2.51 x 10^9 nodes, 0 capped |
@@ -544,7 +555,7 @@ takes 692 s against `full`'s projected 27 240 s on the same laptop: **39x**.
 
 | step | wall |
 |---|---:|
-| order-8 controls, 23 checks | 27 s |
+| order-8 controls, 27 checks | 36 s |
 | SHA-256 of the supplied 1.1 GiB catalogue, before anything reads it | < 1 s |
 | all 14 616 576 records checked against the definition in numpy | 17 s |
 | closure under the order-9216 cell group, 87 699 456 images | 41 s |
