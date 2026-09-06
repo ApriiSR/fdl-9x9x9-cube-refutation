@@ -28,9 +28,9 @@ can rerun any line of it independently.
 ```
 make                      # five C programs, no libraries
 ./verify.sh test          # the order-8 controls          (~1 minute)
-./verify.sh full          # everything, from nothing      (~3 hours on 14 cores)
+./verify.sh full          # everything, from nothing    (2 h 41 m on 14 cores)
 ./verify.sh fast --catalogue n9_supports.bin   # everything downstream of the
-                                               # catalogue      (~8 minutes)
+                                               # catalogue      (7.5 minutes)
 ```
 
 ---
@@ -357,7 +357,36 @@ substantive ones are
 
 ### Measured runtimes
 
-<!--RUNTIMES-->
+Two machines, both arm64.  **A** is a 20-core Linux box (Cortex-X925 +
+Cortex-A725, 121 GB), running `full` with 14 workers at `nice -n 10` while
+other jobs of its owner's were also running.  **B** is a 16-core macOS laptop
+(64 GB), running `test` and `fast` with 14 workers.
+
+`verify.sh full` on **A**, start to finish: **2 h 41 m 28 s**.
+
+| step | measurement |
+|---|---|
+| order-8 controls (23 checks), run on their own | 12 s on A, 21 s on B |
+| enumerate `T(9)`, 48 912 shards | **9 271 s wall** on 14 workers; **124 188 core-seconds = 34.5 core-hours**; 7.83 x 10^11 search nodes; wall per shard min 0.000 s, median 2.486 s, max 11.279 s; 0 shards hit the 3 600-second cap |
+| assemble the catalogue and audit it | part of the 417 s that everything other than the sweep took on A |
+| check all 14 616 576 records against the definition | 18 s on B (14 numpy workers) |
+| closure under the cell group | 50.2 s on A, 43.5 s on B |
+| extract the 11 821 056 roots | 1.4 s |
+| classify them into 2 049 orbits | 48.9 s on A, 39.9 s on B |
+| build 2 049 companion pools | 124.9 s on A, 91.8 s on B |
+| re-derive all 2 049 pools in numpy | 320 s on B (6 workers) |
+| exhaust 2 049 root cases and compute their cliques | **1 s** wall on 14 workers: 1.70 CPU-seconds of exact cover and 4.5 CPU-seconds of clique computation for all 2 049 |
+| extract and re-check the 5-packing | under a second |
+
+`verify.sh fast` on **B**, start to finish: **448 s**, of which 21 s is the
+order-8 suite and 320 s is the independent numpy re-derivation of every
+companion pool.  Everything the order-9 argument actually needs, given the
+catalogue, is about two minutes; the rest is checking.
+
+The shape of the cost is worth stating plainly: **the enumeration is the whole
+expense and the refutation is free.**  Exhausting all 2 049 root cases costs
+1.70 CPU-seconds; the independent clique computation costs another 4.5.
+Building the object they run over costs 34.5 core-hours.
 
 ### Reproducing it
 
