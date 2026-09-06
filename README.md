@@ -30,7 +30,7 @@ make                      # five C programs, no libraries
 ./verify.sh test          # the order-8 controls          (~1 minute)
 ./verify.sh full          # everything, from nothing    (2 h 41 m on 14 cores)
 ./verify.sh fast --catalogue n9_supports.bin   # everything downstream of the
-                                               # catalogue      (7.5 minutes)
+                                               # catalogue   (8-12 minutes)
 ```
 
 ---
@@ -378,10 +378,12 @@ other jobs of its owner's were also running.  **B** is a 16-core macOS laptop
 | exhaust 2 049 root cases and compute their cliques | **1 s** wall on 14 workers: 1.70 CPU-seconds of exact cover and 4.5 CPU-seconds of clique computation for all 2 049 |
 | extract and re-check the 5-packing | under a second |
 
-`verify.sh fast` on **B**, start to finish: **448 s**, of which 21 s is the
-order-8 suite and 320 s is the independent numpy re-derivation of every
-companion pool.  Everything the order-9 argument actually needs, given the
-catalogue, is about two minutes; the rest is checking.
+`verify.sh fast` on **B**, start to finish: **448 s** and **740 s** on two
+runs — the spread is almost all in the numpy re-derivation of every companion
+pool (320 s against 493 s), which is bound by how much of the 1.1 GiB
+catalogue is in page cache.  Of the 448 s, 21 s is the order-8 suite and 320 s
+is that re-derivation: everything the order-9 argument actually needs, given
+the catalogue, is about two minutes, and the rest is checking.
 
 The shape of the cost is worth stating plainly: **the enumeration is the whole
 expense and the refutation is free.**  Exhausting all 2 049 root cases costs
