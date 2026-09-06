@@ -8,7 +8,8 @@ built.  numpy is the only dependency.
 
 Subcommands (each has --help):
 
-  lines N                     report the main-line count and cell degrees
+  lines N [--dump FILE]       report the main-line count and cell degrees, and
+                              optionally write the line set in canonical form
   verify N FILE [--sample K]  check records are supports, by the definition
   a007016 N                   the admissible-row count in closed form
   setcmp N A.bin B.bin        compare two record files as sets
@@ -81,6 +82,14 @@ def cmd_lines(a):
     print(f'cells={a.n ** 3} incidences={L.size} degree min={deg.min()} max={deg.max()}')
     ok = len(L) == expect and all(len(set(row.tolist())) == a.n for row in L)
     print('every line has n distinct cells' if ok else 'MALFORMED LINES')
+    if a.dump:
+        # Canonical form: each line as its cells in increasing order, the lines
+        # sorted.  Comparing this file with `enum n lines --dump` compares the
+        # two constructions as SETS of lines; comparing counts does not.
+        rows = sorted(sorted(int(c) for c in row) for row in L)
+        with open(a.dump, 'w') as f:
+            for row in rows:
+                f.write(' '.join(str(c) for c in row) + '\n')
     return 0 if ok else 1
 
 
@@ -106,7 +115,7 @@ def cmd_verify(a):
         hits = flat[:, L].sum(axis=2)          # (block, lines)
         bad_lines += int((hits != 1).any(axis=1).sum())
     print(json.dumps(dict(file=a.file, records=int(M), checked=int(len(idx)),
-                          lines=int(len(L)),
+                          part=a.part, parts=a.parts, lines=int(len(L)),
                           records_without_n2_distinct_cells=int(bad_cells),
                           records_missing_a_line_exactly_once=int(bad_lines))))
     return 0 if (bad_cells == 0 and bad_lines == 0) else 1
@@ -181,9 +190,10 @@ def cmd_pools(a):
     qry = load_records(a.queries, n)
     cm = masks_of(cat, n)
     qms = masks_of(qry, n)
-    bad = 0
+    bad = []
     sizes = []
     todo = range(a.part, qry.shape[0], a.parts)
+    checked_ids = []
     for j in todo:
         qm = qms[j]
         sel = np.all((cm & qm) == 0, axis=1)
@@ -191,18 +201,26 @@ def cmd_pools(a):
         path = os.path.join(a.pooldir, f'pool_{j}.bin')
         have = load_records(path, n)
         sizes.append(int(want.shape[0]))
+        checked_ids.append(int(j))
         if have.shape != want.shape or not np.array_equal(have, want):
             hs = {r.tobytes() for r in have}
             ws = {r.tobytes() for r in want}
             print(f'pool {j}: disk {have.shape[0]} rescan {want.shape[0]} '
-                  f'only_on_disk {len(hs - ws)} only_in_rescan {len(ws - hs)}')
-            bad += 1
+                  f'only_on_disk {len(hs - ws)} only_in_rescan {len(ws - hs)}',
+                  file=sys.stderr, flush=True)
+            bad.append(int(j))
         if len(sizes) % 250 == 0:
-            print(f'  {len(sizes)}/{len(todo)}', flush=True)
-    print(json.dumps(dict(catalogue=int(cat.shape[0]), queries=len(sizes),
-                          disagreements=bad, pool_min=min(sizes), pool_max=max(sizes),
-                          pool_mean=round(sum(sizes) / len(sizes), 1))))
-    return 0 if bad == 0 else 1
+            print(f'  {len(sizes)}/{len(todo)}', file=sys.stderr, flush=True)
+    # The query ids are reported, not just their number: the driver requires the
+    # union of the workers' reports to be exactly the query universe, which a
+    # count cannot establish when a worker dies partway.
+    print(json.dumps(dict(catalogue=int(cat.shape[0]), part=a.part, parts=a.parts,
+                          queries=len(sizes), query_ids=checked_ids,
+                          disagreements=len(bad), disagreeing=bad[:20],
+                          pool_min=min(sizes), pool_max=max(sizes),
+                          pool_mean=round(sum(sizes) / len(sizes), 1),
+                          complete=True)))
+    return 0 if not bad else 1
 
 
 def cmd_witness(a):
@@ -250,7 +268,9 @@ def main():
     sub = ap.add_subparsers(dest='cmd', required=True)
 
     p = sub.add_parser('lines', help='main-line count and cell degrees')
-    p.add_argument('n', type=int); p.set_defaults(fn=cmd_lines)
+    p.add_argument('n', type=int)
+    p.add_argument('--dump', help='write the incidence structure in canonical form')
+    p.set_defaults(fn=cmd_lines)
 
     p = sub.add_parser('verify', help='check records are supports, by the definition')
     p.add_argument('n', type=int); p.add_argument('file')

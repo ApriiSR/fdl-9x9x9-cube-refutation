@@ -187,6 +187,13 @@ static int reccmp(const void *a, const void *b)
     return memcmp(a, b, (size_t)rec_bytes);
 }
 
+/* lexicographic on the cell indices as numbers, not as bytes */
+static int linecmp(const int *a, const int *b)
+{
+    for (int t = 0; t < N; t++) if (a[t] != b[t]) return a[t] < b[t] ? -1 : 1;
+    return 0;
+}
+
 /* row 0 must be a permutation with exactly one fixed and one reflected point */
 static int admissible_row0(const int *p)
 {
@@ -319,7 +326,7 @@ int main(int argc, char **argv)
             }
             for (int a = 1; a < NI; a++) {          /* lines, lexicographically */
                 int v = ord[a], b = a - 1;
-                while (b >= 0 && memcmp(lines[ord[b]], lines[v], sizeof(int) * (size_t)N) > 0) {
+                while (b >= 0 && linecmp(lines[ord[b]], lines[v]) > 0) {
                     ord[b + 1] = ord[b]; b--;
                 }
                 ord[b + 1] = v;

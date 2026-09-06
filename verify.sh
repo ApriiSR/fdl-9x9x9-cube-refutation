@@ -25,25 +25,37 @@
 #       The order-8 controls only (tests/test_n8.py).  A couple of minutes.
 #
 # Options:
-#   --workers N   parallel workers                  (default: all cores)
+#   --workers N        parallel workers                     (default: all cores)
+#   --pool-workers N   workers for the numpy pool re-derivation, the one
+#                      memory-hungry step  (default: min(--workers, 6); each
+#                      worker needs about 3.6 GB, so on an 8 GB machine pass 1)
 #   --nice N      run the sweep and the searches at nice -n N   (default: 0)
 #   --work DIR    scratch and output directory      (default: ./work)
 #   --cap SEC     per-shard wall-clock cap in the sweep          (default: 3600)
 #   --sample K    mapped shards re-enumerated directly in `symmetric` (default: 320)
 #
 # A sweep is resumable per shard: rerunning the same command skips the shards
-# already recorded as finished, at any worker count.  Once 200 shards (or a
+# already recorded as finished, at any worker count.  A shard counts as finished
+# only if its manifest record has the shape a writer produces AND its payload is
+# still on disk at the recorded length and digest.  Once 200 shards (or a
 # quarter of them) have finished it prints throughput and an ETA, extrapolated
 # from its own run; the shard order is shuffled, so that prefix is an unbiased
 # sample of the universe rather than a structurally poor one.
 #
+# Every parallel stage keeps its workers' PIDs and requires each of them to exit
+# 0; every stage that writes one report per worker then requires exactly one
+# complete report per worker, and requires the reports between them to cover the
+# whole universe of work.  A killed worker is a failure, not a silence.
+#
 # Nothing is downloaded and nothing is sent anywhere.  Every step writes into
-# --work; the repository itself is only read.
+# --work, with two exceptions: `make` writes the binaries into bin/, and the
+# order-8 suite makes its scratch directory under --work as well.
 set -euo pipefail
 
 MODE=${1:-}
 shift 2>/dev/null || true
 WORKERS=$( (command -v nproc >/dev/null && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 4 )
+POOL_WORKERS=
 NICE=0
 WORK=work
 CAP=3600
@@ -51,22 +63,56 @@ SAMPLE=320
 CATALOGUE=
 ETA_AFTER=200
 
+die() { echo "verify.sh: $*" >&2; exit 2; }
+
+# A count must be a positive decimal integer; a cap must be a positive, finite
+# number.  Neither is allowed to arrive as a word that a later arithmetic
+# expansion would evaluate.
+want_count() {
+    case $2 in
+        ''|*[!0-9]*) die "$1 needs a positive whole number, got '$2'" ;;
+    esac
+    [ "$2" -ge 1 ] || die "$1 needs a positive whole number, got '$2'"
+}
+want_int() {
+    case $2 in
+        ''|-|*[!0-9-]*|?*-*) die "$1 needs a whole number, got '$2'" ;;
+    esac
+}
+want_seconds() {
+    awk -v v="$2" 'BEGIN { x = v + 0; exit !(v ~ /^[0-9.eE+-]+$/ && x > 0 && x < 1e18) }' \
+        || die "$1 needs a positive finite number of seconds, got '$2'"
+}
+
 while [ $# -gt 0 ]; do
     case $1 in
-        --workers) WORKERS=$2; shift 2 ;;
-        --nice) NICE=$2; shift 2 ;;
-        --work) WORK=$2; shift 2 ;;
-        --cap) CAP=$2; shift 2 ;;
-        --sample) SAMPLE=$2; shift 2 ;;
-        --catalogue) CATALOGUE=$2; shift 2 ;;
-        *) echo "unknown option: $1" >&2; exit 2 ;;
+        --workers) [ $# -ge 2 ] || die "--workers needs a value"
+                   want_count --workers "$2"; WORKERS=$2; shift 2 ;;
+        --pool-workers) [ $# -ge 2 ] || die "--pool-workers needs a value"
+                   want_count --pool-workers "$2"; POOL_WORKERS=$2; shift 2 ;;
+        --nice) [ $# -ge 2 ] || die "--nice needs a value"
+                   want_int --nice "$2"; NICE=$2; shift 2 ;;
+        --work) [ $# -ge 2 ] || die "--work needs a value"; WORK=$2; shift 2 ;;
+        --cap) [ $# -ge 2 ] || die "--cap needs a value"
+                   want_seconds --cap "$2"; CAP=$2; shift 2 ;;
+        --sample) [ $# -ge 2 ] || die "--sample needs a value"
+                   want_count --sample "$2"; SAMPLE=$2; shift 2 ;;
+        --catalogue) [ $# -ge 2 ] || die "--catalogue needs a value"; CATALOGUE=$2; shift 2 ;;
+        *) die "unknown option: $1" ;;
     esac
 done
 
 case $MODE in
     full|symmetric|fast|test) ;;
-    *) sed -n '2,43p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
+    *) sed -n '2,52p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
 esac
+
+# The pool re-derivation holds one cell bitmask per support per worker, so it is
+# capped independently of the rest.
+if [ -z "$POOL_WORKERS" ]; then
+    POOL_WORKERS=$WORKERS
+    [ "$POOL_WORKERS" -gt 6 ] && POOL_WORKERS=6
+fi
 
 HERE=$(cd "$(dirname "$0")" && pwd)
 cd "$HERE"
@@ -75,12 +121,49 @@ WORK=$(cd "$WORK" && pwd)
 BIN=$HERE/bin
 PY=${PYTHON:-python3}
 LOG=$WORK/verify.log
-NICER=""
-if [ "$NICE" -gt 0 ]; then NICER="nice -n $NICE"; fi
+NICER=()
+if [ "$NICE" -gt 0 ]; then NICER=(nice -n "$NICE"); fi
 
 say() { printf '\n=== [%5ds] %s\n' "$SECONDS" "$*" | tee -a "$LOG"; }
 note() { printf '%s\n' "$*" | tee -a "$LOG"; }
 run() { note "\$ $*"; "$@" 2>&1 | tee -a "$LOG"; }
+
+# ---------------------------------------------------------------- job control
+# Every background job this invocation starts is remembered, so that it can be
+# waited on individually (a bare `wait` discards exit statuses) and reaped on
+# the way out.
+JOBS=()
+WATCHER=
+
+cleanup() {
+    local p
+    [ -n "$WATCHER" ] && { kill "$WATCHER" 2>/dev/null || true; wait "$WATCHER" 2>/dev/null || true; }
+    for p in ${JOBS+"${JOBS[@]}"}; do
+        kill "$p" 2>/dev/null || true
+    done
+    for p in ${JOBS+"${JOBS[@]}"}; do
+        wait "$p" 2>/dev/null || true
+    done
+}
+trap cleanup EXIT
+trap 'echo "verify.sh: interrupted" >&2; exit 130' INT TERM
+
+# Wait for every PID in JOBS, requiring each to exit 0.  $1 names the stage.
+wait_all() {
+    local label=$1 p rc failed=0
+    for p in ${JOBS+"${JOBS[@]}"}; do
+        if wait "$p"; then :; else
+            rc=$?
+            note "$label: worker pid $p exited $rc"
+            failed=$((failed + 1))
+        fi
+    done
+    JOBS=()
+    if [ "$failed" -gt 0 ]; then
+        echo "$label: $failed of the workers failed -- refusing to continue" >&2
+        exit 1
+    fi
+}
 
 # Throughput and an ETA, from the run's own first shards.
 #   $1 manifest directory (m_*.jsonl)   $2 shards to do   $3 already done
@@ -106,36 +189,48 @@ eta_watch() {
     done
 }
 
+# Merge every worker manifest in a directory into one aggregate, via a temporary
+# name.  Manifests from a previous run at a HIGHER worker count are real,
+# resumable state and are kept; the aggregate is never one of the inputs, so a
+# rerun cannot read its own truncated output.
+merge_manifests() {
+    local dir=$1 pattern=$2 out=$3
+    { cat "$dir"/$pattern 2>/dev/null || true; } > "$out.tmp"
+    mv "$out.tmp" "$out"
+}
+
 # Run a shard sweep with `enum`, resumably, with a progress watcher.
 #   $1 shard file   $2 shard dir   $3 manifest dir   $4 label
 sweep() {
     local shardfile=$1 sharddir=$2 mdir=$3 label=$4
-    local total base k pids=() wpid t0 t1
+    local total base k t0 t1
     mkdir -p "$sharddir" "$mdir/logs"
     total=$(grep -c . "$shardfile")
-    { cat "$mdir"/m_*.jsonl 2>/dev/null || true; } > "$mdir/done.jsonl"
+    merge_manifests "$mdir" 'm_*.jsonl' "$mdir/done.jsonl"
     base=$(grep -c '"done":true' "$mdir/done.jsonl" || true)
     note "$label: $total shards, $base already finished, $WORKERS workers, cap ${CAP}s"
     t0=$(date +%s)
     k=0
+    JOBS=()
     while [ "$k" -lt "$WORKERS" ]; do
-        $NICER $BIN/enum 9 shards "$shardfile" "$sharddir" "$mdir/m_$k.jsonl" \
+        ${NICER+"${NICER[@]}"} "$BIN/enum" 9 shards "$shardfile" "$sharddir" "$mdir/m_$k.jsonl" \
             --slice "$k" "$WORKERS" --cap "$CAP" --done "$mdir/done.jsonl" \
             > "$mdir/logs/w$k.log" 2>&1 &
-        pids+=($!)
+        JOBS+=($!)
         k=$((k + 1))
     done
     eta_watch "$mdir" "$((total - base))" "$base" &
-    wpid=$!
-    for p in "${pids[@]}"; do wait "$p"; done
-    kill "$wpid" 2>/dev/null || true
-    wait "$wpid" 2>/dev/null || true
+    WATCHER=$!
+    wait_all "$label sweep"
+    kill "$WATCHER" 2>/dev/null || true
+    wait "$WATCHER" 2>/dev/null || true
+    WATCHER=
     t1=$(date +%s)
-    { cat "$mdir"/m_*.jsonl 2>/dev/null || true; } > "$mdir/enumerated.jsonl"
+    merge_manifests "$mdir" 'm_*.jsonl' "$mdir/enumerated.jsonl"
     note "$label sweep wall: $((t1 - t0)) s on $WORKERS workers"
     # A shard that hit the cap is not done.  Say so and stop, rather than
     # assembling a catalogue that is quietly short of a shard.
-    $PY - "$shardfile" "$mdir/enumerated.jsonl" <<'EOF' | tee -a "$LOG"
+    "$PY" - "$shardfile" "$mdir/enumerated.jsonl" <<'EOF' | tee -a "$LOG"
 import json, sys
 want = {int(l.split()[0]) for l in open(sys.argv[1]) if l.strip()}
 r = [json.loads(l) for l in open(sys.argv[2]) if l.strip()]
@@ -159,15 +254,15 @@ EOF
 
 : > "$LOG"
 say "fdlh9 verify.sh $MODE -- $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-note "host: $(uname -srm)  workers: $WORKERS  nice: $NICE  work: $WORK"
-note "python: $($PY -c 'import sys,numpy;print(sys.version.split()[0], "numpy", numpy.__version__)')"
+note "host: $(uname -srm)  workers: $WORKERS  pool workers: $POOL_WORKERS  nice: $NICE  work: $WORK"
+note "python: $("$PY" -c 'import sys,numpy;print(sys.version.split()[0], "numpy", numpy.__version__)')"
 
 say "0. build"
 run make -s all
 note "cc: $(${CC:-cc} --version 2>&1 | head -1)"
 
 say "1. the order-8 controls (nothing about order 9 is believed until these pass)"
-run $PY tests/test_n8.py --workers "$WORKERS"
+run "$PY" tests/test_n8.py --workers "$WORKERS" --tmpdir "$WORK"
 
 if [ "$MODE" = test ]; then
     say "done (test mode)"
@@ -179,12 +274,12 @@ CAT=$WORK/n9_supports.bin
 
 if [ "$MODE" = full ] || [ "$MODE" = symmetric ]; then
     say "2. the shard universe: every admissible row 0, by brute force over all 9!"
-    run $BIN/shards 9 count
-    $BIN/shards 9 list "$WORK/n9_shards.txt" 2>&1 | tee -a "$LOG"
+    run "$BIN/shards" 9 count
+    "$BIN/shards" 9 list "$WORK/n9_shards.txt" 2>&1 | tee -a "$LOG"
     # The sweep runs the shards in a fixed shuffled order so that a partial run
     # is an unbiased sample of the universe rather than a structurally poor
     # prefix.  Indices and rows are unchanged by the shuffle.
-    $BIN/shards 9 list "$WORK/n9_shards_shuffled.txt" --shuffle 20260906 2>&1 | tee -a "$LOG"
+    "$BIN/shards" 9 list "$WORK/n9_shards_shuffled.txt" --shuffle 20260906 2>&1 | tee -a "$LOG"
 fi
 
 if [ "$MODE" = full ]; then
@@ -194,65 +289,72 @@ if [ "$MODE" = full ]; then
 
 elif [ "$MODE" = symmetric ]; then
     say "2b. the subgroup fixing the plane x = 0, and the shard orbits it induces"
-    run $BIN/symmetry 9 group
-    run $BIN/symmetry 9 orbits "$WORK/n9_shards.txt" "$WORK/n9_shard_orbits.jsonl" \
+    run "$BIN/symmetry" 9 group
+    run "$BIN/symmetry" 9 orbits "$WORK/n9_shards.txt" "$WORK/n9_shard_orbits.jsonl" \
         "$WORK/n9_reps.txt"
 
     say "2c. control (a): the same construction at n = 8 must give the census"
     N8=$WORK/n8sym
     rm -rf "$N8"; mkdir -p "$N8/shards"
-    run $BIN/shards 8 list "$WORK/n8_shards.txt"
-    run $BIN/symmetry 8 orbits "$WORK/n8_shards.txt" "$WORK/n8_shard_orbits.jsonl" \
+    run "$BIN/shards" 8 list "$WORK/n8_shards.txt"
+    run "$BIN/symmetry" 8 orbits "$WORK/n8_shards.txt" "$WORK/n8_shard_orbits.jsonl" \
         "$WORK/n8_reps.txt"
-    run $BIN/enum 8 shards "$WORK/n8_reps.txt" "$N8/shards" "$N8/m_reps.jsonl"
-    run $BIN/symmetry 8 expand "$WORK/n8_shard_orbits.jsonl" "$N8/shards" "$N8/m_map.jsonl"
+    run "$BIN/enum" 8 shards "$WORK/n8_reps.txt" "$N8/shards" "$N8/m_reps.jsonl"
+    run "$BIN/symmetry" 8 expand "$WORK/n8_shard_orbits.jsonl" "$N8/shards" "$N8/m_map.jsonl"
     cat "$N8/m_reps.jsonl" "$N8/m_map.jsonl" > "$N8/manifest.jsonl"
-    run $PY src/catalogue.py audit 8 "$N8/manifest.jsonl" "$N8/shards"
-    run $PY src/catalogue.py pack 8 "$N8/manifest.jsonl" "$N8/shards" "$WORK/n8_supports_sym.bin"
-    run $PY src/check.py setcmp 8 "$WORK/n8_supports_sym.bin" data/n8_supports.bin
+    run "$PY" src/catalogue.py audit 8 "$N8/manifest.jsonl" "$N8/shards" \
+        --shards "$WORK/n8_shards.txt"
+    run "$PY" src/catalogue.py pack 8 "$N8/manifest.jsonl" "$N8/shards" \
+        "$WORK/n8_supports_sym.bin" --shards "$WORK/n8_shards.txt"
+    run "$PY" src/check.py setcmp 8 "$WORK/n8_supports_sym.bin" data/n8_supports.bin
 
     say "3. enumerate one shard per orbit  (157 shards, not 48 912)"
     sweep "$WORK/n9_reps.txt" "$N9/shards" "$N9" "T(9) representatives"
 
     say "3b. map every other shard onto its orbit representative (Lemma 6)"
-    t0=$(date +%s); pids=(); k=0
+    mkdir -p "$N9/logs"
+    merge_manifests "$N9" 'x_*.jsonl' "$N9/xdone.jsonl"
+    t0=$(date +%s); k=0; JOBS=()
     while [ "$k" -lt "$WORKERS" ]; do
-        $NICER $BIN/symmetry 9 expand "$WORK/n9_shard_orbits.jsonl" "$N9/shards" \
-            "$N9/x_$k.jsonl" --slice "$k" "$WORKERS" --done "$N9/x_all.jsonl" \
+        ${NICER+"${NICER[@]}"} "$BIN/symmetry" 9 expand "$WORK/n9_shard_orbits.jsonl" \
+            "$N9/shards" "$N9/x_$k.jsonl" --slice "$k" "$WORKERS" --done "$N9/xdone.jsonl" \
             > "$N9/logs/x$k.log" 2>&1 &
-        pids+=($!); k=$((k + 1))
+        JOBS+=($!); k=$((k + 1))
     done
-    for p in "${pids[@]}"; do wait "$p"; done
+    wait_all "shard mapping"
     t1=$(date +%s)
     cat "$N9"/logs/x*.log | tee -a "$LOG"
-    cat "$N9"/x_*.jsonl > "$N9/x_all.jsonl"
+    merge_manifests "$N9" 'x_*.jsonl' "$N9/xdone.jsonl"
     note "mapping wall: $((t1 - t0)) s on $WORKERS workers"
-    cat "$N9/enumerated.jsonl" "$N9/x_all.jsonl" > "$N9/manifest.jsonl"
+    cat "$N9/enumerated.jsonl" "$N9/xdone.jsonl" > "$N9/manifest.jsonl"
 
     say "3c. control (b): $SAMPLE mapped shards, re-enumerated directly and compared"
-    run $PY src/catalogue.py sample 9 "$WORK/n9_shard_orbits.jsonl" "$SAMPLE" "$WORK/n9_sample.txt"
+    run "$PY" src/catalogue.py sample 9 "$WORK/n9_shard_orbits.jsonl" "$SAMPLE" "$WORK/n9_sample.txt"
     rm -rf "$WORK/n9_sample_shards"; mkdir -p "$WORK/n9_sample_shards"
-    t0=$(date +%s); pids=(); k=0
+    rm -f "$WORK"/n9_sample_[0-9]*.jsonl
+    t0=$(date +%s); k=0; JOBS=()
     while [ "$k" -lt "$WORKERS" ]; do
-        $NICER $BIN/enum 9 shards "$WORK/n9_sample.txt" "$WORK/n9_sample_shards" \
-            "$WORK/n9_sample_$k.jsonl" --slice "$k" "$WORKERS" --cap "$CAP" \
-            > "$N9/logs/s$k.log" 2>&1 &
-        pids+=($!); k=$((k + 1))
+        ${NICER+"${NICER[@]}"} "$BIN/enum" 9 shards "$WORK/n9_sample.txt" \
+            "$WORK/n9_sample_shards" "$WORK/n9_sample_$k.jsonl" --slice "$k" "$WORKERS" \
+            --cap "$CAP" > "$N9/logs/s$k.log" 2>&1 &
+        JOBS+=($!); k=$((k + 1))
     done
-    for p in "${pids[@]}"; do wait "$p"; done
+    wait_all "sample re-enumeration"
     t1=$(date +%s)
     note "sample re-enumeration wall: $((t1 - t0)) s on $WORKERS workers"
-    run $PY src/catalogue.py setcmpshards 9 "$WORK/n9_sample.txt" \
+    run "$PY" src/catalogue.py setcmpshards 9 "$WORK/n9_sample.txt" \
         "$WORK/n9_sample_shards" "$N9/shards"
 fi
 
 if [ "$MODE" = full ] || [ "$MODE" = symmetric ]; then
-    say "4. audit the sweep, then assemble the catalogue"
-    run $PY src/catalogue.py audit 9 "$N9/manifest.jsonl" "$N9/shards"
-    run $PY src/catalogue.py pack 9 "$N9/manifest.jsonl" "$N9/shards" "$CAT"
+    say "4. audit the sweep against the shard universe, then assemble the catalogue"
+    run "$PY" src/catalogue.py audit 9 "$N9/manifest.jsonl" "$N9/shards" \
+        --shards "$WORK/n9_shards.txt"
+    run "$PY" src/catalogue.py pack 9 "$N9/manifest.jsonl" "$N9/shards" "$CAT" \
+        --shards "$WORK/n9_shards.txt"
     say "4b. the catalogue must have the canonical SHA-256 before anything uses it"
     want=$(awk "/^#/ {next} \$2 == \"n9_supports.bin\" {print \$1}" checksums.txt)
-    got=$($PY src/check.py sha256 "$CAT" | awk '{print $1}')
+    got=$("$PY" src/check.py sha256 "$CAT" | awk '{print $1}')
     note "expected $want"
     note "actual   $got"
     [ "$want" = "$got" ] || { echo "CATALOGUE CHECKSUM MISMATCH -- refusing to continue" >&2; exit 1; }
@@ -261,7 +363,7 @@ else
     [ -n "$CATALOGUE" ] || { echo "fast mode needs --catalogue FILE" >&2; exit 2; }
     say "2-4. use the supplied catalogue, checking its SHA-256 before anything reads it"
     want=$(awk "/^#/ {next} \$2 == \"n9_supports.bin\" {print \$1}" checksums.txt)
-    got=$($PY src/check.py sha256 "$CATALOGUE" | awk '{print $1}')
+    got=$("$PY" src/check.py sha256 "$CATALOGUE" | awk '{print $1}')
     note "expected $want"
     note "actual   $got"
     [ "$want" = "$got" ] || { echo "CATALOGUE CHECKSUM MISMATCH -- refusing to continue" >&2; exit 1; }
@@ -269,108 +371,93 @@ else
     CAT=$CATALOGUE
 fi
 
+RECORDS=$(( $(wc -c < "$CAT") / 81 ))
+note "the catalogue holds $RECORDS records of 81 bytes"
+
 say "5. every record is a support, checked against the definition in numpy"
-k=0
+rm -f "$WORK"/verify_*.json
+k=0; JOBS=()
 while [ "$k" -lt "$WORKERS" ]; do
-    $PY src/check.py verify 9 "$CAT" --part "$k" --parts "$WORKERS" > "$WORK/verify_$k.json" &
+    "$PY" src/check.py verify 9 "$CAT" --part "$k" --parts "$WORKERS" > "$WORK/verify_$k.json" &
+    JOBS+=($!)
     k=$((k + 1))
 done
-wait
+wait_all "definition check"
 cat "$WORK"/verify_*.json | tee -a "$LOG"
-$PY - "$WORK" "$WORKERS" <<'EOF' | tee -a "$LOG"
-import json, sys, glob, os
-tot = bad = 0
-for p in sorted(glob.glob(os.path.join(sys.argv[1], 'verify_*.json'))):
-    r = json.load(open(p))
-    tot += r['checked']
-    bad += r['records_without_n2_distinct_cells'] + r['records_missing_a_line_exactly_once']
-print(json.dumps(dict(records_checked=tot, failures=bad)))
-sys.exit(1 if bad else 0)
-EOF
+run "$PY" src/catalogue.py reports verify "$WORK" 'verify_*.json' \
+    --parts "$WORKERS" --expect "$RECORDS"
 
 say "6. the catalogue is closed under the order-9216 cell group"
-run $BIN/orbits 9 group
-run $BIN/orbits 9 closure "$CAT"
+run "$BIN/orbits" 9 group
+run "$BIN/orbits" 9 closure "$CAT"
 
 say "7. the roots: supports through the centre cell, and their orbits"
-run $BIN/orbits 9 centre "$CAT" "$WORK/n9_roots.bin"
-run $BIN/orbits 9 classify "$WORK/n9_roots.bin" "$WORK/n9_orbit_sizes.jsonl" "$WORK/n9_orbit_reps.bin"
-run $PY src/catalogue.py orbitstats "$WORK/n9_orbit_sizes.jsonl"
-run $PY src/check.py verify 9 "$WORK/n9_orbit_reps.bin"
+run "$BIN/orbits" 9 centre "$CAT" "$WORK/n9_roots.bin"
+run "$BIN/orbits" 9 classify "$WORK/n9_roots.bin" "$WORK/n9_orbit_sizes.jsonl" "$WORK/n9_orbit_reps.bin"
+run "$PY" src/catalogue.py orbitstats "$WORK/n9_orbit_sizes.jsonl"
+run "$PY" src/check.py verify 9 "$WORK/n9_orbit_reps.bin"
+
+QUERIES=$(( $(wc -c < "$WORK/n9_orbit_reps.bin") / 81 ))
+note "$QUERIES root orbit representatives"
 
 say "8. companion pools, and an independent re-derivation of every one of them"
-run $BIN/pools 9 build "$CAT" "$WORK/n9_orbit_reps.bin" "$WORK/pools" "$WORK/n9_pool_sizes.jsonl"
-PW=$WORKERS; if [ "$PW" -gt 6 ]; then PW=6; fi   # each worker holds the catalogue's masks
-k=0
-while [ "$k" -lt "$PW" ]; do
-    $PY src/check.py pools 9 "$CAT" "$WORK/n9_orbit_reps.bin" "$WORK/pools" \
-        --part "$k" --parts "$PW" > "$WORK/poolchk_$k.json" &
+run "$BIN/pools" 9 build "$CAT" "$WORK/n9_orbit_reps.bin" "$WORK/pools" "$WORK/n9_pool_sizes.jsonl"
+rm -f "$WORK"/poolchk_*.json
+k=0; JOBS=()
+while [ "$k" -lt "$POOL_WORKERS" ]; do
+    "$PY" src/check.py pools 9 "$CAT" "$WORK/n9_orbit_reps.bin" "$WORK/pools" \
+        --part "$k" --parts "$POOL_WORKERS" > "$WORK/poolchk_$k.json" &
+    JOBS+=($!)
     k=$((k + 1))
 done
-wait
+wait_all "pool re-derivation"
 tail -n1 -q "$WORK"/poolchk_*.json | tee -a "$LOG"
-grep -h '"disagreements"' "$WORK"/poolchk_*.json | grep -qv '"disagreements": 0' \
-    && { echo "POOL RE-DERIVATION DISAGREES" >&2; exit 1; } || true
+run "$PY" src/catalogue.py reports pools "$WORK" 'poolchk_*.json' \
+    --parts "$POOL_WORKERS" --expect "$QUERIES"
 
 say "9. exhaust every root case, and independently compute its packing ceiling"
+rm -f "$WORK"/res_*.jsonl
 t0=$(date +%s)
-k=0
+k=0; JOBS=()
 while [ "$k" -lt "$WORKERS" ]; do
-    $NICER $BIN/pack 9 roots "$WORK/n9_orbit_reps.bin" "$WORK/pools" \
+    ${NICER+"${NICER[@]}"} "$BIN/pack" 9 roots "$WORK/n9_orbit_reps.bin" "$WORK/pools" \
         "$WORK/res_$k.jsonl" --slice "$k" "$WORKERS" --cap 600 &
+    JOBS+=($!)
     k=$((k + 1))
 done
-wait
+wait_all "root search"
 t1=$(date +%s)
 cat "$WORK"/res_*.jsonl > "$WORK/n9_results_raw.jsonl"
 note "root search wall: $((t1 - t0)) s on $WORKERS workers"
-run $PY src/catalogue.py ledger "$WORK/n9_results_raw.jsonl" "$WORK/n9_root_results.jsonl"
+run "$PY" src/catalogue.py ledger "$WORK/n9_results_raw.jsonl" "$WORK/n9_root_results.jsonl"
+say "9b. the results must say what the theorem needs, not merely hash correctly"
+run "$PY" src/catalogue.py validate 9 "$WORK/n9_root_results.jsonl" --queries "$QUERIES"
 
 say "10. the exceptional orbit, written out as an explicit packing and re-checked"
-J=$($PY - "$WORK/n9_root_results.jsonl" <<'EOF'
+J=$("$PY" - "$WORK/n9_root_results.jsonl" <<'EOF'
 import json, sys
 best = max((json.loads(l) for l in open(sys.argv[1])), key=lambda r: r['max_companion_clique'])
 print(best['j'])
 EOF
 )
 note "the orbit with the largest packing is j = $J"
-run $BIN/pack 9 witness "$WORK/n9_orbit_reps.bin" "$WORK/pools" "$J" "$WORK/exceptional_packing.json"
-run $PY src/check.py witness 9 "$WORK/exceptional_packing.json"
+run "$BIN/pack" 9 witness "$WORK/n9_orbit_reps.bin" "$WORK/pools" "$J" "$WORK/exceptional_packing.json"
+run "$PY" src/check.py witness 9 "$WORK/exceptional_packing.json"
 
 say "11. checksums"
 PROD=$WORK/checksums.produced
 : > "$PROD"
-$PY src/check.py sha256 "$CAT" | sed "s| .*|  n9_supports.bin|" >> "$PROD"
-( cd "$WORK" && $PY "$HERE/src/check.py" sha256 \
+"$PY" src/check.py sha256 "$CAT" | sed "s| .*|  n9_supports.bin|" >> "$PROD"
+( cd "$WORK" && "$PY" "$HERE/src/check.py" sha256 \
     n9_orbit_reps.bin n9_orbit_sizes.jsonl n9_pool_sizes.jsonl \
     n9_root_results.jsonl exceptional_packing.json ) >> "$PROD"
-$PY src/check.py sha256 data/n8_supports.bin | sed "s| .*|  n8_supports.bin|" >> "$PROD"
+"$PY" src/check.py sha256 data/n8_supports.bin | sed "s| .*|  n8_supports.bin|" >> "$PROD"
 sort -k2 "$PROD" -o "$PROD"
 cat "$PROD" | tee -a "$LOG"
 
 say "12. compare with checksums.txt"
-$PY - checksums.txt "$PROD" <<'EOF' | tee -a "$LOG"
-import sys
-def read(p):
-    d = {}
-    for line in open(p):
-        line = line.strip()
-        if not line or line.startswith('#'):
-            continue
-        h, name = line.split()
-        d[name.split('/')[-1]] = h
-    return d
-want, got = read(sys.argv[1]), read(sys.argv[2])
-bad = 0
-for name in sorted(want):
-    if name not in got:
-        print(f'MISSING   {name}'); bad += 1
-    elif want[name] != got[name]:
-        print(f'MISMATCH  {name}\n  expected {want[name]}\n  actual   {got[name]}'); bad += 1
-    else:
-        print(f'OK        {name}  {got[name]}')
-print(f'\n{len(want) - bad} of {len(want)} artefacts match')
-sys.exit(1 if bad else 0)
-EOF
+run "$PY" src/catalogue.py checksums checksums.txt "$PROD" --require \
+    n9_supports.bin n8_supports.bin n9_orbit_reps.bin n9_orbit_sizes.jsonl \
+    n9_pool_sizes.jsonl n9_root_results.jsonl exceptional_packing.json
 
 say "done -- $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
