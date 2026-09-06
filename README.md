@@ -31,15 +31,15 @@ three verification modes cheap.
 make                      # six C programs, no libraries
 ./verify.sh test          # the order-8 controls              (36 s)
 ./verify.sh full          # everything, from nothing    (2 h 41 m on 14 cores)
-./verify.sh symmetric     # the same, one shard per symmetry orbit  (12 min)
+./verify.sh symmetric     # the same, one shard per symmetry orbit (12-16 min)
 ./verify.sh fast --catalogue n9_supports.bin   # everything downstream of the
-                                               # catalogue        (6 minutes)
+                                               # catalogue      (6-8 minutes)
 ```
 
 There are three verification modes because there are three things a reader
 might want.  `full` recomputes the catalogue from nothing and uses no
 mathematics beyond Lemmas 1-5.  `symmetric` recomputes it too, but enumerates
-only 157 of the 48 912 shards and obtains the rest by symmetry -- three hundred
+only 157 of the 48 912 shards and obtains the rest by symmetry — three hundred
 times less search, at the price of one extra lemma, which it checks three ways.
 `fast` takes the catalogue as given, verifies its SHA-256 before reading it, and
 redoes everything downstream.  Times, machines and memory are in *How long it
@@ -486,23 +486,24 @@ Two machines, both arm64.
 * **A** — a 20-core Linux box (Cortex-X925 + Cortex-A725, 121 GB), 14 workers
   at `nice -n 10`, with other jobs of its owner's also running.
 * **B** — a 16-core macOS laptop (64 GB), 6 workers at `nice -n 10`, kept
-  deliberately below its core count so the machine stays usable.  The `full`
-  row for B is the only projected entry in the table and is marked as such: it
-  was **not** run to completion on the laptop.
+  deliberately below its core count so the machine stays usable.
+
+Every entry below is marked measured or projected.  The one entry that matters
+most — `full` on the laptop — is projected, and how is spelled out.
 
 | mode | A (20-core Linux, 14 workers) | B (16-core laptop, 6 workers) |
 |---|---|---|
 | `test` | 12 s *(measured)* | 36 s *(measured)* |
 | `full` | **2 h 41 m 28 s** *(measured)* | **≈ 7 h 34 m** *(projected — see below)* |
-| `symmetric` | ≈ 8 m 30 s *(projected from A's own steps)* | **11 m 32 s** *(measured)* |
-| `fast` | ≈ 7 m *(projected from A's own steps)* | **6 m 21 s** *(measured)* |
+| `symmetric` | ≈ 9 m *(projected from A's own steps)* | **11 m 32 s** and **15 m 42 s** *(measured, two runs)* |
+| `fast` | ≈ 7 m *(projected from A's own steps)* | **6 m 21 s** and **8 m 17 s** *(measured, two runs)* |
 
 **How B's `full` row is projected.**  A uniform sample of **1 024 of the 48 912
-shards** was swept on B (the shard order is shuffled by a fixed seed, so the
+shards** was swept on B (the shard order is shuffled by a fixed seed, so a
 prefix is a uniform sample, not a structurally poor one): **562 s wall on 6
-workers**, 3 258.8 core-seconds, 16.29 x 10^9 search nodes, 301 942 supports, 0
-shards near the cap.  That is **3.182 core-seconds per shard** — median 3.310 s,
-max 8.98 s — so the whole sweep is
+workers**, 3 258.8 core-seconds, 16.29 x 10^9 search nodes, 301 942 supports,
+nothing near the cap.  That is **3.182 core-seconds per shard** — median
+3.310 s, max 8.98 s — so the whole sweep is
 
 ```
 3.182 s x 48 912 = 155 700 core-seconds = 43.2 core-hours
@@ -523,39 +524,57 @@ the throughput of 6.  This machine is memory-bandwidth-bound on this problem,
 and `nice` is not the cause (the same shard takes 10.79 s niced and 10.81 s
 not).
 
-**Where `symmetric`'s 11 m 32 s goes** (B, measured, whole run):
+**A caveat on all of B's absolute numbers.**  The measurement sessions differed
+from each other by about half again: the same 320-shard control cost 3.241
+core-seconds per shard in one session and 4.960 in another, and every other step
+moved with it (the order-8 suite 36 s against 51 s, the numpy pool re-derivation
+258 s against 363 s).  A laptop under sustained all-core load is not a stable
+instrument.  So **7 h 34 m is a floor, not a promise** — an unlucky session
+would be nearer 11 h — and the two-run spreads above are given rather than
+averaged.  Ratios measured *within* one run are not affected, which is why the
+speed-up below is quoted that way.
+
+**Where `symmetric`'s time goes** (B, measured, the faster of the two runs):
 
 | step | wall | cost |
 |---|---:|---|
-| order-8 controls, 27 checks | 36 s | |
-| shard universe (twice, brute force over 9!) and the shard orbits | 2 s | `symmetry orbits` itself is 0.1 s |
-| control (a): the whole n = 8 census, symmetrically | 2 s | 25 shards enumerated of 5 568 |
-| enumerate the **157** orbit representatives | 92 s | **486 core-seconds**, 2.51 x 10^9 nodes, 0 capped |
+| order-8 controls, 27 checks | 36 s | includes the whole symmetric mode at n = 8 |
+| shard universe (brute force over 9!), twice, and the shard orbits | 2 s | `symmetry orbits` itself is 0.1 s |
+| control (a): the n = 8 census, symmetrically | 2 s | 25 shards enumerated of 5 568 |
+| enumerate the **157** orbit representatives | 92 s | **486 core-seconds**, 2.51 x 10^9 nodes, none capped |
 | map the other **48 755** shards | 4 s | 23 core-seconds for 14 576 161 records |
 | control (b): 320 mapped shards re-enumerated directly | 187 s | 1 037 core-seconds |
 | audit 48 912 shards, assemble and hash the catalogue | 7 s | |
 | everything downstream of the catalogue | 373 s | the same steps `fast` runs |
 
-**The measured speed-up.**  Against the projected `full` sweep on the same
-machine, the enumeration goes from **155 700 core-seconds to 486**: a factor of
-**320**.  That is almost exactly the reduction in shard count (48 912 / 157 =
-311.5) and in search nodes (7.78 x 10^11 / 2.51 x 10^9 = 310), which is what
-Lemma 6(c) predicts — the cost of a shard is constant along an orbit up to the
-tie-breaking in the search, so the 157 representatives are a stratified sample
-rather than a lucky one, and they turn out to cost 0.6 % more than the average
-shard.
+**The measured speed-up.**  Comparing within a single run — the 157
+representatives against the per-shard cost of the 320-shard control drawn from
+the same sweep, on the same machine at the same moment — the enumeration goes
+from a projected 155 700 core-seconds to 486:
+
+| run | representatives | control shards | projected whole sweep | speed-up |
+|---|---:|---:|---:|---:|
+| first | 486 core-s | 3.241 core-s/shard | 158 500 core-s | **326x** |
+| second | 775 core-s | 4.960 core-s/shard | 242 600 core-s | **313x** |
+
+That is almost exactly the reduction in shard count (48 912 / 157 = 311.5) and
+in search nodes (7.78 x 10^11 / 2.51 x 10^9 = 310), which is what Lemma 6(c)
+predicts: the cost of a shard is constant along an orbit up to the tie-breaking
+in the search, so the 157 representatives are a stratified sample rather than a
+lucky one.  They turn out to cost 0.6 % more than the average shard.
 
 Counting the two controls as part of the price — and they should be counted,
-since they are what makes the mode believable — the enumeration cost is 486 +
-23 + 1 037 = **1 546 core-seconds**, still a factor of **101**.  End to end,
-including the order-8 suite and all of the downstream checking, `symmetric`
-takes 692 s against `full`'s projected 27 240 s on the same laptop: **39x**.
+since they are what makes the mode believable — the enumeration cost is
+486 + 23 + 1 037 = **1 546 core-seconds**, still a factor of **103** (102 in the
+second run).  End to end, including the order-8 suite and all of the downstream
+checking, `symmetric` takes 692 s against `full`'s projected 27 240 s on the
+same laptop: **39x** (43x in the second run, where both sides were slower).
 
-**Where `fast`'s 6 m 21 s goes** (B, measured):
+**Where `fast`'s time goes** (B, measured, the faster of the two runs):
 
 | step | wall |
 |---|---:|
-| order-8 controls, 27 checks | 36 s |
+| order-8 controls, 27 checks | 34 s |
 | SHA-256 of the supplied 1.1 GiB catalogue, before anything reads it | < 1 s |
 | all 14 616 576 records checked against the definition in numpy | 17 s |
 | closure under the order-9216 cell group, 87 699 456 images | 41 s |
@@ -565,12 +584,13 @@ takes 692 s against `full`'s projected 27 240 s on the same laptop: **39x**.
 | the 5-packing, and the checksums | 3 s |
 
 Two thirds of `fast` is the numpy re-derivation of every companion pool, which
-is bound by memory bandwidth and page cache; an earlier pair of runs at 14
-workers took 448 s and 740 s and the whole spread was in that one step.  The
-shape of the cost is worth stating plainly: **the enumeration is the whole
-expense and the refutation is free.**  Exhausting all 2 049 root cases costs
-1.70 CPU-seconds and the independent clique computation another 4.5; building
-the object they run over costs 35-43 core-hours.
+is bound by memory bandwidth and page cache; it is where the whole run-to-run
+spread lives (258 s against 363 s here, and 320 s against 493 s in an earlier
+pair of runs at 14 workers).  The shape of the cost is worth stating plainly:
+**the enumeration is the whole expense and the refutation is free.**  Exhausting
+all 2 049 root cases costs 1.70 CPU-seconds and the independent clique
+computation another 4.5; building the object they run over costs 35-43
+core-hours.
 
 ### Memory and disk
 
