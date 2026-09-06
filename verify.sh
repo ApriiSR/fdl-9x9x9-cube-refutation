@@ -58,7 +58,7 @@ LOG=$WORK/verify.log
 NICER=""
 if [ "$NICE" -gt 0 ]; then NICER="nice -n $NICE"; fi
 
-say() { printf '\n=== %s\n' "$*" | tee -a "$LOG"; }
+say() { printf '\n=== [%5ds] %s\n' "$SECONDS" "$*" | tee -a "$LOG"; }
 note() { printf '%s\n' "$*" | tee -a "$LOG"; }
 run() { note "\$ $*"; "$@" 2>&1 | tee -a "$LOG"; }
 
@@ -113,7 +113,7 @@ if [ "$MODE" = full ]; then
 else
     [ -n "$CATALOGUE" ] || { echo "fast mode needs --catalogue FILE" >&2; exit 2; }
     say "2-4. use the supplied catalogue, checking its SHA-256 before anything reads it"
-    want=$(awk '$2 == "n9_supports.bin" {print $1}' checksums.txt)
+    want=$(awk "/^#/ {next} \$2 == \"n9_supports.bin\" {print \$1}" checksums.txt)
     got=$($PY src/check.py sha256 "$CATALOGUE" | awk '{print $1}')
     note "expected $want"
     note "actual   $got"
@@ -193,11 +193,11 @@ run $PY src/check.py witness 9 "$WORK/exceptional_packing.json"
 say "11. checksums"
 PROD=$WORK/checksums.produced
 : > "$PROD"
-$PY src/check.py sha256 "$CAT" | sed "s| .*| n9_supports.bin|" >> "$PROD"
+$PY src/check.py sha256 "$CAT" | sed "s| .*|  n9_supports.bin|" >> "$PROD"
 ( cd "$WORK" && $PY "$HERE/src/check.py" sha256 \
     n9_orbit_reps.bin n9_orbit_sizes.jsonl n9_pool_sizes.jsonl \
     n9_root_results.jsonl exceptional_packing.json ) >> "$PROD"
-$PY src/check.py sha256 data/n8_supports.bin | sed "s| .*| n8_supports.bin|" >> "$PROD"
+$PY src/check.py sha256 data/n8_supports.bin | sed "s| .*|  n8_supports.bin|" >> "$PROD"
 sort -k2 "$PROD" -o "$PROD"
 cat "$PROD" | tee -a "$LOG"
 
