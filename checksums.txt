@@ -1,8 +1,10 @@
 # SHA-256 of every data artefact the pipeline produces.
 #
-# `verify.sh full` recomputes all of them from nothing and compares; `fast`
-# checks n9_supports.bin first and then recomputes the rest.  The two large
-# files are not in this repository:
+# `verify.sh full` and `verify.sh symmetric` recompute all of them from nothing
+# and compare -- including n9_supports.bin, whose hash is checked as soon as it
+# is assembled and before anything downstream reads it; `fast` checks
+# n9_supports.bin first and then recomputes the rest.  The two large files are
+# not in this repository:
 #
 #   n9_supports.bin  1 183 942 656 B  the 14 616 576 supports of [9]^3
 #   n9_roots.bin       957 505 536 B  the 11 821 056 of them through the centre

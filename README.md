@@ -23,15 +23,27 @@ The proof is a finite computation.  This repository separates it into the part
 a person can check on paper — five short lemmas below, which is the whole of
 the mathematics — and the part a machine has to do, which is stated as a table
 of programs, inputs, expected outputs and SHA-256 checksums, so that a reader
-can rerun any line of it independently.
+can rerun any line of it independently.  A sixth lemma is stated and proved
+afterwards; it proves nothing about order 9 and is used only to make one of the
+three verification modes cheap.
 
 ```
-make                      # five C programs, no libraries
-./verify.sh test          # the order-8 controls          (~1 minute)
+make                      # six C programs, no libraries
+./verify.sh test          # the order-8 controls              (26 s)
 ./verify.sh full          # everything, from nothing    (2 h 41 m on 14 cores)
+./verify.sh symmetric     # the same, one shard per symmetry orbit  (12 min)
 ./verify.sh fast --catalogue n9_supports.bin   # everything downstream of the
-                                               # catalogue   (8-12 minutes)
+                                               # catalogue        (6 minutes)
 ```
+
+There are three verification modes because there are three things a reader
+might want.  `full` recomputes the catalogue from nothing and uses no
+mathematics beyond Lemmas 1-5.  `symmetric` recomputes it too, but enumerates
+only 157 of the 48 912 shards and obtains the rest by symmetry -- three hundred
+times less search, at the price of one extra lemma, which it checks three ways.
+`fast` takes the catalogue as given, verifies its SHA-256 before reading it, and
+redoes everything downstream.  Times, machines and memory are in *How long it
+takes* below.
 
 ---
 
@@ -261,6 +273,102 @@ set of **five** pairwise disjoint supports of `[9]^3`, written out explicitly in
 `check.py witness`.  A cube would need nine.  Any future proof of "the packing
 dies early at order 9" that does not survive this example is wrong.
 
+### Lemma 6 (the plane-fixing subgroup, and the shard orbits)
+
+**The theorem above does not use this lemma.**  `verify.sh full` and
+`verify.sh fast` do not use it either.  It is used by one thing only:
+`verify.sh symmetric`, the mode that enumerates 157 shards instead of 48 912.
+It is stated and proved here so that a reader who wants the cheap mode can see
+exactly what extra they are being asked to believe — and so that a reader who
+does not want to believe it can run `full` instead and lose nothing.
+
+Write `P = {x_0 = 0}` for the plane whose contents define a shard: by Lemma 2 a
+support's intersection with `P` is `{(0, j, p(j))}` for an admissible
+permutation `p`, and the shard `S_p` is the set of supports with that row 0.
+
+> Let `H = { g ∈ G : g(P) = P }` be the setwise stabiliser of `P` in the group
+> `G` of Lemma 4.  Then
+>
+> (a) `H` consists of exactly those `g = g(pi, eps, tau)` with `pi(0) = 0` and
+> `tau(eps_0(0)) = 0`, and
+>
+> ```
+> |H| = |G| / (3 * 2*floor(n/2)) = 9216 / 24 = 384      at n = 8 and n = 9;
+> ```
+>
+> (b) writing `u = tau . eps_1` and `v = tau . eps_2`, an `h ∈ H` acts on `P`
+> by `(0,j,k) -> (0, u(j), v(k))` if `pi` fixes the last two coordinates and by
+> `(0,j,k) -> (0, u(k), v(j))` if `pi` swaps them; so it carries the row `p` to
+> `p^h = v.p.u^{-1}` or `v.p^{-1}.u^{-1}`, which is again admissible.  Hence the
+> shard universe is closed under `H`, which permutes it;
+>
+> (c) for every `h ∈ H` and every `p`, `h(S_p) = S_{p^h}` — the image of a shard
+> is the whole of the image shard, record by record and cell by cell.  In
+> particular `|S_p| = |S_{p^h}|`.
+
+*Proof.*  (a)  The image's first coordinate is `tau(eps_0(x_{pi(0)}))`.  On `P`
+the coordinates `x_1, x_2` are free, so if `pi(0) != 0` that expression takes
+all `n` values on `P` and the image lies in no plane at all; hence `pi(0) = 0`,
+and then the image's first coordinate is the constant `tau(eps_0(0))`, which
+must be `0`.  Conversely every such `g` maps `P` into `P`, and an injection of a
+finite set into itself is onto it.  `H` is the stabiliser of a subset, hence a
+subgroup, and `[G:H]` is the size of the `G`-orbit of `P`.  That orbit is
+`{ {x_a = c} }` with `a` any of the three axes and `c` any value of `tau(0)` or
+`tau(n-1)`: since `tau` permutes the pairs `{t, n-1-t}` as blocks, `c` ranges
+over every symbol except the middle one of an odd `n`, so over `2*floor(n/2)`
+values.  Hence `[G:H] = 3 * 2*floor(n/2) = 24` and `|H| = 384`.  (`symmetry
+group` recomputes both by construction: it selects the elements of `G` that fix
+`P`, exhibits the 24 planes, and checks that the selection is closed under
+composition.)
+
+(b)  With `pi(0) = 0`, `pi` restricts to a permutation of `{1, 2}`, which gives
+the two displayed forms.  The graph `{(j, p(j))}` is carried to
+`{(u(j), v(p(j)))}`, the graph of `v.p.u^{-1}`, or to `{(u(p(j)), v(j))}`, the
+graph of `v.p^{-1}.u^{-1}`.  For admissibility, note that `u` and `v` are each
+`tau` or `tau.rev`, and that `tau` commutes with `rev`.  Take the first form and
+put `s = u^{-1}(t)`.  Then `t` is a fixed point of `p^h` iff `v(p(s)) = u(s)`,
+and a reflected point iff `v(p(s)) = rev(u(s))`.  Cancelling `tau` from both
+sides — legitimate because `tau` is a bijection commuting with `rev` — turns
+those two conditions into `p(s) = s` and `p(s) = rev(s)`, in that order when
+`eps_1 = eps_2` and in the opposite order when not.  Each has exactly one
+solution because `p` is admissible, so `p^h` has exactly one fixed and exactly
+one reflected point.  The second form is the same computation after the
+substitution `s = p^{-1}(u^{-1}(t))`.  So `p^h` is admissible, and
+`h -> (p -> p^h)` is an action of `H` on the `48 912` admissible permutations.
+(`symmetry orbits` checks all `48 912 × 384` images one by one: each is
+admissible, and each is present in the brute-force shard list.)
+
+(c)  `h` is a bijection of the cells with `h(P) = P`, so for any set `T`,
+`h(T) ∩ P = h(T ∩ P)`.  Let `T` be a support whose row 0 is `p`.  By Lemma 4,
+`hT` is a support, and its row 0 is `h(T ∩ P) = p^h` by (b).  Hence
+`h(S_p) ⊆ S_{p^h}`.  Applying the same to `h^{-1}`, which is in `H` because `H`
+is a group, gives `h^{-1}(S_{p^h}) ⊆ S_p`, i.e. `S_{p^h} ⊆ h(S_p)`.  The two
+are therefore equal. ∎
+
+At `n = 9` the `48 912` shards fall into **157** `H`-orbits, of sizes 384 (107
+orbits), 192 (36), 96 (8), 48 (2) and 12 (4); at `n = 8` the `5 568` shards fall
+into 25.  By (c) the number of supports in a shard is constant on an orbit, and
+that is visible in the finished catalogue: across all 157 orbits, no orbit
+contains two shards with different support counts.
+
+`verify.sh symmetric` does exactly what (c) licenses.  It enumerates the 157
+representatives with the same exact-cover search `full` uses, and writes every
+other shard as the image of its representative's payload under a recorded
+element of `H`.  What it then checks is:
+
+* at `n = 8`, that the same construction from 25 enumerated shards reproduces
+  `data/n8_supports.bin` — set-equal *and* byte-identical;
+* at `n = 9`, that a uniform sample of the *mapped* shards (320 by default,
+  drawn with a fixed seed from the 48 755 shards that were never enumerated),
+  re-enumerated directly by the exact-cover search, agrees with the mapped
+  contents: set-equal, and in fact byte-identical;
+* that the assembled catalogue has the canonical SHA-256 `f9dd54e4...`, which is
+  a statement about the whole set of `14 616 576` supports, and is where an
+  error anywhere in the mapping would surface.
+
+A referee who distrusts Lemma 6 need not argue with it: `full` and `symmetric`
+produce the same `1 183 942 656` bytes, and `full` never mentions it.
+
 ---
 
 ## Part II. The computation
@@ -285,8 +393,9 @@ code; the exact-cover route in this repository is about three times cheaper.
 
 ### What each step does
 
-Times below were measured by the runs recorded in this README (see *Measured
-runtimes*), not estimated.  Every artefact's SHA-256 is in `checksums.txt` and
+Steps 3a-3d run only in `symmetric` mode; everything else runs in every mode
+that reaches it.  Times below were measured by the runs recorded in this README
+(see *How long it takes*), not estimated.  Every artefact's SHA-256 is in `checksums.txt` and
 is checked by `verify.sh`.
 
 | # | step | program | input | expected output |
@@ -294,6 +403,10 @@ is checked by `verify.sh`.
 | 1 | order-8 controls | `tests/test_n8.py` | — | 23 checks pass (below) |
 | 2 | shard universe | `shards 9 list` | — | 48 912 admissible rows = A007016(9) |
 | 3 | enumerate `T(9)` | `enum 9 shards` | shard list | 48 912 shards EXHAUSTED, 14 616 576 supports |
+| 3a | *(`symmetric` only)* the plane-fixing subgroup | `symmetry 9 group` | — | `\|H\| = 384`, index 24, closed under composition |
+| 3b | *(`symmetric` only)* shard orbits | `symmetry 9 orbits` | shard list | 157 orbits, every one of the 48 912 x 384 images admissible and present |
+| 3c | *(`symmetric` only)* enumerate, then map | `enum 9 shards`, `symmetry 9 expand` | 157 representatives | the same 48 912 shards, 14 616 576 supports |
+| 3d | *(`symmetric` only)* controls | `catalogue.py sample`, `enum 9 shards`, `catalogue.py setcmpshards` | 320 mapped shards | set-equal and byte-identical to direct enumeration |
 | 4 | assemble, audit | `catalogue.py` | shard payloads | `n9_supports.bin`, no duplicates, every record carrying its own shard row |
 | 5 | definition check | `check.py verify 9` | catalogue | 14 616 576 records, 0 failures against the 301 main lines |
 | 6 | group closure | `orbits 9 closure` | catalogue | 87 699 456 images checked, 0 missing |
@@ -355,58 +468,161 @@ substantive ones are
   the next pass.  A stopping rule that never fires looks exactly like an
   exhaustion, which is the failure mode a negative result most needs excluded.
 
-### Measured runtimes
+### How long it takes
 
-Two machines, both arm64.  **A** is a 20-core Linux box (Cortex-X925 +
-Cortex-A725, 121 GB), running `full` with 14 workers at `nice -n 10` while
-other jobs of its owner's were also running.  **B** is a 16-core macOS laptop
-(64 GB), running `test` and `fast` with 14 workers.
+Two machines, both arm64.
 
-`verify.sh full` on **A**, start to finish: **2 h 41 m 28 s**.
+* **A** — a 20-core Linux box (Cortex-X925 + Cortex-A725, 121 GB), 14 workers
+  at `nice -n 10`, with other jobs of its owner's also running.
+* **B** — a 16-core macOS laptop (64 GB), 6 workers at `nice -n 10`, kept
+  deliberately below its core count so the machine stays usable.  The `full`
+  row for B is the only projected entry in the table and is marked as such: it
+  was **not** run to completion on the laptop.
 
-| step | measurement |
-|---|---|
-| order-8 controls (23 checks), run on their own | 12 s on A, 21 s on B |
-| enumerate `T(9)`, 48 912 shards | **9 271 s wall** on 14 workers; **124 188 core-seconds = 34.5 core-hours**; 7.83 x 10^11 search nodes; wall per shard min 0.000 s, median 2.486 s, max 11.279 s; 0 shards hit the 3 600-second cap |
-| assemble the catalogue and audit it | part of the 417 s that everything other than the sweep took on A |
-| check all 14 616 576 records against the definition | 18 s on B (14 numpy workers) |
-| closure under the cell group | 50.2 s on A, 43.5 s on B |
-| extract the 11 821 056 roots | 1.4 s |
-| classify them into 2 049 orbits | 48.9 s on A, 39.9 s on B |
-| build 2 049 companion pools | 124.9 s on A, 91.8 s on B |
-| re-derive all 2 049 pools in numpy | 320 s on B (6 workers) |
-| exhaust 2 049 root cases and compute their cliques | **1 s** wall on 14 workers: 1.70 CPU-seconds of exact cover and 4.5 CPU-seconds of clique computation for all 2 049 |
-| extract and re-check the 5-packing | under a second |
+| mode | A (20-core Linux, 14 workers) | B (16-core laptop, 6 workers) |
+|---|---|---|
+| `test` | 12 s *(measured)* | 26 s *(measured)* |
+| `full` | **2 h 41 m 28 s** *(measured)* | **≈ 7 h 34 m** *(projected — see below)* |
+| `symmetric` | ≈ 8 m 30 s *(projected from A's own steps)* | **11 m 32 s** *(measured)* |
+| `fast` | ≈ 7 m *(projected from A's own steps)* | **6 m 21 s** *(measured)* |
 
-`verify.sh fast` on **B**, start to finish: **448 s** and **740 s** on two
-runs — the spread is almost all in the numpy re-derivation of every companion
-pool (320 s against 493 s), which is bound by how much of the 1.1 GiB
-catalogue is in page cache.  Of the 448 s, 21 s is the order-8 suite and 320 s
-is that re-derivation: everything the order-9 argument actually needs, given
-the catalogue, is about two minutes, and the rest is checking.
+**How B's `full` row is projected.**  A uniform sample of **1 024 of the 48 912
+shards** was swept on B (the shard order is shuffled by a fixed seed, so the
+prefix is a uniform sample, not a structurally poor one): **562 s wall on 6
+workers**, 3 258.8 core-seconds, 16.29 x 10^9 search nodes, 301 942 supports, 0
+shards near the cap.  That is **3.182 core-seconds per shard** — median 3.310 s,
+max 8.98 s — so the whole sweep is
 
-The shape of the cost is worth stating plainly: **the enumeration is the whole
+```
+3.182 s x 48 912 = 155 700 core-seconds = 43.2 core-hours
+562 s / 1 024 x 48 912 = 26 850 s = 7 h 27 m wall on 6 workers
+```
+
+plus the ~7 minutes everything downstream takes, giving **7 h 34 m**: an
+overnight run on a laptop, which was the point of measuring it.  Two sanity
+checks on the extrapolation: the sample's node count scales to 7.78 x 10^11
+against A's measured 7.83 x 10^11 (0.7 % apart), and its mean supports per shard
+is 294.9 against the true 298.8.
+
+B costs 43.2 core-hours against A's 34.5 for the same work, i.e. 1.25x — a
+per-core difference, not a structural one.  Widening B beyond 6 workers buys
+little: at 14 workers an earlier partial sweep on the same laptop measured 6.25
+core-seconds per shard against 3.18 at 6, so 14 workers deliver only about 1.2x
+the throughput of 6.  This machine is memory-bandwidth-bound on this problem,
+and `nice` is not the cause (the same shard takes 10.79 s niced and 10.81 s
+not).
+
+**Where `symmetric`'s 11 m 32 s goes** (B, measured, whole run):
+
+| step | wall | cost |
+|---|---:|---|
+| order-8 controls, 23 checks | 27 s | |
+| shard universe (twice, brute force over 9!) and the shard orbits | 2 s | `symmetry orbits` itself is 0.1 s |
+| control (a): the whole n = 8 census, symmetrically | 2 s | 25 shards enumerated of 5 568 |
+| enumerate the **157** orbit representatives | 92 s | **486 core-seconds**, 2.51 x 10^9 nodes, 0 capped |
+| map the other **48 755** shards | 4 s | 23 core-seconds for 14 576 161 records |
+| control (b): 320 mapped shards re-enumerated directly | 187 s | 1 037 core-seconds |
+| audit 48 912 shards, assemble and hash the catalogue | 7 s | |
+| everything downstream of the catalogue | 373 s | the same steps `fast` runs |
+
+**The measured speed-up.**  Against the projected `full` sweep on the same
+machine, the enumeration goes from **155 700 core-seconds to 486**: a factor of
+**320**.  That is almost exactly the reduction in shard count (48 912 / 157 =
+311.5) and in search nodes (7.78 x 10^11 / 2.51 x 10^9 = 310), which is what
+Lemma 6(c) predicts — the cost of a shard is constant along an orbit up to the
+tie-breaking in the search, so the 157 representatives are a stratified sample
+rather than a lucky one, and they turn out to cost 0.6 % more than the average
+shard.
+
+Counting the two controls as part of the price — and they should be counted,
+since they are what makes the mode believable — the enumeration cost is 486 +
+23 + 1 037 = **1 546 core-seconds**, still a factor of **101**.  End to end,
+including the order-8 suite and all of the downstream checking, `symmetric`
+takes 692 s against `full`'s projected 27 240 s on the same laptop: **39x**.
+
+**Where `fast`'s 6 m 21 s goes** (B, measured):
+
+| step | wall |
+|---|---:|
+| order-8 controls, 23 checks | 27 s |
+| SHA-256 of the supplied 1.1 GiB catalogue, before anything reads it | < 1 s |
+| all 14 616 576 records checked against the definition in numpy | 17 s |
+| closure under the order-9216 cell group, 87 699 456 images | 41 s |
+| roots, and their classification into 2 049 orbits | 35 s |
+| 2 049 companion pools, and their re-derivation in numpy | 258 s |
+| exhaust 2 049 root cases and compute their cliques | 2 s |
+| the 5-packing, and the checksums | 3 s |
+
+Two thirds of `fast` is the numpy re-derivation of every companion pool, which
+is bound by memory bandwidth and page cache; an earlier pair of runs at 14
+workers took 448 s and 740 s and the whole spread was in that one step.  The
+shape of the cost is worth stating plainly: **the enumeration is the whole
 expense and the refutation is free.**  Exhausting all 2 049 root cases costs
-1.70 CPU-seconds; the independent clique computation costs another 4.5.
-Building the object they run over costs 34.5 core-hours.
+1.70 CPU-seconds and the independent clique computation another 4.5; building
+the object they run over costs 35-43 core-hours.
+
+### Memory and disk
+
+Peak resident set per process, measured on B with `/usr/bin/time -l`:
+
+| process | peak RSS |
+|---|---:|
+| `shards`, `pack`, `symmetry orbits`, `symmetry expand` | 3-31 MB |
+| `enum` — one sweep worker, in any mode | **18 MB** |
+| `catalogue.py pack` / `audit` | 79 MB |
+| `check.py verify` — one worker | 1.30 GB |
+| `orbits closure` / `orbits classify` | 1.26 GB / 1.14 GB |
+| `pools build` | 2.41 GB |
+| `check.py pools` — one worker | **4.75 GB** |
+
+So the enumeration, which is the long part, is free of memory pressure: a
+`full` or `symmetric` sweep is 18 MB per worker whatever the worker count.  The
+ceiling is the numpy pool re-derivation, and it is the reason that one step is
+capped at 6 workers however many were asked for.  Of its 4.75 GB, the 1.1 GiB
+catalogue is memory-mapped and therefore shared between workers; the remaining
+~3.6 GB — one 13-word cell bitmask per support, and the block temporaries that
+build them — is private to each.  A whole run therefore wants roughly
+`3.6 GB x min(workers, 6) + 1.2 GB`: about 23 GB at 6 workers, which is why the
+laptop measurements above were taken on a 64 GB machine.  **On a machine with
+less than about 16 GB, pass `--workers 2` or `--workers 3`**; only that one step
+is affected and it is not the expensive one.
+
+Disk under `--work`: 3.4 GB for `full` or `symmetric` (1.2 GB of shard payloads,
+the 1.1 GiB catalogue, the 957 MB root file, 160 MB of pools), 1.1 GB for `fast`
+if the supplied catalogue is counted.
 
 ### Reproducing it
 
 ```
-make                                     # bin/{enum,shards,orbits,pools,pack}
-./verify.sh full  --workers 14           # everything
+make                                # bin/{enum,shards,orbits,pools,pack,symmetry}
+./verify.sh full                    # everything, from nothing
+./verify.sh symmetric               # the same, one shard per symmetry orbit
+./verify.sh fast --catalogue FILE   # everything downstream of a given catalogue
 ```
 
-Requirements: a C99 compiler, GNU make, `bash`, and Python 3 with **numpy**
-(the only Python dependency).  If numpy lives in a virtualenv, set
-`PYTHON=/path/to/python`.  Disk: about 3.5 GB under `--work`.  Memory: the
-largest single process holds the catalogue plus one bitmask per record, about
-3 GB; the parallel pool re-derivation is capped at 6 workers for that reason.
+`--workers N` defaults to the machine's core count; `--nice N` keeps the machine
+usable; `--work DIR` puts the scratch somewhere else; `--cap SEC` is the
+per-shard wall-clock cap in the sweep (default 3 600 s; the slowest shard
+observed anywhere is 11.3 s).
 
-`./verify.sh fast --catalogue FILE` skips step 3 and starts from a catalogue you
-already have.  It checks that file's SHA-256 **before** anything reads it and
-refuses to continue on a mismatch, so a wrong or truncated catalogue cannot
-silently propagate into the downstream results.
+Both sweeping modes are **resumable per shard**, and the resume does not care
+what worker count the interrupted run used: each worker appends to its own
+manifest, the manifests are merged at the start of the next run, and the merge
+is handed to every worker.  A payload is written to a temporary name, flushed
+and renamed before its manifest line is appended, so an interrupted run leaves
+no half-written shard.  Once 200 shards — or a quarter of them, whichever comes
+first — have finished, the sweep prints its own throughput and an ETA.
+
+Requirements: a C99 compiler, GNU make, `bash`, and Python 3 with **numpy** (the
+only Python dependency).  If numpy lives in a virtualenv, set
+`PYTHON=/path/to/python`.
+
+`./verify.sh fast --catalogue FILE` skips the enumeration and starts from a
+catalogue you already have.  It checks that file's SHA-256 **before** anything
+reads it and refuses to continue on a mismatch, so a wrong or truncated
+catalogue cannot silently propagate into the downstream results.  `full` and
+`symmetric` check the same hash on the catalogue they have just assembled,
+before any of the downstream steps look at it.
 
 Every binary takes `--help`.  Nothing in this repository downloads anything or
 sends anything anywhere; all output goes under `--work` (default `./work`).
@@ -447,10 +663,21 @@ hand.  What remains is:
 
 4. **Floating point plays no role**; there is none in the argument.  Wall-clock
    caps are the only timing-dependent behaviour, and they are configured to
-   values the sweep never approaches (the slowest shard takes about 16 seconds
-   against a 3 600-second cap), and are separately tested to fire.
+   values the sweep never approaches (the slowest shard measured anywhere takes
+   11.3 seconds against a 3 600-second cap), and are separately tested to fire.
 
-5. **The scope.**  This says nothing about order 10 or order 12 in dimension 3,
+5. **Which mode was run.**  `full` and `fast` rest on Lemmas 1-5 only.
+   `symmetric` additionally rests on Lemma 6, and on `src/symmetry.c`
+   implementing it: a wrong subgroup, a wrong element index or a wrong record
+   image would mean 48 755 of the 48 912 shards were produced by an untrusted
+   map rather than by search.  Three things stand against that — the n = 8
+   census reproduced the same way, 320 mapped shards re-enumerated directly and
+   found byte-identical, and the canonical SHA-256 of the whole catalogue — and
+   the first two are samples while the third is not.  A reader who wants the
+   result to depend on no lemma beyond 1-5 should run `full`; it produces the
+   same bytes and costs about three hundred times more search.
+
+6. **The scope.**  This says nothing about order 10 or order 12 in dimension 3,
    and nothing about dimension 4 or above.  Order 10 is now the case that
    decides whether the threshold in dimension 3 is 10 or 11.
 
@@ -460,8 +687,8 @@ hand.  What remains is:
 
 ```
 README.md            this file
-Makefile             builds the five C programs into bin/
-verify.sh            full / fast / test
+Makefile             builds the six C programs into bin/
+verify.sh            full / symmetric / fast / test
 checksums.txt        SHA-256 of every data artefact
 src/lines.h          the main lines of [n]^3, from the definition
 src/enum.c           the enumerator: exact cover by dancing links
@@ -469,6 +696,7 @@ src/shards.c         the admissible row-0 permutations (A007016)
 src/orbits.c         the order-9216 cell group; closure and orbit classification
 src/pools.c          companion pools as a filter over a complete catalogue
 src/pack.c           exhaustive exact cover, and the packing ceiling
+src/symmetry.c       the plane-fixing subgroup, and the shard orbits (Lemma 6)
 src/check.py         definition-level checks in numpy, independent of the C
 src/catalogue.py     assembly, audit and ledger canonicalisation
 tests/test_n8.py     the order-8 controls
