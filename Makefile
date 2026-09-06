@@ -1,9 +1,10 @@
-# Build the five programs.  C99, no libraries beyond libc; the Python side
+# Build the six programs.  C99, no libraries beyond libc; the Python side
 # needs only numpy.
 CC      ?= cc
 CFLAGS  ?= -O2 -Wall -Wextra -std=c99 -D_POSIX_C_SOURCE=200809L
 BIN      = bin
-PROGS    = $(BIN)/enum $(BIN)/shards $(BIN)/orbits $(BIN)/pools $(BIN)/pack
+PROGS    = $(BIN)/enum $(BIN)/shards $(BIN)/orbits $(BIN)/pools $(BIN)/pack \
+           $(BIN)/symmetry
 
 all: $(PROGS)
 
@@ -15,6 +16,7 @@ $(BIN)/shards: src/shards.c             | $(BIN); $(CC) $(CFLAGS) -o $@ src/shar
 $(BIN)/orbits: src/orbits.c src/lines.h | $(BIN); $(CC) $(CFLAGS) -o $@ src/orbits.c
 $(BIN)/pools:  src/pools.c              | $(BIN); $(CC) $(CFLAGS) -o $@ src/pools.c
 $(BIN)/pack:   src/pack.c               | $(BIN); $(CC) $(CFLAGS) -o $@ src/pack.c
+$(BIN)/symmetry: src/symmetry.c           | $(BIN); $(CC) $(CFLAGS) -o $@ src/symmetry.c
 
 # The order-8 controls.  Everything the order-9 argument runs through is
 # exercised here at an order where the answer is independently known.
