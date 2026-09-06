@@ -93,11 +93,16 @@ if [ "$MODE" = full ]; then
 
     say "3. enumerate T(9): 48 912 shards, $WORKERS workers  (this is the expensive step)"
     mkdir -p "$N9/shards" "$N9/logs"
+    # Merge whatever earlier workers finished, so a resume may use a different
+    # worker count than the run it is resuming.
+    cat "$N9"/m_*.jsonl > "$N9/done.jsonl" 2>/dev/null || : > "$N9/done.jsonl"
+    note "already finished: $(grep -c '"done":true' "$N9/done.jsonl" || true) shards"
     t0=$(date +%s)
     k=0
     while [ "$k" -lt "$WORKERS" ]; do
         $NICER $BIN/enum 9 shards "$WORK/n9_shards_shuffled.txt" "$N9/shards" \
             "$N9/m_$k.jsonl" --slice "$k" "$WORKERS" --cap "$CAP" \
+            --done "$N9/done.jsonl" \
             > "$N9/logs/w$k.log" 2>&1 &
         k=$((k + 1))
     done

@@ -305,6 +305,24 @@ is checked by `verify.sh`.
 | 12 | witness | `pack 9 witness` | exceptional orbit | 5 pairwise disjoint supports, re-verified |
 | 13 | checksums | `check.py sha256` | all artefacts | match `checksums.txt` |
 
+### The artefacts and their checksums
+
+| artefact | size | SHA-256 |
+|---|---:|---|
+| `n9_supports.bin` (not in the repository) | 1 183 942 656 B | `f9dd54e401c69327d9383567e0050ca65ffd9bfeca7d8b7e8609059508fe3eb8` |
+| `data/n8_supports.bin` | 835 584 B | `f780d243569b1e54d1d7482ffad7c08aa70e2c7caf9849d9c553fac640f15abc` |
+| `data/n9_orbit_reps.bin` | 165 969 B | `36fcd900c16adb496c5132b8205826e1ad99a90075058419ac379881008bdb80` |
+| `data/n9_orbit_sizes.jsonl` | 58 300 B | `f5a98d97d93fa881018058822afe2088a78725791081b93a0ee3ac20b7f99b43` |
+| `data/n9_pool_sizes.jsonl` | 44 769 B | `1528986d3c6391065114d9eceb5c8fd5a00fbe4b16d5351364d75bd63442d39d` |
+| `data/n9_root_results.jsonl` | 362 770 B | `55f3730690d06a0fc2ae37f33e2e7b1df9a49cdb446d5e9a92f5fc2e38cce386` |
+| `data/exceptional_packing.json` | 940 B | `1c4fd1c21289ac11f1d569d929bead3a13b155e17cd07b4a0a97bbd30f028549` |
+
+`n9_roots.bin` (957 505 536 B, the 11 821 056 supports through the centre) is a
+one-second filter over the catalogue and is not checksummed separately.
+`n9_root_results.jsonl` carries no timings, so that it is reproducible byte for
+byte; the raw per-query output with wall times is left beside it as
+`n9_results_raw.jsonl`.
+
 ### The order-8 controls
 
 Order 8 is where a cube is known to exist and its census is known
@@ -319,17 +337,17 @@ substantive ones are
   of sizes 768, 768, 2 304, 2 304, 2 304, 4 608;
 * the exact cover of `[8]^3` by supports has exactly **198 624** solutions, with
   node counts by depth `1, 1 632, 26 016, 60 672, 69 513, 147 292, 154 660,
-  198 624, 198 624` — the published profile, entry for entry.  Relabelling the
+  198 624, 198 624`.  Relabelling the
   eight classes of a partition by two different permutations gives two
   different arrays (a permutation moving `v` to `w != v` changes the array,
   since the classes `T_v` and `T_w` are different sets), so this also counts
-  the labelled cubes: `8! * 198 624 = 8 008 519 680` FDLHs of order 8;
+  the labelled cubes: there are `8! * 198 624 = 8 008 519 680` FDLHs of
+  order 8;
 * the **root search agrees with the census on every one of the 13 056 supports**
   — for each support, the number of covers containing it, computed once by the
-  census and once by the same root machinery that is run at order 9.  (The
-  order-8 check that was asked for was eight root cases; running all of them
-  costs two seconds, so all of them are run.  The eight sampled ones are
-  reported separately in the output.)
+  census and once by the same root machinery that is run at order 9.  Eight
+  spot checks would make the point; running all 13 056 costs two seconds, so
+  all of them are run, and eight sampled ones are also printed individually;
 * the packing ceiling and the search agree at order 8 too: a support lies in a
   cover **iff** its pool graph has a 7-clique;
 * all four wall-clock caps are tested to fire, with the shard-level cap shown to

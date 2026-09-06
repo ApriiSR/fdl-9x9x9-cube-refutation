@@ -252,6 +252,9 @@ static void usage(int rc)
 "        shardfile lines are: idx p0 p1 ... p<n-1>   (see the `shards` tool)\n"
 "        options:\n"
 "          --slice K W    take only shards whose position in the file is K mod W\n"
+"          --done FILE    additionally read already-finished shards from FILE\n"
+"                         (so a sweep can resume with a different worker count:\n"
+"                          merge the workers' manifests and pass the merge)\n"
 "          --cap SECONDS  give up on a shard after SECONDS (records BUDGET,\n"
 "                         leaves no payload, and does not mark it done)\n"
 "\n"
@@ -323,17 +326,23 @@ int main(int argc, char **argv)
         if (argc < 6) usage(2);
         const char *shardfile = argv[3], *outdir = argv[4], *manifest = argv[5];
         int slice_k = 0, slice_w = 1;
+        const char *donefile = NULL;
         for (int a = 6; a < argc; a++) {
             if (!strcmp(argv[a], "--slice") && a + 2 < argc) { slice_k = atoi(argv[a+1]); slice_w = atoi(argv[a+2]); a += 2; }
             else if (!strcmp(argv[a], "--cap") && a + 1 < argc) { cap_seconds = atof(argv[a+1]); a += 1; }
+            else if (!strcmp(argv[a], "--done") && a + 1 < argc) { donefile = argv[a+1]; a += 1; }
             else usage(2);
         }
         if (slice_w < 1 || slice_k < 0 || slice_k >= slice_w) { fprintf(stderr, "bad --slice\n"); return 2; }
 
-        /* resume: shards already marked done */
+        /* resume: shards already marked done, in this worker's own manifest and
+         * in the optional merged one */
         unsigned char *done = calloc(1 << 20, 1);
-        FILE *mf = fopen(manifest, "r");
-        if (mf) {
+        for (int pass = 0; pass < 2; pass++) {
+            const char *src = pass ? donefile : manifest;
+            if (!src) continue;
+            FILE *mf = fopen(src, "r");
+            if (!mf) continue;
             char line[4096];
             while (fgets(line, sizeof line, mf)) {
                 char *q = strstr(line, "\"idx\":");
