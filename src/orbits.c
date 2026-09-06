@@ -9,17 +9,26 @@
  * where rev(t) = n-1-t.  A coordinate permutation pi maps axis lines to axis
  * lines and diagonals to diagonals; a per-axis reversal eps_i maps each family
  * to itself; and a symbol permutation tau applied to ALL THREE coordinates at
- * once maps a line {a + t b} to {tau(a) + t b} only when tau commutes with rev,
- * which is exactly the condition defining C(rev).  So the group maps supports
- * to supports.
+ * once sends a constant coordinate c to tau(c) and the pattern t to tau(t),
+ * which is again a legitimate parameter.  It sends the pattern r(t) to
+ * tau(rev(t)), and that is rev(tau(t)) -- again a main line -- only when tau
+ * commutes with rev, which is exactly the condition defining C(rev).  tau is
+ * an arbitrary permutation, not an affine map; the description is cell by cell.
+ * So the group maps supports to supports.
  *
  * The parametrisation is 2-to-1: eps = (rev,rev,rev) with tau = id is the same
  * cell map as eps = id with tau = rev.  Hence
  *     |G| = 6 * 8 * |C(rev)| / 2,
  * and |C(rev)| = 2^{floor(n/2)} * floor(n/2)!  -- 384 at n = 8 and n = 9 --
  * giving |G| = 9216 at both orders.  This program builds G, checks that count
- * by deduplication, and picks a generating set greedily and deterministically
- * (verified by closure, not assumed).
+ * by deduplication, and uses a fixed, explicitly named generating set -- six
+ * elements chosen for a reason, not searched for -- whose closure is computed
+ * and required to be the whole of G.
+ *
+ * symmetry.c constructs the same group again for its own use.  That is
+ * duplicated code, deliberately left duplicated: the two programs are compared
+ * by their outputs (|G| = 9216, and both report the same subgroup order), and
+ * sharing the construction would remove that comparison.
  *
  * Every element of G fixes the centre cell of an odd cube: rev fixes (n-1)/2
  * and so does every tau in C(rev).  So G acts on the set of supports through
@@ -36,8 +45,10 @@
 #include <time.h>
 
 #include "lines.h"
+#include "util.h"
 
 #define MAXG 20000
+#define MAXTAU 512
 
 static int N, NC, RB;                 /* side, n^3, record bytes = n^2 */
 static int *G;                        /* NG group elements, NC ints each */
@@ -45,18 +56,32 @@ static int NG;
 static int gen[8];                    /* indices into G */
 static int NGEN;
 
-static double now_s(void)
-{
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return ts.tv_sec + ts.tv_nsec * 1e-9;
-}
+#define now_s fdlh_now_s
 
 /* ---- the centraliser of rev in S_n -------------------------------------- */
 /* tau commutes with rev iff it permutes the pairs {t, n-1-t} as blocks,
  * possibly flipping each; the middle point of an odd n is fixed. */
-static int taus[512][MAXN];
+static int taus[MAXTAU][MAXN];
 static int ntau;
+
+/* |C(rev)| = 2^{floor(n/2)} * floor(n/2)!, and |G| = 6 * 8 * |C(rev)| / 2.
+ * Both arrays are fixed-size, so refuse an order that would overrun them
+ * BEFORE anything is written, rather than after. */
+static void check_capacity(int n)
+{
+    int h = n / 2;
+    long long ctau = 1;
+    for (int i = 2; i <= h; i++) ctau *= i;
+    for (int i = 0; i < h; i++) ctau *= 2;
+    long long cg = 6 * 8 * ctau / 2;
+    if (ctau > MAXTAU || cg > MAXG) {
+        fprintf(stderr,
+                "order %d needs |C(rev)| = %lld and |G| = %lld; this build holds "
+                "%d and %d.\nOrders up to 9 are supported; raise MAXTAU and MAXG "
+                "in src/orbits.c to go further.\n", n, ctau, cg, MAXTAU, MAXG);
+        exit(2);
+    }
+}
 
 static void build_taus(void)
 {
@@ -81,6 +106,7 @@ static void build_taus(void)
             na--;
         }
         for (int flips = 0; flips < (1 << h); flips++) {
+            if (ntau >= MAXTAU) { fprintf(stderr, "too many tau\n"); exit(1); }
             int *t = taus[ntau];
             for (int a = 0; a < h; a++) {
                 int src0 = a, src1 = N - 1 - a;
@@ -91,7 +117,6 @@ static void build_taus(void)
             }
             if (N % 2) t[N / 2] = N / 2;
             ntau++;
-            if (ntau > 512) { fprintf(stderr, "too many tau\n"); exit(1); }
         }
     }
 }
@@ -108,16 +133,15 @@ static uint64_t fnv(const void *p, size_t nbytes)
 static void build_group(void)
 {
     build_taus();
-    G = malloc(sizeof(int) * (size_t)MAXG * NC);
-    if (!G) { fprintf(stderr, "out of memory\n"); exit(1); }
+    G = fdlh_alloc(sizeof(int) * (size_t)MAXG * NC, "the group");
     NG = 0;
     /* dedup by hash of the cell map */
     size_t hs = 1 << 16;
-    int *tab = malloc(sizeof(int) * hs);
+    int *tab = fdlh_alloc(sizeof(int) * hs, "group hash");
     for (size_t i = 0; i < hs; i++) tab[i] = -1;
 
     int pi[6][3] = {{0,1,2},{0,2,1},{1,0,2},{1,2,0},{2,0,1},{2,1,0}};
-    int *g = malloc(sizeof(int) * NC);
+    int *g = fdlh_alloc(sizeof(int) * (size_t)NC, "a group element");
     for (int a = 0; a < 6; a++)
     for (int e = 0; e < 8; e++)
     for (int ti = 0; ti < ntau; ti++) {
@@ -159,7 +183,7 @@ static void index_group(void)
     size_t hs = 1;
     while (hs < (size_t)NG * 4) hs <<= 1;
     gmask = hs - 1;
-    gtab = malloc(sizeof(int) * hs);
+    gtab = fdlh_alloc(sizeof(int) * hs, "group index");
     for (size_t i = 0; i < hs; i++) gtab[i] = -1;
     for (int i = 0; i < NG; i++) {
         size_t s = fnv(G + (size_t)i * NC, sizeof(int) * (size_t)NC) & gmask;
@@ -191,9 +215,9 @@ static int closure_size(const int *gens, int ngens)
     static unsigned char *seen;
     static int *stack, *comp;
     if (!seen) {
-        seen = malloc((size_t)MAXG);
-        stack = malloc(sizeof(int) * (size_t)MAXG);
-        comp = malloc(sizeof(int) * (size_t)NC);
+        seen = fdlh_alloc((size_t)MAXG, "closure marks");
+        stack = fdlh_alloc(sizeof(int) * (size_t)MAXG, "closure stack");
+        comp = fdlh_alloc(sizeof(int) * (size_t)NC, "a composition");
     }
     memset(seen, 0, (size_t)NG);
     int sp = 0, cnt = 1;
@@ -211,8 +235,8 @@ static int closure_size(const int *gens, int ngens)
     return cnt;
 }
 
-/* An explicit generating set, with a mathematical reason for each element,
- * VERIFIED by closure rather than assumed:
+/* An explicit generating set -- fixed, not searched for -- with a mathematical
+ * reason for each element, and VERIFIED by closure rather than assumed:
  *
  *   A  tau = the flip of the block {0, n-1}          (one reversal of symbols)
  *   B  tau = the transposition of the blocks {0,n-1} and {1,n-2}
@@ -254,7 +278,7 @@ static void pick_generators(void)
     int h = N / 2;
     int id3[3] = {0, 1, 2}, sw[3] = {1, 0, 2}, cy[3] = {1, 2, 0};
     int idt[MAXN], A[MAXN], B[MAXN], C[MAXN];
-    int *g = malloc(sizeof(int) * (size_t)NC);
+    int *g = fdlh_alloc(sizeof(int) * (size_t)NC, "a generator");
     for (int t = 0; t < N; t++) idt[t] = A[t] = B[t] = C[t] = t;
     A[0] = N - 1; A[N - 1] = 0;
     if (h >= 2) { B[0] = 1; B[1] = 0; B[N - 1] = N - 2; B[N - 2] = N - 1; }
@@ -288,8 +312,7 @@ static void index_records(void)
     size_t hs = 1;
     while (hs < (size_t)NR * 2) hs <<= 1;
     hmask = hs - 1;
-    htab = malloc(sizeof(int) * hs);
-    if (!htab) { fprintf(stderr, "out of memory for the record index\n"); exit(1); }
+    htab = fdlh_alloc(sizeof(int) * hs, "the record index");
     for (size_t i = 0; i < hs; i++) htab[i] = -1;
     for (long long i = 0; i < NR; i++) {
         const unsigned char *r = recs + i * RB;
@@ -316,6 +339,7 @@ static long long find_record(const unsigned char *r)
 
 static void image(const unsigned char *r, const int *g, unsigned char *out)
 {
+    memset(out, 0xff, (size_t)RB);
     for (int c = 0; c < RB; c++) {
         int cell = c * N + r[c];
         int img = g[cell];
@@ -323,21 +347,16 @@ static void image(const unsigned char *r, const int *g, unsigned char *out)
     }
 }
 
+/* Every byte is checked to be a coordinate in [n] on the way in: image() and
+ * the mask builders use them as indices. */
 static unsigned char *load(const char *path, long long *count)
 {
-    FILE *f = fopen(path, "rb");
-    if (!f) { perror(path); exit(1); }
-    fseek(f, 0, SEEK_END);
-    long long sz = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    if (sz % RB) { fprintf(stderr, "%s: size is not a multiple of %d\n", path, RB); exit(1); }
-    unsigned char *b = malloc((size_t)sz);
-    if (!b) { fprintf(stderr, "out of memory reading %s\n", path); exit(1); }
-    if (fread(b, 1, (size_t)sz, f) != (size_t)sz) { perror(path); exit(1); }
-    fclose(f);
-    *count = sz / RB;
-    return b;
+    return fdlh_load_records(path, RB, N, count);
 }
+
+/* image() writes every one of the RB positions exactly once when g is a
+ * bijection of the cells, but the destination is cleared first so that a
+ * partially written buffer can never be mistaken for a record. */
 
 /* ---- union-find ---------------------------------------------------------- */
 static int *par;
@@ -373,7 +392,8 @@ int main(int argc, char **argv)
     if (!strcmp(argv[1], "--help") || !strcmp(argv[1], "-h")) usage(0);
     if (argc < 3) usage(2);
     N = atoi(argv[1]);
-    if (N < 2 || N > MAXN) { fprintf(stderr, "n out of range\n"); return 2; }
+    if (N < 2 || N > MAXN) { fprintf(stderr, "n out of range 2..%d\n", MAXN); return 2; }
+    check_capacity(N);
     NC = N * N * N; RB = N * N;
     const char *mode = argv[2];
 
@@ -416,7 +436,7 @@ int main(int argc, char **argv)
         if (argc < 4) usage(2);
         recs = load(argv[3], &NR);
         index_records();
-        unsigned char *img = malloc((size_t)RB);
+        unsigned char *img = fdlh_alloc((size_t)RB, "an image");
         long long checked = 0, missing = 0;
         for (long long i = 0; i < NR; i++)
             for (int k = 0; k < NGEN; k++) {
@@ -433,9 +453,9 @@ int main(int argc, char **argv)
         if (argc < 6) usage(2);
         recs = load(argv[3], &NR);
         index_records();
-        par = malloc(sizeof(int) * (size_t)NR);
+        par = fdlh_alloc(sizeof(int) * (size_t)NR, "union-find");
         for (long long i = 0; i < NR; i++) par[i] = (int)i;
-        unsigned char *img = malloc((size_t)RB);
+        unsigned char *img = fdlh_alloc((size_t)RB, "an image");
         for (long long i = 0; i < NR; i++)
             for (int k = 0; k < NGEN; k++) {
                 image(recs + i * RB, G + (size_t)gen[k] * NC, img);
@@ -444,8 +464,8 @@ int main(int argc, char **argv)
                 uni((int)i, (int)j);
             }
         /* orbit sizes, and the lexicographically least member of each orbit */
-        int *size = calloc((size_t)NR, sizeof(int));
-        int *least = malloc(sizeof(int) * (size_t)NR);
+        int *size = fdlh_calloc((size_t)NR, sizeof(int), "orbit sizes");
+        int *least = fdlh_alloc(sizeof(int) * (size_t)NR, "orbit minima");
         for (long long i = 0; i < NR; i++) least[i] = -1;
         for (long long i = 0; i < NR; i++) {
             int r = find((int)i);
@@ -454,7 +474,7 @@ int main(int argc, char **argv)
                 least[r] = (int)i;
         }
         long long norb = 0, tot = 0;
-        int *reps = malloc(sizeof(int) * (size_t)NR);
+        int *reps = fdlh_alloc(sizeof(int) * (size_t)NR, "representatives");
         for (long long i = 0; i < NR; i++)
             if (find((int)i) == (int)i) { reps[norb++] = least[i]; tot += size[i]; }
         /* sort representatives lexicographically so the output is canonical */

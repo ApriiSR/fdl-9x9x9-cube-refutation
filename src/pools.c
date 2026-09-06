@@ -25,33 +25,14 @@
 #include <time.h>
 #include <sys/stat.h>
 
+#include "util.h"
+
 #define PMAXN 12
 #define MAXW (PMAXN * PMAXN * PMAXN / 64 + 1)
 
 static int N, NC, RB, W;              /* side, n^3, n^2 bytes, mask words */
 
-static double now_s(void)
-{
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return ts.tv_sec + ts.tv_nsec * 1e-9;
-}
-
-static unsigned char *load(const char *path, long long *count, int rb)
-{
-    FILE *f = fopen(path, "rb");
-    if (!f) { perror(path); exit(1); }
-    fseek(f, 0, SEEK_END);
-    long long sz = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    if (sz % rb) { fprintf(stderr, "%s: size is not a multiple of %d\n", path, rb); exit(1); }
-    unsigned char *b = malloc((size_t)sz ? (size_t)sz : 1);
-    if (!b) { fprintf(stderr, "out of memory reading %s\n", path); exit(1); }
-    if (sz && fread(b, 1, (size_t)sz, f) != (size_t)sz) { perror(path); exit(1); }
-    fclose(f);
-    *count = sz / rb;
-    return b;
-}
+#define now_s fdlh_now_s
 
 static void mask_of(const unsigned char *r, uint64_t *m)
 {
@@ -95,13 +76,14 @@ int main(int argc, char **argv)
 
     double t0 = now_s();
     long long NT, NQ;
-    unsigned char *cat = load(argv[3], &NT, RB);
-    unsigned char *qry = load(argv[4], &NQ, RB);
+    /* Every byte of both files is checked to be a coordinate in [n] before it
+     * is used to index a mask, a cell map or an image buffer. */
+    unsigned char *cat = fdlh_load_records(argv[3], RB, N, &NT);
+    unsigned char *qry = fdlh_load_records(argv[4], RB, N, &NQ);
     const char *outdir = argv[5];
     mkdir(outdir, 0777);
 
-    uint64_t *cm = malloc(sizeof(uint64_t) * (size_t)NT * W);
-    if (!cm) { fprintf(stderr, "out of memory for %lld catalogue masks\n", NT); return 1; }
+    uint64_t *cm = fdlh_alloc(sizeof(uint64_t) * (size_t)NT * W, "catalogue masks");
     for (long long i = 0; i < NT; i++) {
         mask_of(cat + i * RB, cm + i * W);
         if (popcount_mask(cm + i * W) != RB) {
@@ -117,7 +99,7 @@ int main(int argc, char **argv)
 
     uint64_t qm[MAXW];
     size_t cap = 1 << 14;
-    unsigned char *buf = malloc(cap * (size_t)RB);
+    unsigned char *buf = fdlh_alloc(cap * (size_t)RB, "pool buffer");
     long long minp = -1, maxp = -1, totp = 0;
     for (long long j = 0; j < NQ; j++) {
         mask_of(qry + j * RB, qm);
@@ -127,7 +109,12 @@ int main(int argc, char **argv)
             int ok = 1;
             for (int w = 0; w < W; w++) if (m[w] & qm[w]) { ok = 0; break; }
             if (!ok) continue;
-            if ((size_t)k == cap) { cap *= 2; buf = realloc(buf, cap * (size_t)RB); }
+            if ((size_t)k == cap) {
+                cap *= 2;
+                unsigned char *grown = realloc(buf, cap * (size_t)RB);
+                if (!grown) { fprintf(stderr, "out of memory growing the pool buffer\n"); return 1; }
+                buf = grown;
+            }
             memcpy(buf + k * RB, cat + i * RB, (size_t)RB);
             k++;
         }

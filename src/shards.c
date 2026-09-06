@@ -117,6 +117,18 @@ int main(int argc, char **argv)
             seed = strtoull(argv[a + 1], NULL, 10); shuffled = 1; a++;
         }
 
+    /* Count first, and refuse an order that would not fit, BEFORE anything is
+     * written into the fixed-size table. */
+    kept = 0; store_rows = 0;
+    memset(used, 0, sizeof used);
+    dfs(0, n_side);
+    if (kept > MAXROWS) {
+        fprintf(stderr, "n=%d has %lld admissible rows; this build holds %d.\n"
+                        "Orders up to 9 are supported; raise MAXROWS in "
+                        "src/shards.c to go further.\n", n_side, kept, MAXROWS);
+        return 2;
+    }
+
     kept = 0; store_rows = 1;
     memset(used, 0, sizeof used);
     dfs(0, n_side);

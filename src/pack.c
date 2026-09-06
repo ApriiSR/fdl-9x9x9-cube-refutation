@@ -19,13 +19,19 @@
  *            available and is recorded in the output when it fires, so a
  *            truncated search can never be read as an exhaustion.
  *
- * THE PACKING CEILING.  A second, quite different instrument on the same data:
- * build the graph on a pool with an edge between disjoint members.  A clique of
- * size k there is a packing of k+1 pairwise disjoint supports containing the
- * query, and a cube of order n needs n.  So a triangle-free pool graph already
- * caps the packing at 3 -- no search required, and no way for a search bug to
- * produce the answer.  Edges, triangles and the maximum clique are all
+ * THE PACKING CEILING.  A second instrument on the same data: build the graph
+ * on a pool with an edge between disjoint members.  A clique of size k there is
+ * a packing of k+1 pairwise disjoint supports containing the query, and a cube
+ * of order n needs n.  Edges, triangles and the maximum clique are all
  * reported.
+ *
+ * Two of those three are counts rather than searches, and that is the point.  A
+ * k-clique contains C(k,3) triangles, so the triangle count alone bounds the
+ * clique number: at n = 9 a witness would need an 8-clique and therefore 56
+ * triangles, and a pool graph with fewer cannot contain one.  The maximum
+ * clique is computed as well, by the recursive branch and bound bk() below --
+ * a different algorithm from the exact cover, though the two share this file's
+ * record loader, cell masks and disjoint().
  *
  * Records are n*n bytes: byte i*n+j is k for the cell (i,j,k).
  *
@@ -37,33 +43,14 @@
 #include <stdint.h>
 #include <time.h>
 
+#include "util.h"
+
 #define KMAXN 12
 #define MAXW (KMAXN * KMAXN * KMAXN / 64 + 1)
 
 static int N, NC, RB, W;
 
-static double now_s(void)
-{
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return ts.tv_sec + ts.tv_nsec * 1e-9;
-}
-
-static unsigned char *load(const char *path, long long *count, int rb)
-{
-    FILE *f = fopen(path, "rb");
-    if (!f) { perror(path); exit(1); }
-    fseek(f, 0, SEEK_END);
-    long long sz = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    if (sz % rb) { fprintf(stderr, "%s: size is not a multiple of %d\n", path, rb); exit(1); }
-    unsigned char *b = malloc((size_t)sz ? (size_t)sz : 1);
-    if (!b) { fprintf(stderr, "out of memory reading %s\n", path); exit(1); }
-    if (sz && fread(b, 1, (size_t)sz, f) != (size_t)sz) { perror(path); exit(1); }
-    fclose(f);
-    *count = sz / rb;
-    return b;
-}
+#define now_s fdlh_now_s
 
 static void mask_of(const unsigned char *r, uint64_t *m)
 {
@@ -91,6 +78,19 @@ static int timed_out;
 static long long node_check;
 static int chosen[KMAXN + 1];
 
+/* The cap is a deadline on the whole query, not on the search alone: the graph
+ * construction, the triangle count and the clique search all consult it, so a
+ * query that hits it is reported as BUDGET whichever stage was running. */
+static int over_budget(long long every)
+{
+    if (timed_out) return 1;
+    if (cap_seconds <= 0.0) return 0;
+    if (++node_check < every) return 0;
+    node_check = 0;
+    if (now_s() - t_start > cap_seconds) timed_out = 1;
+    return timed_out;
+}
+
 /* candidate lists per depth, so recursion needs no allocation */
 static int *cand_store;
 static int cand_stride;
@@ -101,10 +101,7 @@ static void search(uint64_t *cov, int depth, const int *surv, int nsurv)
     nodes_by_depth[depth]++;
     if (depth > max_depth_seen) max_depth_seen = depth;
     if (depth == N) { nsol++; if (cover_count) for (int a = 0; a < N; a++) cover_count[chosen[a]]++; return; }
-    if (cap_seconds > 0.0 && ++node_check >= 64) {
-        node_check = 0;
-        if (now_s() - t_start > cap_seconds) { timed_out = 1; return; }
-    }
+    if (over_budget(64)) return;
     /* the uncovered cell lying in the fewest survivors */
     int bestcell = -1, bestn = 1 << 30;
     for (int c = 0; c < NC; c++) {
@@ -157,6 +154,7 @@ static int best_clique;
 static int cur_set[64], best_set[64];
 static void bk(uint64_t *cand, int size)
 {
+    if (over_budget(64)) return;
     int nc = popcnt(cand);
     if (size + nc <= best_clique) return;
     if (!nc) {
@@ -170,12 +168,13 @@ static void bk(uint64_t *cand, int size)
             bits &= bits - 1;
             int v = w * 64 + b;
             if (size + popcnt(cand) <= best_clique) return;
-            uint64_t *nx = malloc(sizeof(uint64_t) * (size_t)AW);
+            uint64_t *nx = fdlh_alloc(sizeof(uint64_t) * (size_t)AW, "clique candidates");
             for (int u = 0; u < AW; u++) nx[u] = cand[u] & adj[(size_t)v * AW + u];
             if (size < 64) cur_set[size] = v;
             bk(nx, size + 1);
             free(nx);
             cand[w] &= ~((uint64_t)1 << b);      /* v exhausted; drop it */
+            if (timed_out) return;
         }
     }
     if (size > best_clique) { best_clique = size; memcpy(best_set, cur_set, sizeof(int) * (size_t)size); }
@@ -197,8 +196,12 @@ static void usage(int rc)
 "        triangles and maximum clique.  One JSON line per query.\n"
 "        options:\n"
 "          --slice K W    take only the queries with j = K (mod W)\n"
-"          --cap SECONDS  wall-clock cap per query; a query that hits it is\n"
-"                         reported as BUDGET, never as EXHAUSTED\n"
+"          --cap SECONDS  wall-clock deadline for the WHOLE query -- the graph,\n"
+"                         the triangle count and the clique search as well as\n"
+"                         the exact cover.  A query that hits it is reported as\n"
+"                         BUDGET, never as EXHAUSTED.  Set FDLH_CLOCK_STEP to a\n"
+"                         positive number of seconds to drive the deadline from\n"
+"                         a deterministic virtual clock instead.\n"
 "          --no-clique    skip the clique computation (exhaustion only)\n"
 "          --no-search    skip the exact cover (clique only)\n"
 "  pack <n> witness <queries.bin> <pooldir> <j> <out.json>\n"
@@ -222,14 +225,14 @@ int main(int argc, char **argv)
             if (!strcmp(argv[a], "--cap") && a + 1 < argc) { cap_seconds = atof(argv[a + 1]); a++; }
             else usage(2);
         long long NT;
-        unsigned char *cat = load(argv[3], &NT, RB);
-        M = malloc(sizeof(uint64_t) * (size_t)NT * W);
+        unsigned char *cat = fdlh_load_records(argv[3], RB, N, &NT);
+        M = fdlh_alloc(sizeof(uint64_t) * (size_t)NT * W, "catalogue masks");
         for (long long i = 0; i < NT; i++) mask_of(cat + i * RB, M + i * W);
-        cover_count = calloc((size_t)NT, sizeof(long long));
-        int *surv = malloc(sizeof(int) * (size_t)NT);
+        cover_count = fdlh_calloc((size_t)NT, sizeof(long long), "cover tallies");
+        int *surv = fdlh_alloc(sizeof(int) * (size_t)NT, "survivors");
         for (long long i = 0; i < NT; i++) surv[i] = (int)i;
         cand_stride = (int)NT;
-        cand_store = malloc(sizeof(int) * (size_t)cand_stride * (2 * N + 2));
+        cand_store = fdlh_alloc(sizeof(int) * (size_t)cand_stride * (2 * N + 2), "candidate lists");
         uint64_t cov[MAXW];
         memset(cov, 0, sizeof cov);
         node_check = 63;
@@ -257,17 +260,17 @@ int main(int argc, char **argv)
     if (!strcmp(argv[2], "witness")) {
         if (argc < 7) usage(2);
         long long NQ2;
-        unsigned char *qry2 = load(argv[3], &NQ2, RB);
+        unsigned char *qry2 = fdlh_load_records(argv[3], RB, N, &NQ2);
         long long j = atoll(argv[5]);
         if (j < 0 || j >= NQ2) { fprintf(stderr, "query index out of range\n"); return 2; }
         char path[1024];
         snprintf(path, sizeof path, "%s/pool_%lld.bin", argv[4], j);
         long long P;
-        unsigned char *pool = load(path, &P, RB);
-        M = malloc(sizeof(uint64_t) * (size_t)(P ? P : 1) * W);
+        unsigned char *pool = fdlh_load_records(path, RB, N, &P);
+        M = fdlh_alloc(sizeof(uint64_t) * (size_t)(P ? P : 1) * W, "pool masks");
         for (long long i = 0; i < P; i++) mask_of(pool + i * RB, M + i * W);
         AW = (int)((P + 63) / 64); if (!AW) AW = 1;
-        adj = calloc((size_t)(P ? P : 1) * AW, sizeof(uint64_t));
+        adj = fdlh_calloc((size_t)(P ? P : 1) * AW, sizeof(uint64_t), "adjacency");
         for (long long x = 0; x < P; x++)
             for (long long y = x + 1; y < P; y++)
                 if (disjoint(M + (size_t)x * W, M + (size_t)y * W)) {
@@ -275,7 +278,7 @@ int main(int argc, char **argv)
                     adj[(size_t)y * AW + (x >> 6)] |= (uint64_t)1 << (x & 63);
                 }
         best_clique = 0;
-        uint64_t *all = calloc((size_t)AW, sizeof(uint64_t));
+        uint64_t *all = fdlh_calloc((size_t)AW, sizeof(uint64_t), "clique candidates");
         for (long long x = 0; x < P; x++) all[x >> 6] |= (uint64_t)1 << (x & 63);
         bk(all, 0);
         FILE *f = fopen(argv[6], "w");
@@ -311,7 +314,7 @@ int main(int argc, char **argv)
     if (slice_w < 1 || slice_k < 0 || slice_k >= slice_w) { fprintf(stderr, "bad --slice\n"); return 2; }
 
     long long NQ;
-    unsigned char *qry = load(qpath, &NQ, RB);
+    unsigned char *qry = fdlh_load_records(qpath, RB, N, &NQ);
     FILE *out = fopen(outpath, "w");
     if (!out) { perror(outpath); return 1; }
 
@@ -320,15 +323,26 @@ int main(int argc, char **argv)
         char path[1024];
         snprintf(path, sizeof path, "%s/pool_%lld.bin", pooldir, j);
         long long P;
-        unsigned char *pool = load(path, &P, RB);
+        unsigned char *pool = fdlh_load_records(path, RB, N, &P);
         uint64_t qm[MAXW];
         mask_of(qry + j * RB, qm);
 
-        M = malloc(sizeof(uint64_t) * (size_t)(P ? P : 1) * W);
+        /* The deadline covers the whole query: loading, the graph, the search
+         * and the clique bound alike. */
+        timed_out = 0; node_check = 0; t_start = now_s();
+
+        M = fdlh_alloc(sizeof(uint64_t) * (size_t)(P ? P : 1) * W, "pool masks");
         long long meets = 0;
         for (long long i = 0; i < P; i++) {
             mask_of(pool + i * RB, M + i * W);
             if (!disjoint(M + i * W, qm)) meets++;
+        }
+        /* A pool member meeting its own query is not a companion.  Searching
+         * such a pool would answer a different question, so refuse it. */
+        if (meets) {
+            fprintf(stderr, "query %lld: %lld of %lld pool members meet the query -- "
+                            "this is not a companion pool\n", j, meets, P);
+            return 1;
         }
 
         double w0 = now_s();
@@ -336,18 +350,17 @@ int main(int argc, char **argv)
         int maxd = 0, budget = 0;
         if (do_search) {
             memset(nodes_by_depth, 0, sizeof nodes_by_depth);
-            nsol = 0; max_depth_seen = 0; timed_out = 0; node_check = 63;
+            nsol = 0; max_depth_seen = 0;
             cover_count = NULL;
             cand_stride = (int)(P ? P : 1);
-            cand_store = malloc(sizeof(int) * (size_t)cand_stride * (2 * N + 2));
-            int *surv = malloc(sizeof(int) * (size_t)(P ? P : 1));
+            cand_store = fdlh_alloc(sizeof(int) * (size_t)cand_stride * (2 * N + 2), "candidate lists");
+            int *surv = fdlh_alloc(sizeof(int) * (size_t)(P ? P : 1), "survivors");
             for (long long i = 0; i < P; i++) surv[i] = (int)i;
             uint64_t cov[MAXW];
             memcpy(cov, qm, sizeof(uint64_t) * (size_t)W);
             chosen[0] = -1;
-            t_start = now_s();
             search(cov, 1, surv, (int)P);           /* depth 1: the query itself */
-            covers = nsol; maxd = max_depth_seen; budget = timed_out;
+            covers = nsol; maxd = max_depth_seen;
             for (int d = 0; d <= N; d++) nodes += nodes_by_depth[d];
             free(surv); free(cand_store); cand_store = NULL;
         }
@@ -357,16 +370,16 @@ int main(int argc, char **argv)
         int clique = 0;
         if (do_clique) {
             AW = (int)((P + 63) / 64); if (!AW) AW = 1;
-            adj = calloc((size_t)(P ? P : 1) * AW, sizeof(uint64_t));
-            for (long long a = 0; a < P; a++)
+            adj = fdlh_calloc((size_t)(P ? P : 1) * AW, sizeof(uint64_t), "adjacency");
+            for (long long a = 0; a < P && !over_budget(1024); a++)
                 for (long long b = a + 1; b < P; b++)
                     if (disjoint(M + (size_t)a * W, M + (size_t)b * W)) {
                         adj[(size_t)a * AW + (b >> 6)] |= (uint64_t)1 << (b & 63);
                         adj[(size_t)b * AW + (a >> 6)] |= (uint64_t)1 << (a & 63);
                         edges++;
                     }
-            uint64_t *tmp = malloc(sizeof(uint64_t) * (size_t)AW);
-            for (long long a = 0; a < P; a++)
+            uint64_t *tmp = fdlh_alloc(sizeof(uint64_t) * (size_t)AW, "triangle scratch");
+            for (long long a = 0; a < P && !over_budget(1024); a++)
                 for (long long b = a + 1; b < P; b++)
                     if (adj[(size_t)a * AW + (b >> 6)] & ((uint64_t)1 << (b & 63))) {
                         int s = 0;
@@ -379,7 +392,7 @@ int main(int argc, char **argv)
             triangles /= 3;
             best_clique = 0;
             if (P) {
-                uint64_t *all = calloc((size_t)AW, sizeof(uint64_t));
+                uint64_t *all = fdlh_calloc((size_t)AW, sizeof(uint64_t), "clique candidates");
                 for (long long a = 0; a < P; a++) all[a >> 6] |= (uint64_t)1 << (a & 63);
                 bk(all, 0);
                 free(all);
@@ -387,6 +400,7 @@ int main(int argc, char **argv)
             clique = best_clique;
             free(tmp); free(adj); adj = NULL;
         }
+        budget = timed_out;
         double w2 = now_s();
 
         fprintf(out, "{\"j\":%lld,\"pool\":%lld,\"pool_meets_query\":%lld,"

@@ -11,12 +11,12 @@ all: $(PROGS)
 $(BIN):
 	mkdir -p $(BIN)
 
-$(BIN)/enum:   src/enum.c   src/lines.h | $(BIN); $(CC) $(CFLAGS) -o $@ src/enum.c
+$(BIN)/enum:   src/enum.c   src/lines.h src/util.h | $(BIN); $(CC) $(CFLAGS) -o $@ src/enum.c
 $(BIN)/shards: src/shards.c             | $(BIN); $(CC) $(CFLAGS) -o $@ src/shards.c
-$(BIN)/orbits: src/orbits.c src/lines.h | $(BIN); $(CC) $(CFLAGS) -o $@ src/orbits.c
-$(BIN)/pools:  src/pools.c              | $(BIN); $(CC) $(CFLAGS) -o $@ src/pools.c
-$(BIN)/pack:   src/pack.c               | $(BIN); $(CC) $(CFLAGS) -o $@ src/pack.c
-$(BIN)/symmetry: src/symmetry.c           | $(BIN); $(CC) $(CFLAGS) -o $@ src/symmetry.c
+$(BIN)/orbits: src/orbits.c src/lines.h src/util.h | $(BIN); $(CC) $(CFLAGS) -o $@ src/orbits.c
+$(BIN)/pools:  src/pools.c  src/util.h  | $(BIN); $(CC) $(CFLAGS) -o $@ src/pools.c
+$(BIN)/pack:   src/pack.c   src/util.h  | $(BIN); $(CC) $(CFLAGS) -o $@ src/pack.c
+$(BIN)/symmetry: src/symmetry.c src/util.h  | $(BIN); $(CC) $(CFLAGS) -o $@ src/symmetry.c
 
 # The order-8 controls.  Everything the order-9 argument runs through is
 # exercised here at an order where the answer is independently known.

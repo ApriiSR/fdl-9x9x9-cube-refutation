@@ -44,7 +44,10 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "util.h"
+
 #define YMAXN 12
+#define MAXTAU 512
 #define MAXG 20000
 #define MAXSHARDS 65536
 
@@ -52,12 +55,7 @@ static int N, NC, RB;                 /* side, n^3, record bytes = n^2 */
 static int *G; static int NG;         /* the whole cell group */
 static int *H; static int NH;         /* the plane-fixing subgroup */
 
-static double now_s(void)
-{
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return ts.tv_sec + ts.tv_nsec * 1e-9;
-}
+#define now_s fdlh_now_s
 
 static uint64_t fnv(const void *p, size_t nbytes)
 {
@@ -68,8 +66,27 @@ static uint64_t fnv(const void *p, size_t nbytes)
 }
 
 /* ---- C(rev), then the cell group ---------------------------------------- */
-static int taus[512][YMAXN];
+static int taus[MAXTAU][YMAXN];
 static int ntau;
+
+/* Fixed-size arrays: refuse an order that would overrun them before anything
+ * is written.  |C(rev)| = 2^{floor(n/2)} * floor(n/2)!, |G| = 24 * |C(rev)|,
+ * and the shard universe is A007016(n). */
+static void check_capacity(int n)
+{
+    int h = n / 2;
+    long long ctau = 1;
+    for (int i = 2; i <= h; i++) ctau *= i;
+    for (int i = 0; i < h; i++) ctau *= 2;
+    long long cg = 6 * 8 * ctau / 2;
+    if (ctau > MAXTAU || cg > MAXG) {
+        fprintf(stderr,
+                "order %d needs |C(rev)| = %lld and |G| = %lld; this build holds "
+                "%d and %d.\nOrders up to 9 are supported; raise MAXTAU and MAXG "
+                "in src/symmetry.c to go further.\n", n, ctau, cg, MAXTAU, MAXG);
+        exit(2);
+    }
+}
 
 static void build_taus(void)
 {
@@ -90,6 +107,7 @@ static void build_taus(void)
             na--;
         }
         for (int flips = 0; flips < (1 << h); flips++) {
+            if (ntau >= MAXTAU) { fprintf(stderr, "too many tau\n"); exit(1); }
             int *t = taus[ntau];
             for (int a = 0; a < h; a++) {
                 int b = perm[a], d0 = b, d1 = N - 1 - b;
@@ -98,7 +116,6 @@ static void build_taus(void)
             }
             if (N % 2) t[N / 2] = N / 2;
             ntau++;
-            if (ntau > 512) { fprintf(stderr, "too many tau\n"); exit(1); }
         }
     }
 }
@@ -106,15 +123,14 @@ static void build_taus(void)
 static void build_group(void)
 {
     build_taus();
-    G = malloc(sizeof(int) * (size_t)MAXG * NC);
-    if (!G) { fprintf(stderr, "out of memory\n"); exit(1); }
+    G = fdlh_alloc(sizeof(int) * (size_t)MAXG * NC, "the group");
     NG = 0;
     size_t hs = 1 << 16;
-    int *tab = malloc(sizeof(int) * hs);
+    int *tab = fdlh_alloc(sizeof(int) * hs, "group hash");
     for (size_t i = 0; i < hs; i++) tab[i] = -1;
 
     int pi[6][3] = {{0,1,2},{0,2,1},{1,0,2},{1,2,0},{2,0,1},{2,1,0}};
-    int *g = malloc(sizeof(int) * NC);
+    int *g = fdlh_alloc(sizeof(int) * (size_t)NC, "a group element");
     for (int a = 0; a < 6; a++)
     for (int e = 0; e < 8; e++)
     for (int ti = 0; ti < ntau; ti++) {
@@ -156,8 +172,7 @@ static int h_identity;
 
 static void build_subgroup(void)
 {
-    H = malloc(sizeof(int) * (size_t)NG * NC);
-    if (!H) { fprintf(stderr, "out of memory\n"); exit(1); }
+    H = fdlh_alloc(sizeof(int) * (size_t)NG * NC, "the subgroup");
     NH = 0;
     for (int i = 0; i < NG; i++)
         if (fixes_plane(G + (size_t)i * NC))
@@ -169,6 +184,36 @@ static void build_subgroup(void)
         if (ok) h_identity = i;
     }
     if (h_identity < 0) { fprintf(stderr, "the subgroup does not contain the identity\n"); exit(1); }
+}
+
+/* A hash index of H, so that "is this composition an element of H?" is a real
+ * question about membership in the constructed set -- not the much weaker
+ * question of whether it happens to preserve the plane, which every product of
+ * two plane-preserving maps does automatically. */
+static int *htab_g; static size_t hmask_g;
+
+static void index_subgroup(void)
+{
+    size_t hs = 1;
+    while (hs < (size_t)NH * 4) hs <<= 1;
+    hmask_g = hs - 1;
+    htab_g = fdlh_alloc(sizeof(int) * hs, "the subgroup index");
+    for (size_t i = 0; i < hs; i++) htab_g[i] = -1;
+    for (int i = 0; i < NH; i++) {
+        size_t s = fnv(H + (size_t)i * NC, sizeof(int) * (size_t)NC) & hmask_g;
+        while (htab_g[s] >= 0) s = (s + 1) & hmask_g;
+        htab_g[s] = i;
+    }
+}
+
+static int find_subgroup(const int *g)
+{
+    size_t s = fnv(g, sizeof(int) * (size_t)NC) & hmask_g;
+    while (htab_g[s] >= 0) {
+        if (!memcmp(H + (size_t)htab_g[s] * NC, g, sizeof(int) * (size_t)NC)) return htab_g[s];
+        s = (s + 1) & hmask_g;
+    }
+    return -1;
 }
 
 /* ---- the shard universe -------------------------------------------------- */
@@ -195,7 +240,7 @@ static void index_rows(void)
     size_t hs = 1;
     while (hs < (size_t)nshard * 4) hs <<= 1;
     rowmask = hs - 1;
-    rowtab = malloc(sizeof(int) * hs);
+    rowtab = fdlh_alloc(sizeof(int) * hs, "the row index");
     for (size_t i = 0; i < hs; i++) rowtab[i] = -1;
     for (int i = 0; i < nshard; i++) {
         size_t s = fnv(rowbytes[i], (size_t)N) & rowmask;
@@ -266,6 +311,7 @@ static void row_image(const int *g, const unsigned char *p, unsigned char *out)
 /* ---- records ------------------------------------------------------------- */
 static void record_image(const unsigned char *r, const int *g, unsigned char *out)
 {
+    memset(out, 0xff, (size_t)RB);
     for (int c = 0; c < RB; c++) {
         int cell = c * N + r[c];
         int img = g[cell];
@@ -289,15 +335,22 @@ static int cmd_group(void)
     double t0 = now_s();
     build_group();
     build_subgroup();
-    /* the subgroup really is one: closed under composition, and closed under
-     * inverses because a finite closed non-empty set is */
-    int *comp = malloc(sizeof(int) * (size_t)NC);
-    long long outside = 0;
+    index_subgroup();
+    /* The subgroup really is one: every one of the |H|^2 products is checked to
+     * be an ELEMENT OF H, by lookup in the constructed set.  (Merely checking
+     * that a product preserves the plane would check nothing: a composition of
+     * two plane-preserving maps preserves the plane whatever else it does.)
+     * Closure under inverses then follows, a finite closed non-empty set of
+     * bijections containing them. */
+    int *comp = fdlh_alloc(sizeof(int) * (size_t)NC, "a composition");
+    long long outside = 0, notinH = 0, products = 0;
     for (int a = 0; a < NH; a++)
     for (int b = 0; b < NH; b++) {
         const int *ga = H + (size_t)a * NC, *gb = H + (size_t)b * NC;
         for (int c = 0; c < NC; c++) comp[c] = gb[ga[c]];
+        products++;
         if (!fixes_plane(comp)) outside++;
+        if (find_subgroup(comp) < 0) notinH++;
     }
     free(comp);
     /* the planes {x_a = c} the whole group can send {x_0 = 0} to */
@@ -321,8 +374,10 @@ static int cmd_group(void)
            planes, expect, planes == expect ? "ok" : "MISMATCH");
     printf("expected |H| = |G|/%d = %d -- %s\n", expect, NG / expect,
            NH == NG / expect ? "ok" : "MISMATCH");
-    printf("products of subgroup elements leaving the plane: %lld\n", outside);
-    return (planes == expect && NH == NG / expect && outside == 0) ? 0 : 1;
+    printf("products of subgroup elements checked: %lld -- leaving the plane: %lld"
+           " -- not elements of H: %lld\n", products, outside, notinH);
+    return (planes == expect && NH == NG / expect && outside == 0 && notinH == 0
+            && products == (long long)NH * NH) ? 0 : 1;
 }
 
 static int cmd_orbits(const char *shardfile, const char *outjson, const char *repsfile)
@@ -330,16 +385,49 @@ static int cmd_orbits(const char *shardfile, const char *outjson, const char *re
     double t0 = now_s();
     build_group();
     build_subgroup();
+    index_subgroup();
     read_shardfile(shardfile);
 
-    int *rep = malloc(sizeof(int) * (size_t)nshard);
-    int *gel = malloc(sizeof(int) * (size_t)nshard);
-    int *orb = malloc(sizeof(int) * (size_t)nshard);
+    /* The closure check, in full: EVERY row against EVERY subgroup element, not
+     * only the orbit representatives.  At n = 9 that is 48 912 x 384 =
+     * 18 782 208 images, each required to be an admissible permutation and to
+     * be present in the shard file.  The orbit pass below visits a row only
+     * until it has been assigned, so it alone would check 157 x 384 = 60 288.
+     */
+    long long images = 0;
+    {
+        unsigned char im[YMAXN];
+        for (int i = 0; i < nshard; i++)
+            for (int k = 0; k < NH; k++) {
+                row_image(H + (size_t)k * NC, rowbytes[i], im);
+                if (!admissible(im)) {
+                    fprintf(stderr, "a subgroup element maps an admissible row to an "
+                                    "inadmissible one -- shard %d, element %d\n",
+                            shard_idx[i], k);
+                    return 1;
+                }
+                if (find_row(im) < 0) {
+                    fprintf(stderr, "the shard universe is not closed under the subgroup "
+                                    "-- shard %d, element %d\n", shard_idx[i], k);
+                    return 1;
+                }
+                images++;
+            }
+    }
+    if (images != (long long)nshard * NH) {
+        fprintf(stderr, "checked %lld images, expected %lld\n",
+                images, (long long)nshard * NH);
+        return 1;
+    }
+
+    int *rep = fdlh_alloc(sizeof(int) * (size_t)nshard, "orbit representatives");
+    int *gel = fdlh_alloc(sizeof(int) * (size_t)nshard, "orbit elements");
+    int *orb = fdlh_alloc(sizeof(int) * (size_t)nshard, "orbit numbers");
     for (int i = 0; i < nshard; i++) { rep[i] = -1; gel[i] = -1; orb[i] = -1; }
 
     /* Shards in increasing index; the representative is the least-indexed
      * member of its orbit, so the choice depends on nothing but the group. */
-    int *byidx = malloc(sizeof(int) * (size_t)nshard);
+    int *byidx = fdlh_alloc(sizeof(int) * (size_t)nshard, "shard order");
     for (int i = 0; i < nshard; i++) byidx[i] = i;
     for (int a = 1; a < nshard; a++) {          /* insertion sort on shard index */
         int v = byidx[a], b = a - 1;
@@ -349,7 +437,7 @@ static int cmd_orbits(const char *shardfile, const char *outjson, const char *re
 
     unsigned char img[YMAXN];
     int norb = 0;
-    long long *osize = malloc(sizeof(long long) * (size_t)nshard);
+    long long *osize = fdlh_alloc(sizeof(long long) * (size_t)nshard, "orbit sizes");
     for (int a = 0; a < nshard; a++) {
         int i = byidx[a];
         if (rep[i] >= 0) continue;
@@ -357,17 +445,7 @@ static int cmd_orbits(const char *shardfile, const char *outjson, const char *re
         osize[o] = 0;
         for (int k = 0; k < NH; k++) {
             row_image(H + (size_t)k * NC, rowbytes[i], img);
-            if (!admissible(img)) {
-                fprintf(stderr, "a subgroup element maps an admissible row to an "
-                                "inadmissible one -- shard %d, element %d\n", shard_idx[i], k);
-                return 1;
-            }
-            int j = find_row(img);
-            if (j < 0) {
-                fprintf(stderr, "the shard universe is not closed under the subgroup "
-                                "-- shard %d, element %d\n", shard_idx[i], k);
-                return 1;
-            }
+            int j = find_row(img);           /* admissible and present: checked above */
             if (rep[j] < 0) { rep[j] = i; gel[j] = k; orb[j] = o; osize[o]++; }
         }
         if (rep[i] != i) {
@@ -415,9 +493,10 @@ static int cmd_orbits(const char *shardfile, const char *outjson, const char *re
         while (b >= 0 && sizes[b] > sv) { sizes[b+1] = sizes[b]; counts[b+1] = counts[b]; b--; }
         sizes[b+1] = sv; counts[b+1] = cv;
     }
-    printf("{\"shards\":%d,\"subgroup_order\":%d,\"orbits\":%d,\"representatives\":%lld,"
+    printf("{\"shards\":%d,\"subgroup_order\":%d,\"images_checked\":%lld,"
+           "\"orbits\":%d,\"representatives\":%lld,"
            "\"sum_orbit_sizes\":%lld,\"reduction\":%.2f,\"orbit_size_histogram\":{",
-           nshard, NH, norb, nreps, tot, nshard / (double)norb);
+           nshard, NH, images, norb, nreps, tot, nshard / (double)norb);
     for (int s = 0; s < nsz; s++)
         printf("%s\"%lld\":%lld", s ? "," : "", sizes[s], counts[s]);
     printf("},\"wall\":%.1f}\n", now_s() - t0);
@@ -437,26 +516,17 @@ static int cmd_expand(const char *orbfile, const char *sharddir, const char *man
     build_group();
     build_subgroup();
 
-    unsigned char *done = calloc(1 << 20, 1);
-    for (int pass = 0; pass < 2; pass++) {
-        const char *src = pass ? donefile : manifest;
-        if (!src) continue;
-        FILE *mf = fopen(src, "r");
-        if (!mf) continue;
-        char line[4096];
-        while (fgets(line, sizeof line, mf)) {
-            char *q = strstr(line, "\"idx\":");
-            if (q && strstr(line, "\"done\":true")) {
-                int v = atoi(q + 6);
-                if (v >= 0 && v < (1 << 20)) done[v] = 1;
-            }
-        }
-        fclose(mf);
-    }
+    /* Resume on the same terms `enum` uses: a shard counts as finished only if
+     * its completion record has the exact shape a writer produces and its
+     * payload is still on disk at the recorded length and digest. */
+    struct fdlh_done done;
+    fdlh_done_init(&done, 1 << 17);
+    fdlh_done_read(&done, manifest);
+    if (donefile) fdlh_done_read(&done, donefile);
 
     FILE *of = fopen(orbfile, "r");
     if (!of) { perror(orbfile); return 1; }
-    FILE *out_mf = fopen(manifest, "a");
+    FILE *out_mf = fdlh_manifest_append(manifest);
     if (!out_mf) { perror(manifest); return 1; }
 
     char line[8192];
@@ -480,8 +550,20 @@ static int cmd_expand(const char *orbfile, const char *sharddir, const char *man
         for (int j = 0; j < N; j++) { J.row[j] = (unsigned char)atoi(q); q = strchr(q, ','); if (q) q++; else if (j + 1 < N) return 1; }
         if (J.rep == J.idx) continue;                 /* enumerated directly */
         if ((seen++ % slice_w) != slice_k) continue;
-        if (J.idx >= 0 && J.idx < (1 << 20) && done[J.idx]) continue;
         if (J.g < 0 || J.g >= NH) { fprintf(stderr, "shard %d: bad element index\n", J.idx); return 1; }
+
+        char sub[1024], path[1200], tmp[1300];
+        snprintf(sub, sizeof sub, "%s/%03d", sharddir, J.idx / 1000);
+        shard_path(path, sizeof path, sharddir, J.idx);
+        snprintf(tmp, sizeof tmp, "%s.part", path);
+
+        long long dbytes; uint64_t ddig; int dhas;
+        if (fdlh_done_get(&done, J.idx, &dbytes, &ddig, &dhas)) {
+            const char *why = "the completion record has no length or digest";
+            if (dhas && fdlh_payload_ok(path, dbytes, ddig, &why)) continue;
+            fprintf(stderr, "shard %d: %s -- regenerating it\n", J.idx, why);
+        }
+        unlink(tmp);            /* a .part left by an interrupted run */
 
         if (J.rep != cached_rep) {
             char p[1200];
@@ -495,6 +577,9 @@ static int cmd_expand(const char *orbfile, const char *sharddir, const char *man
             if (!src) { fprintf(stderr, "out of memory\n"); return 1; }
             if (sz && fread(src, 1, (size_t)sz, f) != (size_t)sz) { perror(p); return 1; }
             fclose(f);
+            /* the representative's own payload is data too: check its bytes are
+             * coordinates in [n] before using them to index the cell map */
+            if (!fdlh_bytes_in_range(src, sz, N, p, RB)) return 1;
             nsrc = (size_t)(sz / RB);
             cached_rep = J.rep;
         }
@@ -522,29 +607,27 @@ static int cmd_expand(const char *orbfile, const char *sharddir, const char *man
             }
         double w = now_s() - w0;
 
-        char sub[1024], path[1200], tmp[1300];
-        snprintf(sub, sizeof sub, "%s/%03d", sharddir, J.idx / 1000);
         mkdir(sub, 0777);
-        shard_path(path, sizeof path, sharddir, J.idx);
-        snprintf(tmp, sizeof tmp, "%s.part", path);
         FILE *f = fopen(tmp, "wb");
         if (!f) { perror(tmp); return 1; }
         if (nsrc && fwrite(dst, (size_t)RB, nsrc, f) != nsrc) { perror(tmp); return 1; }
         if (fflush(f) || fsync(fileno(f)) || fclose(f)) { perror(tmp); return 1; }
         if (rename(tmp, path)) { perror("rename"); return 1; }
 
+        uint64_t dig = fdlh_fnv64(dst, nsrc * (size_t)RB);
         fprintf(out_mf, "{\"idx\":%d,\"row0\":[", J.idx);
         for (int j = 0; j < N; j++) fprintf(out_mf, "%d%s", J.row[j], j + 1 < N ? "," : "");
         fprintf(out_mf, "],\"count\":%zu,\"nodes\":0,\"wall\":%.4f,\"bytes\":%zu,"
-                        "\"status\":\"MAPPED\",\"done\":true,\"from\":%d,\"g\":%d}\n",
-                nsrc, w, nsrc * (size_t)RB, J.rep, J.g);
+                        "\"digest\":\"%016llx\",\"status\":\"MAPPED\",\"done\":true,"
+                        "\"from\":%d,\"g\":%d}\n",
+                nsrc, w, nsrc * (size_t)RB, (unsigned long long)dig, J.rep, J.g);
         fflush(out_mf);
         made++; records += (long long)nsrc;
     }
     fclose(of);
     if (fclose(out_mf)) { perror(manifest); return 1; }
     printf("{\"mapped_shards\":%lld,\"records\":%lld,\"wall\":%.1f}\n", made, records, now_s() - t0);
-    free(done); free(src); free(dst);
+    free(src); free(dst);
     return 0;
 }
 
@@ -557,9 +640,13 @@ static void usage(int rc)
 "  symmetry <n> group\n"
 "        Build the cell group, select the elements fixing the plane x = 0,\n"
 "        and check the order against |G| / (3 * 2*floor(n/2)), the index being\n"
-"        the number of planes the whole group can send {x = 0} to.\n"
+"        the number of planes the whole group can send {x = 0} to.  Every one\n"
+"        of the |H|^2 products is looked up in H, so closure is checked as\n"
+"        membership and not merely as preservation of the plane.\n"
 "  symmetry <n> orbits <shardfile> <out.jsonl> <reps.txt>\n"
-"        Decompose the shard universe into orbits of that subgroup.  Writes\n"
+"        Check every one of the (shards x |H|) row images -- each must be an\n"
+"        admissible permutation and be present in the shard file -- and then\n"
+"        decompose the shard universe into orbits of the subgroup.  Writes\n"
 "        one JSON line per shard -- its orbit, its representative (the least\n"
 "        shard index in the orbit) and the index of a subgroup element taking\n"
 "        the representative's row 0 to its own -- and a reps.txt in the format\n"
@@ -576,6 +663,10 @@ static void usage(int rc)
 "          --slice K W    take only shards whose position is K mod W\n"
 "          --done FILE    additionally read already-finished shards from FILE\n"
 "\n"
+"A shard is skipped on resume only if its completion record has the shape a\n"
+"writer produces AND its payload is still on disk at the recorded length and\n"
+"digest; otherwise it is remade and the reason is printed.\n"
+"\n"
 "Records are n*n bytes: byte i*n+j is k for the cell (i,j,k).\n");
     exit(rc);
 }
@@ -587,6 +678,7 @@ int main(int argc, char **argv)
     if (argc < 3) usage(2);
     N = atoi(argv[1]);
     if (N < 2 || N > YMAXN) { fprintf(stderr, "n out of range 2..%d\n", YMAXN); return 2; }
+    check_capacity(N);
     NC = N * N * N; RB = N * N;
     const char *mode = argv[2];
 

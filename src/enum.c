@@ -6,9 +6,11 @@
  *
  *     items   = the 3n^2 + 6n + 4 main lines   (301 at n = 9)
  *     options = the n^3 cells                  (729 at n = 9)
- *     a cell covers exactly the main lines through it -- 3 axis lines always,
- *     0-3 face diagonals, 0-1 space diagonal, so degrees run 3..13 at n = 9
- *     (the centre (4,4,4) is the unique degree-13 cell).
+ *     a cell covers exactly the main lines through it -- the 3 axis lines
+ *     always, then 0 to 6 of the face diagonals and 0 to 4 of the space
+ *     diagonals, so degrees run 3..13 at n = 9 (the centre (4,4,4) is the
+ *     unique degree-13 cell, on all six face diagonals and all four space
+ *     diagonals at once).
  *
  * The search is Knuth's Algorithm X with dancing links and minimum-remaining-
  * values item selection.  Nothing here knows that a support is the graph of a
@@ -38,6 +40,7 @@
 #include <unistd.h>
 
 #include "lines.h"
+#include "util.h"
 
 #define MAXNODES (MAXLINES + 1 + MAXDEG * MAXCELLS)
 
@@ -136,12 +139,7 @@ static double t_start;
 static int timed_out;
 static long long node_check;
 
-static double now_s(void)
-{
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return ts.tv_sec + ts.tv_nsec * 1e-9;
-}
+#define now_s fdlh_now_s
 
 static void emit(int depth)
 {
@@ -149,8 +147,9 @@ static void emit(int depth)
     if (!do_collect) return;
     if (nrecs == caprecs) {
         caprecs = caprecs ? caprecs * 2 : 4096;
-        recs = realloc(recs, caprecs * (size_t)rec_bytes);
-        if (!recs) { fprintf(stderr, "out of memory\n"); exit(1); }
+        unsigned char *grown = realloc(recs, caprecs * (size_t)rec_bytes);
+        if (!grown) { fprintf(stderr, "out of memory collecting records\n"); exit(1); }
+        recs = grown;
     }
     unsigned char *p = recs + nrecs * (size_t)rec_bytes;
     memset(p, 0xff, rec_bytes);
@@ -238,17 +237,25 @@ static void usage(int rc)
 "enum -- enumerate the supports of [n]^3 (exact cover over the main lines)\n"
 "\n"
 "usage:\n"
-"  enum <n> lines\n"
+"  enum <n> lines [--dump FILE]\n"
 "        Report the main-line count and the cell-degree range, and check that\n"
 "        every line has n distinct in-range cells.  Exits nonzero on failure.\n"
+"        --dump writes the incidence structure in canonical form -- one line\n"
+"        per main line, its cells in increasing order, the lines sorted -- so\n"
+"        that an independent construction can be compared as a SET of lines\n"
+"        rather than as a count.\n"
 "  enum <n> all <out.bin|->\n"
 "        Enumerate every support of [n]^3 (no sharding).  Records are sorted.\n"
 "  enum <n> one <out.bin|-> p0 p1 ... p<n-1>\n"
 "        Enumerate one shard, given row 0 explicitly.\n"
 "  enum <n> shards <shardfile> <outdir> <manifest.jsonl> [options]\n"
 "        Enumerate a list of shards, one payload file per shard, appending one\n"
-"        JSON line per finished shard to the manifest.  Resumable: shards\n"
-"        already marked done in the manifest are skipped.\n"
+"        JSON line per finished shard to the manifest.  Resumable: a shard is\n"
+"        skipped only if the manifest records it done AND its payload is still\n"
+"        on disk at the recorded length and digest; otherwise it is redone and\n"
+"        the reason is printed.  A torn final manifest line -- a kill during a\n"
+"        write -- is discarded before appending, and a stale .part file is\n"
+"        removed before the shard is redone.\n"
 "        shardfile lines are: idx p0 p1 ... p<n-1>   (see the `shards` tool)\n"
 "        options:\n"
 "          --slice K W    take only shards whose position in the file is K mod W\n"
@@ -296,6 +303,35 @@ int main(int argc, char **argv)
             }
         }
         printf("every line has %d distinct in-range cells\n", N);
+        /* The canonical form of the incidence structure: each line as its cells
+         * in increasing order, the lines themselves in increasing order.  Two
+         * implementations that agree here agree as line SETS, which equal counts
+         * would not establish. */
+        if (argc >= 5 && !strcmp(argv[3], "--dump")) {
+            int *ord = fdlh_alloc(sizeof(int) * (size_t)NI, "line order");
+            for (int l = 0; l < NI; l++) ord[l] = l;
+            for (int l = 0; l < NI; l++) {          /* cells of each line, sorted */
+                for (int a = 1; a < N; a++) {
+                    int v = lines[l][a], b = a - 1;
+                    while (b >= 0 && lines[l][b] > v) { lines[l][b + 1] = lines[l][b]; b--; }
+                    lines[l][b + 1] = v;
+                }
+            }
+            for (int a = 1; a < NI; a++) {          /* lines, lexicographically */
+                int v = ord[a], b = a - 1;
+                while (b >= 0 && memcmp(lines[ord[b]], lines[v], sizeof(int) * (size_t)N) > 0) {
+                    ord[b + 1] = ord[b]; b--;
+                }
+                ord[b + 1] = v;
+            }
+            FILE *d = fopen(argv[4], "w");
+            if (!d) { perror(argv[4]); return 1; }
+            for (int a = 0; a < NI; a++) {
+                for (int t = 0; t < N; t++) fprintf(d, "%d%s", lines[ord[a]][t], t + 1 < N ? " " : "\n");
+            }
+            if (fclose(d)) { perror(argv[4]); return 1; }
+            free(ord);
+        }
         return (NI == expect && inc == (long long)NI * N) ? 0 : 1;
     }
 
@@ -336,28 +372,18 @@ int main(int argc, char **argv)
         }
         if (slice_w < 1 || slice_k < 0 || slice_k >= slice_w) { fprintf(stderr, "bad --slice\n"); return 2; }
 
-        /* resume: shards already marked done, in this worker's own manifest and
-         * in the optional merged one */
-        unsigned char *done = calloc(1 << 20, 1);
-        for (int pass = 0; pass < 2; pass++) {
-            const char *src = pass ? donefile : manifest;
-            if (!src) continue;
-            FILE *mf = fopen(src, "r");
-            if (!mf) continue;
-            char line[4096];
-            while (fgets(line, sizeof line, mf)) {
-                char *q = strstr(line, "\"idx\":");
-                if (q && strstr(line, "\"done\":true")) {
-                    int v = atoi(q + 6);
-                    if (v >= 0 && v < (1 << 20)) done[v] = 1;
-                }
-            }
-            fclose(mf);
-        }
+        /* Resume: shards already marked done, in this worker's own manifest and
+         * in the optional merged one.  A completion record is trusted only if
+         * it has the exact shape a writer produces AND its payload is still on
+         * disk at the recorded length and digest; anything else is redone. */
+        struct fdlh_done done;
+        fdlh_done_init(&done, 1 << 17);
+        fdlh_done_read(&done, manifest);
+        if (donefile) fdlh_done_read(&done, donefile);
         mkdir(outdir, 0777);
         FILE *sf = fopen(shardfile, "r");
         if (!sf) { perror(shardfile); return 1; }
-        FILE *out_mf = fopen(manifest, "a");
+        FILE *out_mf = fdlh_manifest_append(manifest);
         if (!out_mf) { perror(manifest); return 1; }
 
         char line[4096];
@@ -375,13 +401,20 @@ int main(int argc, char **argv)
             }
             if (!ok) continue;
             if ((seen++ % slice_w) != slice_k) continue;
-            if (idx >= 0 && idx < (1 << 20) && done[idx]) continue;
 
             char sub[1024], path[1200], tmp[1300];
             snprintf(sub, sizeof sub, "%s/%03d", outdir, idx / 1000);
-            mkdir(sub, 0777);
             snprintf(path, sizeof path, "%s/s%05d.bin", sub, idx);
             snprintf(tmp, sizeof tmp, "%s.part", path);
+
+            long long dbytes; uint64_t ddig; int dhas;
+            if (fdlh_done_get(&done, idx, &dbytes, &ddig, &dhas)) {
+                const char *why = "the completion record has no length or digest";
+                if (dhas && fdlh_payload_ok(path, dbytes, ddig, &why)) continue;
+                fprintf(stderr, "shard %d: %s -- regenerating it\n", idx, why);
+            }
+            mkdir(sub, 0777);
+            unlink(tmp);            /* a .part left by an interrupted run */
 
             long long cnt, nds; double w;
             int rc = run_one(p, 1, &cnt, &nds, &w);
@@ -397,14 +430,16 @@ int main(int argc, char **argv)
             }
             if (write_records(tmp)) return 1;
             if (rename(tmp, path)) { perror("rename"); return 1; }
+            uint64_t dig = fdlh_fnv64(recs, nrecs * (size_t)rec_bytes);
             fprintf(out_mf, "{\"idx\":%d,\"row0\":[", idx);
             for (int j = 0; j < N; j++) fprintf(out_mf, "%d%s", p[j], j + 1 < N ? "," : "");
             fprintf(out_mf, "],\"count\":%lld,\"nodes\":%lld,\"wall\":%.4f,\"bytes\":%lld,"
-                            "\"status\":\"EXHAUSTED\",\"done\":true}\n",
-                    cnt, nds, w, cnt * (long long)rec_bytes);
+                            "\"digest\":\"%016llx\",\"status\":\"EXHAUSTED\",\"done\":true}\n",
+                    cnt, nds, w, cnt * (long long)rec_bytes, (unsigned long long)dig);
             fflush(out_mf);
         }
-        fclose(out_mf); fclose(sf); free(done);
+        if (fclose(out_mf)) { perror(manifest); return 1; }
+        fclose(sf);
         return 0;
     }
 
