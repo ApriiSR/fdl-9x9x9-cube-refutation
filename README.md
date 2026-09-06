@@ -637,7 +637,7 @@ make                                # bin/{enum,shards,orbits,pools,pack,symmetr
 `--workers N` defaults to the machine's core count; `--nice N` keeps the machine
 usable; `--work DIR` puts the scratch somewhere else; `--cap SEC` is the
 per-shard wall-clock cap in the sweep (default 3 600 s; the slowest shard
-observed anywhere is 11.3 s).
+observed anywhere is 15.9 s, and that on a throttled laptop).
 
 Both sweeping modes are **resumable per shard**, and the resume does not care
 what worker count the interrupted run used: each worker appends to its own
@@ -707,7 +707,7 @@ hand.  What remains is:
 4. **Floating point plays no role**; there is none in the argument.  Wall-clock
    caps are the only timing-dependent behaviour, and they are configured to
    values the sweep never approaches (the slowest shard measured anywhere takes
-   11.3 seconds against a 3 600-second cap), and are separately tested to fire.
+   15.9 seconds against a 3 600-second cap), and are separately tested to fire.
 
 5. **Which mode was run.**  `full` and `fast` rest on Lemmas 1-5 only.
    `symmetric` additionally rests on Lemma 6, and on `src/symmetry.c`
