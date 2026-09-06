@@ -133,17 +133,27 @@ sweep() {
     t1=$(date +%s)
     { cat "$mdir"/m_*.jsonl 2>/dev/null || true; } > "$mdir/enumerated.jsonl"
     note "$label sweep wall: $((t1 - t0)) s on $WORKERS workers"
-    note "BUDGET shards (must be 0): $(grep -c '"status":"BUDGET"' "$mdir/enumerated.jsonl" || true)"
-    $PY - "$mdir/enumerated.jsonl" <<'EOF' | tee -a "$LOG"
+    # A shard that hit the cap is not done.  Say so and stop, rather than
+    # assembling a catalogue that is quietly short of a shard.
+    $PY - "$shardfile" "$mdir/enumerated.jsonl" <<'EOF' | tee -a "$LOG"
 import json, sys
-r = [json.loads(l) for l in open(sys.argv[1]) if l.strip()]
-w = [x['wall'] for x in r if x.get('done')]
-w.sort()
-print(json.dumps(dict(shards=len(w), supports=sum(x['count'] for x in r if x.get('done')),
+want = {int(l.split()[0]) for l in open(sys.argv[1]) if l.strip()}
+r = [json.loads(l) for l in open(sys.argv[2]) if l.strip()]
+done = {x['idx'] for x in r if x.get('done')}
+w = sorted(x['wall'] for x in r if x.get('done'))
+unfinished = sorted(want - done)
+print(json.dumps(dict(shards=len(done), unfinished=len(unfinished),
+                      capped=sorted({x['idx'] for x in r if x['status'] == 'BUDGET'} - done)[:10],
+                      supports=sum(x['count'] for x in r if x.get('done')),
                       nodes=sum(x['nodes'] for x in r if x.get('done')),
                       core_seconds=round(sum(w), 1), core_hours=round(sum(w) / 3600, 3),
                       wall_per_shard=dict(min=round(w[0], 4), median=round(w[len(w) // 2], 4),
-                                          max=round(w[-1], 4)))))
+                                          max=round(w[-1], 4)) if w else None)))
+if unfinished:
+    print(f'{len(unfinished)} shards did not finish: {unfinished[:10]}'
+          '\nRerun the same command to carry on (the sweep is resumable), '
+          'or raise --cap.', file=sys.stderr)
+    sys.exit(1)
 EOF
 }
 
