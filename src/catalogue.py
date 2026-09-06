@@ -15,6 +15,10 @@ Subcommands:
   ledger IN.jsonl OUT.jsonl          drop timing fields, leaving a reproducible
                                      per-query result file, and summarise it
   orbitstats IN.jsonl                orbit-size histogram and total
+  sample N ORBITS K OUT.txt          K mapped shards, drawn uniformly, in the
+                                     format `shards list` writes
+  setcmpshards N ORBITS A B          compare two shard trees on the sampled
+                                     shards, as sets and byte for byte
 """
 import argparse
 import collections
@@ -123,6 +127,59 @@ def cmd_audit(a):
     return 0 if not problems and not dup_records and not wrong_row0 else 1
 
 
+def cmd_sample(a):
+    """A uniform sample of the shards the symmetric mode does NOT enumerate.
+
+    Drawing from the mapped shards only is the point: a representative's payload
+    is produced by the enumerator either way, so re-enumerating one would check
+    nothing about the mapping."""
+    import random
+    rows = []
+    with open(a.orbits) as f:
+        for line in f:
+            r = json.loads(line)
+            if r['rep'] != r['idx']:
+                rows.append((r['idx'], r['row0']))
+    if a.k > len(rows):
+        sys.exit(f'asked for {a.k} of {len(rows)} mapped shards')
+    pick = sorted(random.Random(a.seed).sample(rows, a.k))
+    with open(a.out, 'w') as f:
+        for idx, row in pick:
+            f.write(' '.join(str(v) for v in [idx] + row) + '\n')
+    print(json.dumps(dict(mapped_shards=len(rows), sampled=len(pick), seed=a.seed,
+                          first=pick[0][0], last=pick[-1][0])))
+    return 0
+
+
+def cmd_setcmpshards(a):
+    """Compare the mapped payload and the directly enumerated payload of every
+    shard in a sample, as sets (the substantive claim) and byte for byte (which
+    also pins the ordering convention)."""
+    w = a.n * a.n
+    idxs = [int(line.split()[0]) for line in open(a.sample) if line.strip()]
+    bad_set, bad_bytes, missing, records = [], [], [], 0
+    for i in idxs:
+        pa, pb = shard_path(a.a, i), shard_path(a.b, i)
+        if not (os.path.exists(pa) and os.path.exists(pb)):
+            missing.append(i)
+            continue
+        ra, rb = open(pa, 'rb').read(), open(pb, 'rb').read()
+        sa = {ra[k:k + w] for k in range(0, len(ra), w)}
+        sb = {rb[k:k + w] for k in range(0, len(rb), w)}
+        records += len(sa)
+        if sa != sb:
+            bad_set.append(i)
+        elif ra != rb:
+            bad_bytes.append(i)
+    ok = not bad_set and not bad_bytes and not missing
+    print(json.dumps(dict(shards=len(idxs), records=records,
+                          set_equal=len(idxs) - len(bad_set) - len(missing),
+                          byte_identical=len(idxs) - len(bad_set) - len(bad_bytes) - len(missing),
+                          differing_as_sets=bad_set[:20], differing_bytes_only=bad_bytes[:20],
+                          missing=missing[:20], all_agree=ok)))
+    return 0 if ok else 1
+
+
 DROP = ('search_wall', 'clique_wall', 'wall')
 
 
@@ -176,6 +233,17 @@ def main():
 
     p = sub.add_parser('orbitstats', help='orbit-size histogram')
     p.add_argument('inp'); p.set_defaults(fn=cmd_orbitstats)
+
+    p = sub.add_parser('sample', help='a uniform sample of the mapped shards')
+    p.add_argument('n', type=int); p.add_argument('orbits')
+    p.add_argument('k', type=int); p.add_argument('out')
+    p.add_argument('--seed', type=int, default=20260906)
+    p.set_defaults(fn=cmd_sample)
+
+    p = sub.add_parser('setcmpshards', help='compare two shard trees on a sample')
+    p.add_argument('n', type=int); p.add_argument('sample')
+    p.add_argument('a'); p.add_argument('b')
+    p.set_defaults(fn=cmd_setcmpshards)
 
     a = ap.parse_args()
     sys.exit(a.fn(a))
