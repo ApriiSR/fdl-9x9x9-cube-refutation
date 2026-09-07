@@ -30,11 +30,11 @@ three verification modes cheap.
 
 ```
 make                      # six C programs, no libraries
-./verify.sh test          # the order-8 controls              (36 s)
+./verify.sh test          # the order-8 controls          (12-97 s)
 ./verify.sh full          # everything, from nothing    (2 h 41 m on 14 cores)
-./verify.sh symmetric     # the same, one shard per symmetry orbit (12-16 min)
+./verify.sh symmetric     # the same, one shard per symmetry orbit (9-24 min)
 ./verify.sh fast --catalogue n9_supports.bin   # everything downstream of the
-                                               # catalogue      (6-8 minutes)
+                                               # catalogue     (6-13 minutes)
 ```
 
 Three modes, because there are three things a reader might want.  `full`
@@ -547,10 +547,29 @@ Two machines, both arm64.
 
 | mode | A (20-core Linux, 14 workers) | B (16-core laptop, 6 workers) |
 |---|---|---|
-| `test` | 12 s *(measured)* | 69 s *(measured)* |
-| `full` | **2 h 41 m 28 s** *(measured)* | **≈ 7 h 34 m** *(projected — see below)* |
-| `symmetric` | ≈ 9 m *(projected from A's own steps)* | **11 m 32 s** and **15 m 42 s** *(measured, two runs)* |
-| `fast` | ≈ 7 m *(projected from A's own steps)* | **6 m 21 s** and **8 m 17 s** *(measured, two runs)* |
+| `test` | 12 s | 97 s |
+| `full` | **2 h 41 m 28 s** | **7 h 30 m to 13 h** *(projected — see below)* |
+| `symmetric` | ≈ 9 m *(projected from A's own steps)* | **23 m 46 s** |
+| `fast` | ≈ 7 m *(projected from A's own steps)* | **12 m 49 s** |
+
+Every figure is a wall-clock measurement except the two marked as projected.
+B's column is the run recorded here; two earlier sessions on the same laptop
+gave 11 m 32 s and 15 m 42 s for `symmetric` and 6 m 21 s and 8 m 17 s for
+`fast`, and A's row was measured in one of them.  Those earlier numbers predate
+the checks this package now runs, which add about half a minute of order-8
+controls and three seconds at order 9; the rest of that spread is the
+instrument, not the work.
+
+**A caveat on all of B's absolute numbers.**  A laptop under sustained all-core
+load is not a stable instrument.  The 320-shard control below is the same 320
+shards and, as its identical node count confirms, exactly the same search every
+time; it cost 3.241 core-seconds per shard in one measurement session, 4.960 in
+another and 5.665 in the one tabulated here, and every other step moved with
+it.  A pair of single-worker runs of the same 24 shards, one with this code and
+one with the code as it stood before the checks were strengthened, came out at
+115.6 and 119.8 core-seconds, so the drift is the machine.  Ratios measured
+*within* one run are unaffected, which is why the speed-up below is quoted that
+way.
 
 **How B's `full` row is projected.**  A uniform sample of **1 024 of the 48 912
 shards** was swept on B (the shard order is shuffled by a fixed seed, so a
@@ -558,55 +577,53 @@ prefix is a uniform sample, not a structurally poor one): **562 s wall on 6
 workers**, 3 258.8 core-seconds, 16.29 x 10^9 search nodes, 301 942 supports,
 nothing near the cap.  That is **3.182 core-seconds per shard**, so the whole
 sweep is 155 700 core-seconds — 43.2 core-hours, or 7 h 27 m wall on 6 workers
-— plus the ~7 minutes everything downstream takes.  Two checks on the
+— plus the few minutes everything downstream takes.  Two checks on the
 extrapolation: the sample's node count scales to 7.78 x 10^11 against A's
 measured 7.83 x 10^11 (0.7 % apart), and its mean supports per shard is 294.9
-against the true 298.8.
+against the true 298.8.  That sample was taken in the fastest of the three
+sessions, so **7 h 30 m is a floor**; at the per-shard cost of the slowest it
+would be 13 h.
 
-**A caveat on all of B's absolute numbers.**  A laptop under sustained all-core
-load is not a stable instrument: the same 320-shard control cost 3.241
-core-seconds per shard in one measurement session and 4.960 in another, and
-every other step moved with it.  So **7 h 34 m is a floor, not a promise** — an
-unlucky session would be nearer 11 h — and the two-run spreads above are given
-rather than averaged.  Ratios measured *within* one run are not affected, which
-is why the speed-up below is quoted that way.
-
-**Where the time goes** (B, measured, the faster of the two runs):
+**Where the time goes** (B, the two runs recorded here):
 
 | step | `symmetric` | `fast` |
 |---|---:|---:|
-| order-8 controls, 37 checks | 69 s | 69 s |
-| shard universe (brute force over 9!), twice, and the shard orbits | 3 s | — |
-| control (a): the n = 8 census, symmetrically | 2 s | — |
-| enumerate the **157** orbit representatives | 92 s (**486 core-s**) | — |
-| map the other **48 755** shards | 4 s (23 core-s) | — |
-| control (b): 320 mapped shards re-enumerated directly | 187 s (1 037 core-s) | — |
-| audit 48 912 shards, assemble and hash the catalogue | 7 s | — |
-| SHA-256 of the supplied 1.1 GiB catalogue, before anything reads it | — | < 1 s |
-| all 14 616 576 records checked against the definition in numpy | 17 s | 17 s |
-| closure under the order-9216 cell group, 87 699 456 images | 41 s | 41 s |
-| roots, and their classification into 2 049 orbits | 35 s | 35 s |
-| 2 049 companion pools, and their re-derivation in numpy | 258 s | 258 s |
-| exhaust 2 049 root cases and compute their cliques | 2 s | 2 s |
-| the 5-packing, the validators and the checksums | 3 s | 3 s |
+| order-8 controls, 37 checks | 157 s | 102 s |
+| shard universe (brute force over 9!), twice, and the shard orbits | 6 s | — |
+| control (a): the n = 8 census, symmetrically | 8 s | — |
+| enumerate the **157** orbit representatives | 236 s (**1 295 core-s**) | — |
+| map the other **48 755** shards | 16 s | — |
+| control (b): 320 mapped shards re-enumerated directly | 326 s (1 813 core-s) | — |
+| audit 48 912 shards, assemble and hash the catalogue | 46 s | — |
+| SHA-256 of the supplied 1.1 GiB catalogue, before anything reads it | — | 2 s |
+| all 14 616 576 records checked against the definition in numpy | 34 s | 35 s |
+| closure under the order-9216 cell group, 87 699 456 images | 66 s | 62 s |
+| roots, and their classification into 2 049 orbits | 64 s | 52 s |
+| 2 049 companion pools, and their re-derivation in numpy | 465 s | 511 s |
+| exhaust 2 049 root cases and compute their cliques | < 1 s | 3 s |
+| the 5-packing, the validators and the checksums | 1 s | 2 s |
 
-**The measured speed-up.**  Comparing within a single run — the 157
-representatives against the per-shard cost of the 320-shard control drawn from
-the same sweep, at the same moment — the enumeration goes from a projected
-155 700 core-seconds to 486: a factor of **326** in the first run and **313** in
-the second.  Counting the two controls as part of the price, and they should be
-counted since they are what makes the mode believable, the enumeration cost is
-486 + 23 + 1 037 = **1 546 core-seconds**, still a factor of **103**.  End to
-end, `symmetric` takes 692 s against `full`'s projected 27 240 s on the same
-laptop: **39x**.
+**The speed-up.**  The exact part of it is a count, not a time: the 157
+representatives cost **2 512 814 852** search nodes against A's measured
+7.83 x 10^11 for all 48 912, a factor of **312** — the reduction factor
+48 912 / 157 almost exactly, as Lemma 6 leads one to expect.  Lemma 6 equates
+the number of supports in symmetry-related shards, not their search effort, so
+that agreement is a measurement rather than a consequence.  In wall-clock terms,
+comparing within a single run — the representatives against the per-shard cost
+of the 320-shard control drawn from the same sweep, at the same moment — the
+three sessions give **326**, **313** and **214**.  Counting both controls as
+part of the price, and they should be counted since they are what makes the mode
+believable, the factor is **89** to **103**.  End to end, `symmetric` took 1 426 s
+against `full`'s projection of 46 900 s on the same laptop in the same session:
+**33x**.
 
 Two thirds of `fast` is the numpy re-derivation of every companion pool, which
-is bound by memory bandwidth and page cache, and it is where the whole
-run-to-run spread lives (258 s against 363 s here).  The shape of the cost is
-worth stating plainly: **the enumeration is the whole expense and the refutation
-is free.**  Exhausting all 2 049 root cases costs 1.70 CPU-seconds and the
-independent clique computation another 4.5; building the object they run over
-costs 35-43 core-hours.
+is bound by memory bandwidth and page cache, and it is where most of the
+run-to-run spread lives (258 s in the fastest session against 511 s here).  The
+shape of the cost is worth stating plainly: **the enumeration is the whole
+expense and the refutation is free.**  Exhausting all 2 049 root cases costs
+1.70 CPU-seconds and the independent clique computation another 4.5; building
+the object they run over costs 35-43 core-hours.
 
 ### Memory and disk
 
@@ -649,7 +666,7 @@ The four commands are at the top of this file.  `--workers N` defaults to the ma
 one memory-hungry stage separately (see *Memory and disk*); `--nice N` keeps the
 machine usable; `--work DIR` puts the scratch somewhere else; `--cap SEC` is the
 per-shard wall-clock cap in the sweep (default 3 600 s; the slowest shard
-observed anywhere is 15.9 s, and that on a throttled laptop).  In `enum` the cap
+observed anywhere is 26.0 s, and that on a throttled laptop).  In `enum` the cap
 bounds the search, which is essentially the whole of a shard's work; in `pack`
 it is a deadline on the whole query, consulted by the graph construction and the
 clique bound as well as the exact cover.  Setting `FDLH_CLOCK_STEP` to a
@@ -756,7 +773,7 @@ bytes rather than exhaustion.  What each mode does about that:
 4. **Floating point plays no role**; there is none in the argument.  Wall-clock
    caps are the only timing-dependent behaviour, and they are configured to
    values the sweep never approaches (the slowest shard measured anywhere takes
-   15.9 seconds against a 3 600-second cap), and are separately tested to fire —
+   26.0 seconds against a 3 600-second cap), and are separately tested to fire —
    against an injected clock, so the test does not itself depend on wall time.
 
 5. **Which mode was run.**  `full` and `fast` rest on Lemmas 1-5 only.
