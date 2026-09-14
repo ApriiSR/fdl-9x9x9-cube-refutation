@@ -9,15 +9,20 @@ receives all `n` symbols.  A main line is obtained by letting a parameter `t`
 run over `[n]` and setting each coordinate either to a constant, or to `t`, or
 to `n-1-t`, with at least one coordinate non-constant.  So the rows, the
 columns, the pillars, all the plane diagonals and all the space diagonals must
-each be rainbow.  Taylor introduced these in 1972 under the name *completely
-Latin*; the `2^d` corner cells are pairwise joined by main lines, which forces
-`n = 1` or `n >= 2^d`, and Taylor conjectured that this is the only
-obstruction.  He asked in particular (his Problem 2) for the case `d = 3`,
-`n = 9`.
+each be rainbow.  Walter Taylor raised these in 1972, as a property `P(m, n)`
+of the `m^n`-cube; he gave the objects no name, and did not use the word
+*conjecture*.  (*Completely Latin* is Arkin, Hoggatt and Straus's 1976 term for
+them, coined while citing Taylor for the concept.)  The `2^d` corner cells are
+pairwise joined by main lines, which forces `n = 1` or `n >= 2^d` (Taylor's
+Proposition 4), and Taylor asked (his Problem 3) whether that bound is
+attained: "For every `n` does there exist `M` such that `P(m, n)` whenever
+`m >= M`?  May one take `M = 2^n`?"  He asked in particular (his Problem 2)
+for the case `d = 3`, `n = 9`.
 
-**The answer is no.  There is no FDLH of order 9 in dimension 3.**  Taylor's
-conjecture that `n >= 2^d` is the only obstruction is therefore false at
-`d = 3`.  This computation says nothing about order 10 or order 12, and
+**The answer is no.  There is no FDLH of order 9 in dimension 3.**  The second
+question of Taylor's Problem 3 — may one take `M = 2^d`? — therefore has a
+negative answer at `d = 3`; his first question, whether *some* `M` exists in
+each dimension, is untouched.  This computation says nothing about order 10 or order 12, and
 establishes no general threshold; see *The scope* at the end.
 
 The proof is a finite computation.  This repository separates it into the part
@@ -34,7 +39,7 @@ make                      # six C programs, no libraries
 ./verify.sh full          # everything, from nothing    (2 h 41 m on 14 cores)
 ./verify.sh symmetric     # the same, one shard per symmetry orbit (9-24 min)
 ./verify.sh fast --catalogue n9_supports.bin   # everything downstream of the
-                                               # catalogue     (6-13 minutes)
+                                               # catalogue     (7-13 minutes)
 ```
 
 Three modes, because there are three things a reader might want.  `full`
@@ -151,7 +156,7 @@ Call a support containing `c0` a **root**.  So: if no root is a member of any
 partition of `[9]^3` into nine supports, there is no FDLH of order 9.  (An
 aside, not needed for the proof: all four space diagonals pass through `c0`, so
 a support containing it discharges all four with one cell while a support
-avoiding it needs four distinct cells.  That is why roots are not rare —
+avoiding it needs four distinct cells.  That may be why roots are not rare —
 `11 821 056` of the `14 616 576` supports, 80.9 %, contain the centre.)
 
 ### Lemma 4 (orbit reduction)
@@ -273,8 +278,8 @@ independent as *algorithms*, not as implementations.
 ### Theorem
 
 > There is no fully diagonalised Latin cube of order 9.  Taylor's Problem 2
-> therefore has a negative answer, and his conjecture that `n >= 2^d` is the
-> only restriction fails at `d = 3`.
+> therefore has a negative answer, and the answer to the second question of
+> his Problem 3 — may one take `M = 2^d`? — is no at `d = 3`.
 
 *Proof.*  Suppose `A` is an FDLH of order 9.  By Lemma 1 its level sets are
 nine pairwise disjoint supports.  By Lemma 3 one of them, `T`, contains the
@@ -837,8 +842,11 @@ on trust from either.
 ## References
 
 * W. Taylor, *On the coloration of cubes*, Discrete Mathematics **2** (1972)
-  187–190.  The objects, the `n >= 2^d` corner bound, the conjecture, and
-  Problem 2 (`d = 3`, `n = 9`).
+  187–190.  The objects (as the property `P(m, n)`), the `n >= 2^d` corner
+  bound (Proposition 4), and Problems 2 (`d = 3`, `n = 9`) and 3.
+* J. Arkin, V. E. Hoggatt Jr. and E. G. Straus, *Systems of magic Latin
+  k-cubes*, Canadian J. Math. **28** (1976) 1153–1161.  The name *completely
+  Latin* for these objects, citing Taylor for the concept.
 * D. E. Knuth, *Dancing links*, in J. Davies, B. Roscoe, J. Woodcock (eds.),
   *Millennial Perspectives in Computer Science*, Palgrave (2000), 187–214.
   Algorithm X and the doubly linked cover matrix used by `src/enum.c`.
