@@ -832,8 +832,14 @@ data/exceptional_packing.json the five pairwise disjoint supports
 ```
 
 The 1.1 GiB catalogue and the 957 MB root file are not in the repository.
-Recompute them with `./verify.sh full`, or obtain the catalogue elsewhere and
-use `./verify.sh fast`, which checks its SHA-256 first.
+Recompute them with `./verify.sh full`, or download the catalogue and use
+`./verify.sh fast`, which checks its SHA-256 against `checksums.txt` before
+doing anything else:
+
+```
+curl -O https://files.apriiori.com/fdlh/n9/n9_supports.bin      # 1 183 942 656 bytes
+./verify.sh fast --catalogue n9_supports.bin
+```
 
 ## Provenance
 
