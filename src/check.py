@@ -79,7 +79,8 @@ def cmd_lines(a):
     deg = np.bincount(L.ravel(), minlength=a.n ** 3)
     expect = 3 * a.n * a.n + 6 * a.n + 4
     print(f'n={a.n} lines={len(L)} expected={expect}')
-    print(f'cells={a.n ** 3} incidences={L.size} degree min={deg.min()} max={deg.max()}')
+    dmin, dmax = (int(deg.min()), int(deg.max())) if deg.size else (0, 0)
+    print(f'cells={a.n ** 3} incidences={L.size} degree min={dmin} max={dmax}')
     ok = len(L) == expect and all(len(set(row.tolist())) == a.n for row in L)
     print('every line has n distinct cells' if ok else 'MALFORMED LINES')
     if a.dump:
@@ -153,7 +154,7 @@ def a007016(n):
 
 
 def cmd_a007016(a):
-    vals = [a007016(k) for k in range(1, a.n + 1)]
+    vals = [a007016(k) for k in range(0, a.n + 1)]
     print(json.dumps(dict(n=a.n, sequence=vals, value=vals[-1])))
     return 0
 

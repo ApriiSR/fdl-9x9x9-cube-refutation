@@ -71,7 +71,7 @@ int main(int argc, char **argv)
     if (!strcmp(argv[1], "--help") || !strcmp(argv[1], "-h")) usage(0);
     if (argc < 7 || strcmp(argv[2], "build")) usage(2);
     N = atoi(argv[1]);
-    if (N < 2 || N > PMAXN) { fprintf(stderr, "n out of range\n"); return 2; }
+    if (N < 0 || N > PMAXN) { fprintf(stderr, "n out of range\n"); return 2; }
     NC = N * N * N; RB = N * N; W = (NC + 63) / 64;
 
     double t0 = now_s();

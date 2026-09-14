@@ -101,10 +101,25 @@ def main():
     counts = {int(l.split('\t')[0]): int(l.split('\t')[1])
               for l in r.stdout.strip().splitlines()[1:]}
     closed = json.loads(run([PY, f'{ROOT}/src/check.py', 'a007016', '9']).stdout)['sequence']
-    oeis = [1, 0, 0, 8, 20, 96, 656, 5568, 48912]      # OEIS A007016, a(1..9)
+    oeis = [0, 1, 0, 0, 8, 20, 96, 656, 5568, 48912]   # OEIS A007016, a(0..9); a(0) = 0 by the definition
     check('shard universe is A007016 (brute force = closed form = OEIS)',
-          closed == oeis and all(counts[n] == oeis[n - 1] for n in range(2, 10)),
+          closed == oeis and all(counts[n] == oeis[n] for n in range(0, 10)),
           f'n=8: {counts[8]}, n=9: {counts[9]}')
+
+    # ---- 2b. the degenerate orders ------------------------------------------
+    # [0]^3 has no cells, so no support; the empty coloring is an FDLH with no
+    # color classes.  [1]^3 is one cell, which is the unique support, and the
+    # one-cell coloring is an FDLH.  Every tool must answer, not refuse.
+    tiny = {}
+    for n in (0, 1):
+        e = run([f'{BIN}/enum', str(n), 'all', '-'])
+        g = run([f'{BIN}/orbits', str(n), 'group'])
+        tiny[n] = (e.stdout, g.stdout)
+    check('T(0) is empty and T(1) is the single cell',
+          '0 supports' in tiny[0][0] and '1 supports' in tiny[1][0],
+          tiny[0][0].strip() + ' | ' + tiny[1][0].strip())
+    check('the cell group is trivial at n = 0 and n = 1',
+          all('|G|=1 ' in tiny[n][1] and 'MISMATCH' not in tiny[n][1] for n in (0, 1)))
 
     shardfile = f'{tmp}/n8_shards.txt'
     run([f'{BIN}/shards', '8', 'list', shardfile])

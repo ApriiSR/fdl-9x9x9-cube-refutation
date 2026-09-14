@@ -283,7 +283,7 @@ int main(int argc, char **argv)
     if (!strcmp(argv[1], "--help") || !strcmp(argv[1], "-h")) usage(0);
     if (argc < 3) usage(2);
     N = atoi(argv[1]);
-    if (N < 2 || N > MAXN) { fprintf(stderr, "n out of range 2..%d\n", MAXN); return 2; }
+    if (N < 0 || N > MAXN) { fprintf(stderr, "n out of range 0..%d\n", MAXN); return 2; }
     NI = fdlh_build_lines(N, lines);
     rec_bytes = N * N;
     const char *mode = argv[2];
@@ -291,7 +291,7 @@ int main(int argc, char **argv)
     if (!strcmp(mode, "lines")) {
         int expect = fdlh_expected_lines(N);
         build_matrix();
-        long long inc = 0; int mind = 1 << 30, maxd = 0;
+        long long inc = 0; int mind = N ? 1 << 30 : 0, maxd = 0;
         for (int c = 0; c < N * N * N; c++) {
             inc += cellndeg[c];
             if (cellndeg[c] < mind) mind = cellndeg[c];

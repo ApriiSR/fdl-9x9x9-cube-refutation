@@ -392,7 +392,7 @@ int main(int argc, char **argv)
     if (!strcmp(argv[1], "--help") || !strcmp(argv[1], "-h")) usage(0);
     if (argc < 3) usage(2);
     N = atoi(argv[1]);
-    if (N < 2 || N > MAXN) { fprintf(stderr, "n out of range 2..%d\n", MAXN); return 2; }
+    if (N < 0 || N > MAXN) { fprintf(stderr, "n out of range 0..%d\n", MAXN); return 2; }
     check_capacity(N);
     NC = N * N * N; RB = N * N;
     const char *mode = argv[2];
@@ -419,8 +419,8 @@ int main(int argc, char **argv)
     if (!strcmp(mode, "group")) {
         printf("n=%d |C(rev)|=%d |G|=%d generators=%d (%.1f s)\n",
                N, ntau, NG, NGEN, now_s() - t0);
-        int expect = 6 * 8 * ntau / 2;
-        printf("expected |G| = 6*8*|C(rev)|/2 = %d -- %s\n", expect,
+        int expect = N >= 2 ? 6 * 8 * ntau / 2 : 1;   /* below n = 2 every map is the identity */
+        printf("expected |G| = %s = %d -- %s\n", N >= 2 ? "6*8*|C(rev)|/2" : "1 (n < 2)", expect,
                expect == NG ? "ok" : "MISMATCH");
         if (N % 2) {
             int m = (N - 1) / 2, bad = 0;

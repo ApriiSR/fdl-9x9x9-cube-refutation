@@ -460,7 +460,7 @@ estimated.
 
 | # | step | program | input | expected output |
 |---|------|---------|-------|-----------------|
-| 1 | order-8 controls | `tests/test_n8.py` | — | 37 checks pass (below) |
+| 1 | order-8 controls | `tests/test_n8.py` | — | 39 checks pass (below) |
 | 2 | shard universe | `shards 9 list` | — | 48 912 admissible rows = A007016(9) |
 | 3 | enumerate `T(9)` | `enum 9 shards` | shard list | 48 912 shards EXHAUSTED, 14 616 576 supports |
 | 3a | *(`symmetric` only)* the plane-fixing subgroup | `symmetry 9 group` | — | `\|H\| = 384`, index 24, all 147 456 products elements of `H` |
@@ -500,7 +500,7 @@ byte; the raw output with wall times is left beside it as `n9_results_raw.jsonl`
 
 Order 8 is where a cube exists and the census is known, so the whole pipeline is
 exercised at an order where the answers were not produced by this run.
-`./verify.sh test` runs 37 checks; the substantive ones are
+`./verify.sh test` runs 39 checks; the substantive ones are
 
 * `T(8)` enumerated from nothing is **13 056** supports, set-equal *and*
   byte-identical to the shipped `data/n8_supports.bin`;

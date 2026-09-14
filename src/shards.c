@@ -95,11 +95,11 @@ int main(int argc, char **argv)
     if (!strcmp(argv[1], "--help") || !strcmp(argv[1], "-h")) usage(0);
     if (argc < 3) usage(2);
     n_side = atoi(argv[1]);
-    if (n_side < 2 || n_side > 10) { fprintf(stderr, "n out of range 2..10\n"); return 2; }
+    if (n_side < 0 || n_side > 10) { fprintf(stderr, "n out of range 0..10\n"); return 2; }
 
     if (!strcmp(argv[2], "count")) {
         printf("n\tadmissible_rows\n");
-        for (int n = 2; n <= n_side; n++) {
+        for (int n = 0; n <= n_side; n++) {
             kept = 0; store_rows = 0;
             memset(used, 0, sizeof used);
             dfs(0, n);

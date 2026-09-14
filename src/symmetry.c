@@ -677,7 +677,7 @@ int main(int argc, char **argv)
     if (!strcmp(argv[1], "--help") || !strcmp(argv[1], "-h")) usage(0);
     if (argc < 3) usage(2);
     N = atoi(argv[1]);
-    if (N < 2 || N > YMAXN) { fprintf(stderr, "n out of range 2..%d\n", YMAXN); return 2; }
+    if (N < 0 || N > YMAXN) { fprintf(stderr, "n out of range 0..%d\n", YMAXN); return 2; }
     check_capacity(N);
     NC = N * N * N; RB = N * N;
     const char *mode = argv[2];
