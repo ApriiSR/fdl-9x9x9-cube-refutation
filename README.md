@@ -826,6 +826,14 @@ The 1.1 GiB catalogue and the 957 MB root file are not in the repository.
 Recompute them with `./verify.sh full`, or obtain the catalogue elsewhere and
 use `./verify.sh fast`, which checks its SHA-256 first.
 
+## Provenance
+
+The programs, the verification script and this README were written with
+Claude Code (Anthropic), working from the mathematics above; the lemmas, the
+checks and the checksums were reviewed by a human before being published, and
+the point of the three verification modes is that nothing here need be taken
+on trust from either.
+
 ## References
 
 * W. Taylor, *On the coloration of cubes*, Discrete Mathematics **2** (1972)
