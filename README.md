@@ -1,46 +1,33 @@
 # There is no fully diagonalised Latin cube of order 9
 
-This repository reproduces, from nothing, a negative answer to a question of
-Walter Taylor.
+This repository aims to cleanly demonstrate a negative answer to a question which was (to my knowledge) first posed by Walter Taylor in a 1972 paper.
 
-A **fully diagonalised Latin hypercube** (FDLH) is a colouring
-`A : [n]^d -> [n]`, where `[n] = {0, 1, ..., n-1}`, in which each colour occurs
-exactly once on every *main line*.  A main line is obtained by letting `t` run
-over `[n]` and taking each coordinate to be a constant, `t`, or `n-1-t`, with
-at least one coordinate varying.  In dimension 3 the rows, the columns, the
-pillars, all the plane diagonals and all the space diagonals must therefore
-each contain every colour.
+A d-dimensional **fully diagonalised Latin hypercube** (FDLH) (called *completely Latin* by Arkin, Hoggatt and Straus) is a coloring `A : [n]^d -> [n]`, where `[n] = {0, 1, ..., n-1}`, in which each color occurs exactly once on every *line*.  A line is obtained by letting `t` run over `[n]` and taking each coordinate to be a constant, `t`, or `n-1-t`, with at least one coordinate varying.  In dimension 3 the lines are the rows, the columns and the pillars, the diagonals of every planar cross-section of the cube, and the four space diagonals; each must therefore contain every color.
 
-Every pair of the `2^d` corner cells lies on a main line, which forces `n = 1`
-or `n >= 2^d` (Taylor's Proposition 4).  Taylor's 1972 Problem 3 asks two
-questions — in his notation, where `m` is the order and `n` the dimension:
-"For every `n` does there exist `M` such that `P(m, n)` whenever `m >= M`?  May
-one take `M = 2^n`?"  His Problem 2 asks in particular about order 9 in
-dimension 3.
+Every pair of the `2^d` corner cells lies on a line, which forces `n <= 1` or `n >= 2^d` (Taylor's Proposition 4).  Taylor's 1972 Problem 3 asks two questions — in his notation, where P(m, n) asks whether there exists an n-cube of order m: "For every `n` does there exist `M` such that `P(m, n)` whenever `m >= M`?  May one take `M = 2^n`?"  His Problem 2 asks in particular about order 9 in dimension 3. 
 
-**There is no FDLH of order 9 in dimension 3.**  This answers Problem 2
-negatively and rules out `M = 2^d` at `d = 3`; it leaves open the first
-question of Problem 3, whether *some* `M` exists in each dimension.  Order 8
-does admit such cubes, so the corner bound `n >= 2^d` does not guarantee
-existence at every larger order.  This computation says nothing about order 10
-or order 12 and establishes no general threshold; see *The scope* at the end.
 
-Taylor described these objects through a property `P(m, n)` of the `m^n`-cube.
-He gave them no name and did not use the word *conjecture*; *completely Latin*
-is Arkin, Hoggatt and Straus's 1976 term for them, coined while citing Taylor
-for the concept.
+(His Problem 1, the 12x12 square, was settled almost immediately: Hilton (1973) and, independently, Faber constructed doubly diagonalized Latin squares of every order at least 4, as Taylor notes in proof, and Gergely (1974) gave a simpler construction.)
 
-The proof is a finite computation.  Enumerate every possible colour class;
-keep those containing the centre cell, one per symmetry class; form the graph
-of which of them can coexist with which.  A cube would need eight mutually
-compatible companions to a centre class, and the recorded triangle counts rule
-that out.  Five short lemmas justify that reduction and are the whole of the
-mathematics; Part II states the machine's part as a table of programs, inputs,
+
+While there is a fully diagonalized Latin cube of order 8 (as shown by Taylor), **there is none of order 9.**  This answers Problem 2 negatively and rules out `M = 2^d` at `d = 3`; it leaves open the first question of Problem 3, whether *some* `M` exists in each dimension.  The method does not extend to order 10: the catalogue of candidate color classes would be thousands of times larger (a pilot suggests at least 6 x 10^10 entries and a core-year of enumeration), and the case analysis here relies on the cube having a center cell, which an even cube does not (though the order 8 case is sufficiently small to use as a sanity check anyways).  Settling order 10 seems to need a new idea, though if an order-10 cube exists a search might of course find it long before exhausting anything.
+
+
+The rough outline of this algorithm is as follows:
+1. Enumerate every *support*, a set of cells that could be the locations of a single color within an FDLH (that is, sets containing precisely one cell per line).
+2. Track those supports containing the center cell, one per symmetry class. 
+3. Form the graph of which of them can occur in the same FDLH — two vertices share an edge if they represent disjoint supports.  A 9x9x9 would need eight mutually compatible companions to some fixed center support — that is, an 8-clique in that support's graph.  Any 8-clique contains 56 triangles (mutually compatible triples), so counting triangles is enough: for 2 048 of the 2 049 center supports the graph has no triangles at all, and for the last one it has 8.  No graph can contain an 8-clique, so no center support extends to a 9x9x9, and every 9x9x9 would have to contain one.
+
+
+{"Five short lemmata justify that reduction" the reducion seems self-evidently justified to me. Whatever the lemmata justify, it isn't the rough outline above, which doesn't really require justification. Perhaps they justify that our operationalization of "one per symmetry class" is valid? That seems like the one step that actually needs much elaboration.}
+
+
+{"Part II states the machine's part as a table of programs, inputs,
 expected outputs and SHA-256 checksums, so a reader can rerun any line
 independently.  *From nothing* means regenerating the order-9 catalogue rather
 than supplying a precomputed one.  A sixth lemma, proved afterwards, proves
 nothing about order 9: it justifies a symmetry shortcut used by one
-verification mode.
+verification mode." i probably want to rewrite this but i need to go see what's actually in part 2 first.}
 
 Start with `make` and `./verify.sh test`; then pick `full`, `symmetric` or
 `fast` according to how much you want to recompute.
@@ -58,10 +45,8 @@ You need a 64-bit POSIX platform with GCC or Clang, GNU make, `bash`, and
 Python 3.8+ with numpy (details under *Reproducing it*).  The pool re-derivation
 is the one memory-hungry stage: on an 8 GB machine pass `--pool-workers 1`.
 
-There are three modes.  `full` recomputes the catalogue from nothing and uses no mathematics beyond Lemmas 1-5.
-`symmetric` recomputes it too, but enumerates only 157 of the 48 912 shards and
-obtains the rest by symmetry — three hundred times less search, at the price of
-one extra lemma, which it checks three ways.  `fast` takes the catalogue as
+There are three modes.  `full` recomputes the catalogue from nothing and uses no mathematics beyond Lemmata 1-5.
+`symmetric` recomputes it too, but enumerates only 157 of the 48,912 shards (sets of supports sharing the same first face) and obtains the rest by symmetry — three hundred times less search, at the cost of also requiring the validity of Lemma 6.  `fast` takes the catalogue as
 given, verifies its SHA-256 before reading it, and redoes everything downstream.
 
 A failed check aborts the run, so reaching the final `done --` line means every
@@ -73,29 +58,30 @@ line per root orbit: `status` is `EXHAUSTED` and `covers` is `0` on all 2 049.
 
 ## Part I. The mathematics
 
-Throughout, `n = 9`, `r(t) = n-1-t`, and cells of `[n]^3` are written `(i,j,k)`
-and indexed by `(i*n + j)*n + k`.
+Throughout, `n` is the order — `9` in every concrete example, `8` in the
+controls — `r(t) = n-1-t`, and cells of `[n]^3` are written `(i,j,k)` and
+indexed (in C) by `(i*n + j)*n + k`, which at `n = 9` is `81i + 9j + k`.
 
 ### Lemma 1 (supports and partitions)
 
-A main line has `n` cells, so it carries all `n` colours exactly when it
-carries each of them once.  Call a set of cells meeting every main line exactly
+A line has `n` cells, so it carries all `n` colors exactly when it
+carries each of them once.  Call a set of cells meeting every line exactly
 once a **support**, and write `T(n)` for the set of supports of `[n]^3`.  The
-colour classes `A^{-1}(v)` of an FDLH are therefore supports, and an FDLH of
+*color classes* `A^{-1}(v)` of an FDLH are therefore supports, and an FDLH of
 order `n` exists **iff** `T(n)` contains `n` pairwise disjoint members.
 
-*Proof.*  Every support has exactly `n^2` cells: the `n^2` lines `{(i,j,*)}`
-are main lines (only the third coordinate varies), they are pairwise disjoint,
+*Proof.*  Every support has exactly `n^2` cells: the `n^2` pillars `{(i,j,*)}`
+are lines (only the third coordinate varies), they are pairwise disjoint,
 they cover the cube, and a support meets each once.  So `n` pairwise disjoint
 supports occupy `n * n^2 = n^3` cells and therefore partition `[n]^3`.  Give
-each a different colour; every main line then carries each colour exactly once,
-so the array is an FDLH.  Conversely the colour classes of an FDLH partition
-the cube and meet every main line once, so each is a support. ∎
+each a different color; every line then carries each color exactly once,
+so the array is an FDLH.  Conversely the color classes of an FDLH partition
+the cube and meet every line once, so each is a support. ∎
 
-**Listing and counting main lines.**  Replacing `t` by `r(t)` throughout traces
+**Listing and counting lines.**  Replacing `t` by `r(t)` throughout traces
 the same line in the opposite direction, so to list each line once, require its
 first varying coordinate to use the pattern `t`.  In dimension `d`, choose the
-`s` varying coordinates, their `2^{s-1}` directions, and the values of the
+`s` varying coordinates, their `2^{s-1}` sets of directions (`t` or `r(t)` for each varying coordinate besides the first), and the fixed values of the
 `d-s` others:
 
 ```
@@ -107,139 +93,134 @@ plane diagonals, 4 space diagonals), 244 at `n = 8`.
 
 ### Lemma 2 (Latin-square form, and what row 0 must be)
 
-Every support `T` of `[n]^3` has the form
+Every support `T` of `[n]^3` must be of the form
 
 ```
 T = {(i, j, L(i,j)) : i, j ∈ [n]}
 ```
 
 for a unique Latin square `L : [n]^2 -> [n]`, and its first row `p = L(0, ·)`
-has **exactly one fixed point** and **exactly one reflected point**: exactly one
+must have **exactly one fixed point** and **exactly one reflected point**: exactly one
 solution each to `p(t) = t` and `p(t) = r(t)`.
 
-*Proof.*  The line `{(i,j,*)}` is a main line (third coordinate `t`, the other
+
+Supports have the form `{(i, j, L(i,j)) : i, j ∈ [n]}` merely due to the requirement that the support contain one cell from each *axis* line — that part of the statement would be true even for supports of merely Latin cubes (i.e. the more general notion of support that permits choosing zero or multiple cells from a diagonal).  The fixed point comes from the requirement that the support hit the positive diagonal of the plane `i = 0`, while the reverse point comes from the requirement to hit the negative diagonal:
+
+
+*Proof.*  The pillar `{(i,j,*)}` is a line (third coordinate `t`, the other
 two constant), and `T` meets it exactly once, which picks out the single value
-`L(i,j)`.  Meeting each of the main lines `{(i,*,k)}` and `{(*,j,k)}` exactly
+`L(i,j)`.  Meeting each of the lines `{(i,*,k)}` and `{(*,j,k)}` exactly
 once says that every row and every column of `L` contains every value once, so
-`L` is a Latin square and `p` is a permutation.  Finally the plane `i = 0`
-contains the two main lines `{(0,t,t)}` and `{(0,t,r(t))}` — first coordinate
+`L` is a Latin square and its first row `p` is a permutation.  Finally the plane `i = 0`
+contains the two lines `{(0,t,t)}` and `{(0,t,r(t))}` — first coordinate
 constant at `0`, the other two varying — and meeting each exactly once gives
 the two conditions on `p`. ∎
 
-Call such a permutation **admissible**.  A **shard** is the set of all supports
-with one specified first row, and Lemma 2 is what justifies splitting the
-enumeration into shards.  Every support has an admissible first row, but
-admissibility does not guarantee an extension to a support: exhaustive
-enumeration must therefore consider every admissible row, including those whose
-shards turn out to be empty.  The numbers of admissible permutations are
-[OEIS A007016](https://oeis.org/A007016): `8, 20, 96, 656, 5568, 48912` for
-`n = 4..9`.  The package computes the order-9 count twice, by brute force over
-all `9! = 362 880` permutations (`shards`) and by inclusion–exclusion in closed
-form (`check.py a007016`), and both agree with OEIS.
+Call a permutation with one fixed point and one reflected point **admissible**.  A **shard** is the set of all supports whose Latin squares `L` have one specified first row, or equivalently the set of all supports that share one specified `i=0` plane. Lemma 2 ensures that it suffices for an exhaustive enumeration to consider the shards corresponding to every admissible row (some of which may turn out to be empty).
 
-Within each shard the enumerator re-checks the supplied row for admissibility
-and then solves the exact-cover problem
 
-```
-items   = the 301 main lines
-options = the 729 cells,  a cell covering exactly the lines through it
-```
+The numbers of admissible permutations are [OEIS A007016](https://oeis.org/A007016): `8, 20, 96, 656, 5568, 48912` for `n = 4..9`.  This repository computes the order-9 count in two different ways, by brute force over all `9! = 362 880` permutations (`shards.c`) and by inclusion–exclusion in closed form (`check.py a007016 N`), and both agree with OEIS.
 
-by Knuth's Algorithm X with dancing links.  The enumerator itself does **not**
-use Lemma 2: the Latin structure comes out of the cover, it is not put in, and
-Lemma 2 is used only to justify the sharding.
+Within each shard the enumerator solves an exact-cover problem: the 301 lines
+must each be covered exactly once, and choosing a cell covers the lines through
+it.  Nine cells are fixed by `L`'s first row / the support's `i=0` plane.  The search is [Knuth's Algorithm X with dancing links](https://en.wikipedia.org/wiki/Knuth's_Algorithm_X).
 
-### Lemma 3 (every cube has a root)
+### Lemma 3 (every FLDH of odd order has a root)
 
-`n = 9` is odd, so `[9]^3` has a centre cell `c0 = (4,4,4)`, and exactly one
-colour class of an FDLH of order 9 contains it, because the colour classes
-partition the cube.  Call a support containing `c0` a **root**.  To rule out an
-FDLH of order 9 it therefore suffices to show that no root belongs to a
-partition of `[9]^3` into nine supports.
+When `n` is odd, `[n]^3` has a center cell `c0 = (m,m,m)` with `m = (n-1)/2`
+— `(4,4,4)` at `n = 9` — and exactly one color class of an FDLH of order `n`
+contains it, because the color classes partition the cube.  Call a support
+containing `c0` a **root**.  To rule out an FDLH of odd order `n` it therefore
+suffices to show that no root belongs to a partition of `[n]^3` into `n`
+supports.  (An even cube has no center cell and no roots; the order-8 control
+runs its root search on every support instead, see below.)
 
-An aside, not needed for the proof: all four space diagonals pass through `c0`.
-A root meets all four with that one cell, while a support avoiding the centre
-must meet them at four distinct cells.  That may be why roots are not rare —
-`11 821 056` of the `14 616 576` supports, 80.9 %, contain the centre.
+An aside, not needed for the proof: all four space diagonals pass through `c0`. A root meets all four with that one cell, while a support avoiding the center must meet them at four distinct cells.  That may be why roots are more common than one might naively expect — `11 821 056` of the `14 616 576` supports, 80.9 %, contain the center.
 
 ### Lemma 4 (orbit reduction)
 
-We need test only one root from each symmetry class.  The symmetries used here
-permute the axes, reverse individual axes, and apply one permutation of the
-coordinate *values* on every axis at once; that last permutation has to commute
-with reversal.  At `n = 9`, reversal pairs up `{0,8}, {1,7}, {2,6}, {3,5}` and
-fixes `4`; a permutation commuting with it permutes those pairs as blocks and
-may swap each pair's members.
+We need test only one root from each symmetry class, for some suitable notion of symmetry classes. For example, if two roots are reflections of each other, ruling out that one of them occurs in an FDLH also implies that the other does not. To maximize the efficiency of our exhaustive enumeration, we wish to use the largest valid choice of symmetry group we can, i.e. the group which maximizes the size of each root's symmetry class while still ensuring that checking one representative from each class is sufficient.
 
-Precisely, let `rev(t) = r(t) = n-1-t` and let `C(rev) <= S_n` be its
-centraliser, the permutations commuting with `rev`.  For `pi ∈ S_3`,
-`eps ∈ {id, rev}^3` and `tau ∈ C(rev)` define a map on cells by
+The symmetries used here permute the axes, reverse individual axes, and relabel the coordinate *values* by one permutation applied on every axis at once.  Axis lines survive any
+relabelling, but a diagonal such as `(t, 8-t, 3)` survives only if the
+relabelling respects the pairing `u <-> 8-u`: relabel `0 <-> 1` alone and the
+cells `(0,8,3), (1,7,3), ...` become `(1,8,3), (0,7,3), ...`, which lie on no line.  So
+the relabellings used are those that shuffle the pairs `{0,8}, {1,7}, {2,6}, {3,5}` as blocks and optionally flip each, leaving `4` fixed — the permutations
+that commute with reversal.
+
+Precisely, let `C(r)` be the centraliser of `r` in `S_n`, the symmetric group
+on `[n]`: that is, the set of elements of `S_n` that communte with `r`. `C(r)` consists of the permutations `τ` of the coordinate values such that `τ(r(t)) = r(τ(t))` for all `t`.  (`r` is written `rev` in `src/orbits.c`.)  
+
+For `π ∈ S_3`, `ε ∈ {id, r}^3` and `τ ∈ C(r)` define a map `g: [n]^3 -> [n]^3` on cells `x = (x_0, x_1, x_2)` by
 
 ```
-g(x)_i = tau( eps_i( x_{pi(i)} ) ).
+g(x)_i = τ( ε_i( x_{π(i)} ) ).
 ```
 
-These form a group `G`.  It (i) permutes the main lines, hence maps supports to
-supports; (ii) fixes the centre cell; and (iii) maps partitions to partitions.
-Consequently a root `T` lies in a partition iff `gT` does, and it suffices to
+These form a group `G` (a subgroup of `S_{n^3}`).  Lemma 4 states that `G` 
+(i) permutes the lines, hence maps supports to
+supports; (ii) fixes the center cell (when n is odd); and (iii) maps partitions to partitions.
+
+Consequently a root `T` lies in a partition iff `gT` does for some `g`, and it suffices to
 test one root per `G`-orbit.  At `n = 8` and `n = 9`,
-`|C(rev)| = 2^{floor(n/2)} * floor(n/2)! = 384` and `|G| = 6 * 8 * 384 / 2 =
+`|C(r)| = 2^{floor(n/2)} * floor(n/2)! = 384` and `|G| = 6 * 8 * 384 / 2 =
 **9216**`, the `/2` being proved with the closure below.
 
-*Proof.*  (i)  Describe a main line by its triple of patterns (constant `c`,
-`t`, or `r(t)`) per coordinate.  `pi` permutes which coordinate carries which
-pattern, leaving at least one non-constant.  `eps_i = rev` sends a constant `c`
+*Proof.*  (i)  Describe a line by its triple of patterns (constant `c`,
+`t`, or `r(t)`) per coordinate.  `π` permutes which coordinate carries which
+pattern, leaving at least one non-constant.  `ε_i = r` sends a constant `c`
 in position `i` to the constant `r(c)`, the pattern `t` to `r(t)`, and `r(t)`
-to `t`.  Applying the same `tau` to all three coordinates sends a constant `c`
-to the constant `tau(c)`, and sends the pattern `t` to `tau(t)`, which after
-the substitution `s = tau(t)` (a bijection of `[n]`, so a legitimate
+to `t`.  Applying the same `τ` to all three coordinates sends a constant `c`
+to the constant `τ(c)`, and sends the pattern `t` to `τ(t)`, which after
+the substitution `s = τ(t)` (a bijection of `[n]`, so a legitimate
 reparametrisation) is again the pattern `s`; the pattern `r(t)` goes to
-`tau(rev(t))`, and this equals `rev(tau(t)) = r(s)` **exactly because `tau`
-commutes with `rev`** — which is the whole reason `C(rev)` and not `S_n`
-appears.  In each case the image is again a main line.
+`τ(r(t))`, and this equals `r(τ(t)) = r(s)` **exactly because `τ`
+commutes with `r`** — which is the whole reason `C(r)` and not `S_n`
+appears.  In each case the image is again a line.
 
-A bijection of cells that permutes the main lines carries a set meeting every
+A bijection of cells that permutes the lines carries a set meeting every
 line once to a set meeting every line once, so `G` maps `T(n)` to `T(n)`.
 
-(ii)  `rev` has the unique fixed point `4`, and `tau rev = rev tau` forces
-`tau` to permute the fixed points of `rev`, so `tau(4) = 4`; also
-`eps_i(4) = 4`; and `pi` merely permutes the equal coordinates of `(4,4,4)`.
-So `g(c0) = c0` for every `g ∈ G`.
+(ii)  For odd `n`, `r` has the unique fixed point `m = (n-1)/2`, and
+`τ r = r τ` forces `τ` to permute the fixed points of `r`, so `τ(m) = m`; also
+`ε_i(m) = m`; and `π` merely permutes the equal coordinates of `(m,m,m)`.
+So `g(c0) = c0` for every `g ∈ G`.  (For even `n` there is no fixed point and
+no center; (i) and (iii) are unaffected.)
 
-(iii)  `g` is a bijection of the cell set, so `T_1, ..., T_9` are pairwise
-disjoint supports covering the cube iff `gT_1, ..., gT_9` are.
+(iii)  `g` is a bijection of the cell set, so `T_1, ..., T_n` are pairwise
+disjoint supports covering the cube iff `gT_1, ..., gT_n` are.
 
 Finally, that these maps form a group, and how many of them there are.
 
-*Closure.*  If `g = (pi, eps, tau)` and `h = (rho, delta, sigma)`, then
+*Closure.*  If `g = (π, ε, τ)` and `h = (ρ, δ, σ)`, then
 `g ∘ h` is the map with parameters
 
 ```
-pi'   = rho ∘ pi,
-eps'_i = eps_i ∘ delta_{pi(i)},
-tau'  = tau ∘ sigma,
+π'   = ρ ∘ π,
+ε'_i = ε_i ∘ δ_{π(i)},
+τ'  = τ ∘ σ,
 ```
 
-which is again of the displayed form: `tau ∘ sigma` lies in `C(rev)` because
-`C(rev)` is a subgroup, and the reversals can be gathered on the left of the
-value permutation precisely because `tau` and `sigma` each commute with `rev`.
+which is again of the displayed form: `τ ∘ σ` lies in `C(r)` because
+`C(r)` is a subgroup, and the reversals can be gathered on the left of the
+value permutation precisely because `τ` and `σ` each commute with `r`.
 The identity is `(id, id, id)`, and a finite composition-closed family of
 bijections of a finite set contains inverses.  So `G` is a group.
 
 *The count.*  Suppose two parameter triples define the same cell map.  Each
 output coordinate depends bijectively on exactly one input coordinate, so the
-two coordinate permutations agree; write `pi` for both.  Equating the `i`-th
-output coordinates gives `tau(eps_i(x)) = tau'(eps'_i(x))` for all `x`, i.e.
-`tau'^{-1} tau = eps'_i eps_i^{-1}` for every `i`.  The right-hand side is
-`id` or `rev`, and it is the *same* element for every `i` because the left-hand
+two coordinate permutations agree; write `π` for both.  Equating the `i`-th
+output coordinates gives `τ(ε_i(x)) = τ'(ε'_i(x))` for all `x`, i.e.
+`τ'^{-1} τ = ε'_i ε_i^{-1}` for every `i`.  The right-hand side is
+`id` or `r`, and it is the *same* element for every `i` because the left-hand
 side does not depend on `i`.  So either all three reversal bits agree and
-`tau = tau'` — the triples are identical — or all three are flipped and
-`tau' = tau ∘ rev`.  Every map therefore has exactly two descriptions, and
-`|G| = 6 * 8 * |C(rev)| / 2`.
+`τ = τ'` — the triples are identical — or all three are flipped and
+`τ' = τ ∘ r`.  Every map therefore has exactly two descriptions, and
+`|G| = 6 * 8 * |C(r)| / 2`.
 
-A `tau` commuting with `rev` permutes the `floor(n/2)` pairs `{t, r(t)}` as
+A `τ` commuting with `r` permutes the `floor(n/2)` pairs `{t, r(t)}` as
 blocks and may flip each, and fixes the middle point when `n` is odd, so
-`|C(rev)| = 2^{floor(n/2)} * floor(n/2)!` — `384` at `n = 8` and `n = 9`, so
+`|C(r)| = 2^{floor(n/2)} * floor(n/2)!` — `384` at `n = 8` and `n = 9`, so
 `|G| = 9216`.  The program `orbits` builds all
 `6 * 8 * 384 = 18 432` maps, deduplicates them, and checks that `9216` remain,
 that all of them fix `c0`, and that six explicitly named generators generate
@@ -249,17 +230,20 @@ all of them. ∎
 
 Completing a support `T` to an FDLH requires `n-1` further supports, disjoint
 from `T` and from one another.  Let `P(T) = { S ∈ T(n) : S ∩ T = ∅ }` be the
-**companion pool** of `T`, and let `Gamma(T)` be the graph on `P(T)` joining
+**companion pool** of `T`, and let `Γ(T)` be the graph on `P(T)` joining
 two companions when they are disjoint.  Because the catalogue is complete,
-every possible companion is in the pool, so those `n-1` supports would form a
-clique of size `n-1` in `Gamma(T)`.  Hence
+every possible companion is in the pool, so `n-1` such supports are exactly a
+clique of size `n-1` in `Γ(T)`, and by Lemma 1 any such clique together with
+`T` is a partition.  Hence, for every `n`,
 
 ```
-omega(Gamma(T)) < n - 1   ==>   T belongs to no partition.
+T belongs to a partition   <==>   Γ(T) contains a clique of size n - 1,
 ```
 
-At `n = 9` a bound of `omega(Gamma(T)) <= 4` already suffices, and a
-*triangle-free* `Gamma(T)` (`omega <= 2`) suffices very comfortably.
+and in particular `ω(Γ(T)) < n - 1` rules `T` out.  At `n = 9` a bound of
+`ω(Γ(T)) <= 4` already suffices, and a *triangle-free* `Γ(T)` (`ω <= 2`)
+suffices very comfortably.  At `n = 8` the control checks the equivalence
+itself: a support lies in a cover iff its pool graph has a 7-clique.
 
 The recorded triangle counts alone rule out every root case, with no clique
 computation at all.  An 8-clique contains `C(8,3) = 56` triangles, whereas
@@ -275,15 +259,34 @@ different algorithm from the exact cover — but the two live in the same progra
 and share its record loader, its cell masks and its `disjoint()`, so they are
 independent as *algorithms*, not as implementations.
 
+### What the order-8 control checks
+
+Order 8 is where a cube exists and the census (Part II) is known
+independently, so every lemma above is exercised at an order whose answers
+this code did not produce.  Each check is an instance of a lemma at `n = 8`:
+
+* the catalogue is built from the `5 568` admissible first rows — Lemma 2's
+  shard universe at `n = 8` — and every record passes the definition of a
+  support against the `244` lines (Lemma 1's definition);
+* `T(8)` is closed under `G` and splits into six orbits — Lemma 4 (i);
+  clause (ii) is not used, since there is no center;
+* the exact cover of `[8]^3` by supports has `198 624` solutions, i.e.
+  `8! * 198 624` labelled cubes — the correspondence of Lemma 1;
+* for every one of the `13 056` supports, the root search finds exactly the
+  number of covers through it that the census predicts, and a support lies in
+  a cover iff its pool graph has a `7`-clique — Lemma 5 at `n = 8`, checked
+  exhaustively rather than one root per orbit, because without a center there
+  is no root and Lemma 3 does not apply;
+* the symmetric mode reproduces the catalogue byte for byte from `25` of the
+  `5 568` shards — Lemma 6 at `n = 8`.
+
 ### Theorem
 
-> There is no fully diagonalised Latin cube of order 9.  Taylor's Problem 2
-> therefore has a negative answer, and the answer to the second question of
-> his Problem 3 — may one take `M = 2^d`? — is no at `d = 3`.
+> There is no fully diagonalised Latin cube of order 9.
 
-*Proof.*  Suppose `A` is an FDLH of order 9.  By Lemma 1 its colour classes are
+*Proof.*  Suppose `A` is an FDLH of order 9.  By Lemma 1 its color classes are
 nine pairwise disjoint supports.  By Lemma 3 one of them, `T`, contains the
-centre `c0`.  By Lemma 4 we may replace the whole cube by its image under any
+center `c0`.  By Lemma 4 we may replace the whole cube by its image under any
 `g ∈ G`, so we may assume `T` is the chosen representative of its `G`-orbit.
 The computation (Part II) establishes:
 
@@ -292,7 +295,7 @@ The computation (Part II) establishes:
   whose sizes sum to `11 821 056`;
 * for each of the `2 049` orbit representatives, the companion pool is complete
   (it is a filter over the complete catalogue, re-derived independently), and
-  `omega(Gamma(T)) <= 4` — in fact `2` for `2 048` of them, `4` for one.
+  `ω(Γ(T)) <= 4` — in fact `2` for `2 048` of them, `4` for one.
 
 By Lemma 5, `T` belongs to no partition.  Contradiction. ∎
 
@@ -318,7 +321,7 @@ set of **five** pairwise disjoint supports of `[9]^3`, written out explicitly in
 dies early at order 9" that does not survive this example is wrong.
 
 This is a maximum packing *containing a root*, which is all the computation
-bounds.  It is not a claim about incomplete packings that avoid the centre
+bounds.  It is not a claim about incomplete packings that avoid the center
 cell: Lemma 3 applies to partitions, not to arbitrary packings, so nothing here
 says five is the global maximum.
 
@@ -337,16 +340,16 @@ permutation `p`, and the shard `S_p` is the set of supports with that row 0.
 > Let `H = { g ∈ G : g(P) = P }` be the setwise stabiliser of `P` in the group
 > `G` of Lemma 4.  Then
 >
-> (a) `H` consists of exactly those `g = g(pi, eps, tau)` with `pi(0) = 0` and
-> `tau(eps_0(0)) = 0`, and
+> (a) `H` consists of exactly those `g = g(π, ε, τ)` with `π(0) = 0` and
+> `τ(ε_0(0)) = 0`, and
 >
 > ```
 > |H| = |G| / (3 * 2*floor(n/2)) = 9216 / 24 = 384      at n = 8 and n = 9;
 > ```
 >
-> (b) writing `u = tau . eps_1` and `v = tau . eps_2`, an `h ∈ H` acts on `P`
-> by `(0,j,k) -> (0, u(j), v(k))` if `pi` fixes the last two coordinates and by
-> `(0,j,k) -> (0, u(k), v(j))` if `pi` swaps them; so it carries the row `p` to
+> (b) writing `u = τ . ε_1` and `v = τ . ε_2`, an `h ∈ H` acts on `P`
+> by `(0,j,k) -> (0, u(j), v(k))` if `π` fixes the last two coordinates and by
+> `(0,j,k) -> (0, u(k), v(j))` if `π` swaps them; so it carries the row `p` to
 > `p^h = v.p.u^{-1}` or `v.p^{-1}.u^{-1}`, which is again admissible.  Hence the
 > shard universe is closed under `H`, which permutes it;
 >
@@ -354,16 +357,16 @@ permutation `p`, and the shard `S_p` is the set of supports with that row 0.
 > is the whole of the image shard, record by record and cell by cell.  In
 > particular `|S_p| = |S_{p^h}|`.
 
-*Proof.*  (a)  The image's first coordinate is `tau(eps_0(x_{pi(0)}))`.  On `P`
-the coordinates `x_1, x_2` are free, so if `pi(0) != 0` that expression takes
+*Proof.*  (a)  The image's first coordinate is `τ(ε_0(x_{π(0)}))`.  On `P`
+the coordinates `x_1, x_2` are free, so if `π(0) != 0` that expression takes
 all `n` values on `P` and the image cannot be contained in the plane `x_0 = 0`;
-hence `pi(0) = 0`,
-and then the image's first coordinate is the constant `tau(eps_0(0))`, which
+hence `π(0) = 0`,
+and then the image's first coordinate is the constant `τ(ε_0(0))`, which
 must be `0`.  Conversely every such `g` maps `P` into `P`, and an injection of a
 finite set into itself is onto it.  `H` is the stabiliser of a subset, hence a
 subgroup, and `[G:H]` is the size of the `G`-orbit of `P`.  That orbit is
-`{ {x_a = c} }` with `a` any of the three axes and `c` any value of `tau(0)` or
-`tau(n-1)`: since `tau` permutes the pairs `{t, n-1-t}` as blocks, `c` ranges
+`{ {x_a = c} }` with `a` any of the three axes and `c` any value of `τ(0)` or
+`τ(n-1)`: since `τ` permutes the pairs `{t, n-1-t}` as blocks, `c` ranges
 over every value except the middle one of an odd `n`, so over `2*floor(n/2)`
 values.  Hence `[G:H] = 3 * 2*floor(n/2) = 24` and `|H| = 384`.  (`symmetry group` recomputes both by construction: it selects the elements of
 `G` that fix `P`, exhibits the 24 planes, and forms all `384^2 = 147 456`
@@ -372,16 +375,16 @@ selected set**, found by lookup.  Checking instead that a product preserves `P`
 would check nothing, since a composition of two plane-preserving maps preserves
 the plane whatever else it does.)
 
-(b)  With `pi(0) = 0`, `pi` restricts to a permutation of `{1, 2}`, which gives
+(b)  With `π(0) = 0`, `π` restricts to a permutation of `{1, 2}`, which gives
 the two displayed forms.  The graph `{(j, p(j))}` is carried to
 `{(u(j), v(p(j)))}`, the graph of `v.p.u^{-1}`, or to `{(u(p(j)), v(j))}`, the
 graph of `v.p^{-1}.u^{-1}`.  For admissibility, note that `u` and `v` are each
-`tau` or `tau.rev`, and that `tau` commutes with `rev`.  Take the first form and
+`τ` or `τ.r`, and that `τ` commutes with `r`.  Take the first form and
 put `s = u^{-1}(t)`.  Then `t` is a fixed point of `p^h` iff `v(p(s)) = u(s)`,
-and a reflected point iff `v(p(s)) = rev(u(s))`.  Cancelling `tau` from both
-sides — legitimate because `tau` is a bijection commuting with `rev` — turns
-those two conditions into `p(s) = s` and `p(s) = rev(s)`, in that order when
-`eps_1 = eps_2` and in the opposite order when not.  Each has exactly one
+and a reflected point iff `v(p(s)) = r(u(s))`.  Cancelling `τ` from both
+sides — legitimate because `τ` is a bijection commuting with `r` — turns
+those two conditions into `p(s) = s` and `p(s) = r(s)`, in that order when
+`ε_1 = ε_2` and in the opposite order when not.  Each has exactly one
 solution because `p` is admissible, so `p^h` has exactly one fixed and exactly
 one reflected point.  The second form is the same computation after the
 substitution `s = p^{-1}(u^{-1}(t))`.  So `p^h` is admissible, and
@@ -465,9 +468,9 @@ estimated.
 | 3c | *(`symmetric` only)* enumerate, then map | `enum 9 shards`, `symmetry 9 expand` | 157 representatives | the same 48 912 shards, 14 616 576 supports |
 | 3d | *(`symmetric` only)* controls | `catalogue.py sample`, `enum 9 shards`, `catalogue.py setcmpshards` | 320 mapped shards | set-equal and byte-identical to direct enumeration |
 | 4 | audit, assemble | `catalogue.py audit`, `pack` | manifest, payloads, shard universe | the universe covered exactly, records in canonical order, then `n9_supports.bin` |
-| 5 | definition check | `check.py verify 9` | catalogue | 14 616 576 records, 0 failures against the 301 main lines |
+| 5 | definition check | `check.py verify 9` | catalogue | 14 616 576 records, 0 failures against the 301 lines |
 | 6 | group closure | `orbits 9 closure` | catalogue | 87 699 456 images checked, 0 missing |
-| 7 | roots | `orbits 9 centre` | catalogue | 11 821 056 supports through `(4,4,4)` |
+| 7 | roots | `orbits 9 center` | catalogue | 11 821 056 supports through `(4,4,4)` |
 | 8 | orbits | `orbits 9 classify` | roots | 2 049 orbits, sizes summing to 11 821 056 |
 | 9 | companion pools | `pools 9 build` | catalogue, 2 049 reps | pool sizes 764 / 980 / 988.3 / 1 552 (min/median/mean/max) |
 | 10 | pools re-derived | `check.py pools 9`, `catalogue.py reports` | catalogue, pools | 0 disagreements, and one complete report per worker covering all 2 049 queries |
@@ -488,7 +491,7 @@ estimated.
 | `data/n9_root_results.jsonl` | 362 770 B | `55f3730690d06a0fc2ae37f33e2e7b1df9a49cdb446d5e9a92f5fc2e38cce386` |
 | `data/exceptional_packing.json` | 940 B | `1c4fd1c21289ac11f1d569d929bead3a13b155e17cd07b4a0a97bbd30f028549` |
 
-`n9_roots.bin` (957 505 536 B, the 11 821 056 supports through the centre) is a
+`n9_roots.bin` (957 505 536 B, the 11 821 056 supports through the center) is a
 one-second filter over the catalogue and is not checksummed separately.
 `n9_root_results.jsonl` carries no timings, so that it is reproducible byte for
 byte; the raw output with wall times is left beside it as `n9_results_raw.jsonl`.
@@ -501,8 +504,8 @@ exercised at an order where the answers were not produced by this run.
 
 * `T(8)` enumerated from nothing is **13 056** supports, set-equal *and*
   byte-identical to the shipped `data/n8_supports.bin`;
-* all 13 056 pass the definition-level check against the 244 main lines, and the
-  C and numpy constructions of the main lines agree as *sets of lines*, in
+* all 13 056 pass the definition-level check against the 244 lines, and the
+  C and numpy constructions of the lines agree as *sets of lines*, in
   canonical form — at `n = 8` and at `n = 9`;
 * `T(8)` is closed under the order-9216 cell group and falls into **6** orbits,
   of sizes 768, 768, 2 304, 2 304, 2 304, 4 608;
@@ -569,7 +572,7 @@ Every figure is a wall-clock measurement except the two marked as projected.
 B's column is the run recorded here; two earlier sessions on the same laptop
 gave 11 m 32 s and 15 m 42 s for `symmetric` and 6 m 21 s and 8 m 17 s for
 `fast`, and A's row was measured in one of them.  Those earlier numbers predate
-the checks this package now runs, which add about half a minute of order-8
+the checks this repository now runs, which add about half a minute of order-8
 controls and three seconds at order 9; the rest of that spread is the
 instrument, not the work.
 
@@ -752,12 +755,12 @@ in strict row order between them.  That is an exhaustion audit rather than a
 digest comparison, and it explains a discrepancy instead of merely detecting
 one.
 
-1. **That the programs implement the definitions.**  The main lines are built
+1. **That the programs implement the definitions.**  The lines are built
    twice — in C from the pattern description, and independently in numpy — and
    the two are compared as *sets of lines*, in canonical form, not by their
    counts; every record ever produced is checked against the numpy version of
    the definition.  But the definition itself is written down twice by the same
-   author, and a reader who disagrees with the definition of a main line will
+   author, and a reader who disagrees with the definition of a line will
    disagree with everything downstream.  Read `src/lines.h` and `main_lines()`
    in `src/check.py`; they are about twenty lines each.
 
@@ -772,7 +775,7 @@ one.
    whole orbit.
 
 3. **Common-mode error in the model.**  Both the exact-cover enumerator and the
-   definition-level checker are built on the same reading of "main line" and of
+   definition-level checker are built on the same reading of "line" and of
    the record format.  The Python checker is a separate implementation of the
    same definitions, checking data the C programs produced; the two packing
    algorithms share their representation code and their input.  These checks
@@ -808,7 +811,7 @@ README.md            this file
 Makefile             builds the six C programs into bin/
 verify.sh            full / symmetric / fast / test
 checksums.txt        SHA-256 of every data artefact
-src/lines.h          the main lines of [n]^3, from the definition
+src/lines.h          the lines of [n]^3, from the definition
 src/enum.c           the enumerator: exact cover by dancing links
 src/shards.c         the admissible row-0 permutations (A007016)
 src/orbits.c         the order-9216 cell group; closure and orbit classification
@@ -854,6 +857,13 @@ on trust from either.
 * W. Taylor, *On the coloration of cubes*, Discrete Mathematics **2** (1972)
   187–190.  The objects (as the property `P(m, n)`), the `n >= 2^d` corner
   bound (Proposition 4), and Problems 2 (`d = 3`, `n = 9`) and 3.
+* E. Gergely, *A simple method for constructing doubly diagonalized Latin
+  squares*, J. Combinatorial Theory Ser. A **16** (1974) 266–272.  Doubly
+  diagonalized Latin squares of every order except 2 and 3; in particular
+  order 12, Taylor's Problem 1.
+* A. J. W. Hilton, *On double diagonal and cross Latin squares*, J. London
+  Math. Soc. (2) **6** (1973) 679–689.  The earlier resolution of every order
+  `m >= 4`, credited in Taylor's added-in-proof note.
 * J. Arkin, V. E. Hoggatt Jr. and E. G. Straus, *Systems of magic Latin
   k-cubes*, Canadian J. Math. **28** (1976) 1153–1161.  The name *completely
   Latin* for these objects, citing Taylor for the concept.
