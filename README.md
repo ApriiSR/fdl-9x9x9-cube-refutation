@@ -170,13 +170,23 @@ test one root per `G`-orbit.  At `n = 8` and `n = 9`,
 `t`, or `r(t)`) per coordinate.  `π` permutes which coordinate carries which
 pattern, leaving at least one non-constant.  `ε_i = r` sends a constant `c`
 in position `i` to the constant `r(c)`, the pattern `t` to `r(t)`, and `r(t)`
-to `t`.  Applying the same `τ` to all three coordinates sends a constant `c`
-to the constant `τ(c)`, and sends the pattern `t` to `τ(t)`, which after
-the substitution `s = τ(t)` (a bijection of `[n]`, so a legitimate
-reparametrisation) is again the pattern `s`; the pattern `r(t)` goes to
-`τ(r(t))`, and this equals `r(τ(t)) = r(s)` **exactly because `τ`
-commutes with `r`** — which is the whole reason `C(r)` and not `S_n`
-appears.  In each case the image is again a line.
+to `t`.  Applying the same `τ` to all three coordinates: take a line with, say, one
+constant coordinate and both varying patterns, and follow it through:
+
+```
+L   = { (c,    t,    r(t))    : t ∈ [n] }
+τL  = { (τ(c), τ(t), τ(r(t))) : t ∈ [n] }
+    = { (τ(c), τ(t), r(τ(t))) : t ∈ [n] }     since τ commutes with r
+    = { (τ(c), s,    r(s))    : s ∈ [n] }     writing s = τ(t); τ is a bijection,
+                                              so s runs over all of [n]
+```
+
+The result is again a line: the constant went to a constant and the varying
+coordinates still carry the patterns `s` and `r(s)`.  The middle step is the
+only place the commuting condition is used — without it the third coordinate
+would be `τ(r(τ^{-1}(s)))`, which is neither `s` nor `r(s)`, and `τL` would
+not be a line.  Any other line is the same computation with a different choice
+of pattern per coordinate.  In each case the image is again a line.
 
 A bijection of cells that permutes the lines carries a set meeting every
 line once to a set meeting every line once, so `G` maps `T(n)` to `T(n)`.
