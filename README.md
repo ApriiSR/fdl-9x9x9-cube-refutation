@@ -2,7 +2,7 @@
 
 This repository aims to cleanly demonstrate a negative answer to a question which was (to my knowledge) first posed by Walter Taylor in a 1972 paper.
 
-A d-dimensional **fully diagonalised Latin hypercube** (FDLH) (called *completely Latin* by Arkin, Hoggatt and Straus) is a coloring $A : [n]^d \to [n]$, where $[n] = \{0, 1, \ldots, n-1\}$, in which each color occurs exactly once on every *line*.  A line is obtained by letting $t$ run over $[n]$ and taking each coordinate to be a constant, $t$, or $n-1-t$, with at least one coordinate varying.  In dimension 3 the lines are the rows, the columns and the pillars, the diagonals of every planar cross-section of the cube, and the four space diagonals; each must therefore contain every color.
+A d-dimensional **fully diagonalised Latin hypercube** (FDLH) (called *completely Latin* by Arkin, Hoggatt and Straus) is a coloring $A : [n]^d \to [n]$, where $[n] = \lbrace0, 1, \ldots, n-1\rbrace$, in which each color occurs exactly once on every *line*.  A line is obtained by letting $t$ run over $[n]$ and taking each coordinate to be a constant, $t$, or $n-1-t$, with at least one coordinate varying.  In dimension 3 the lines are the rows, the columns and the pillars, the diagonals of every planar cross-section of the cube, and the four space diagonals; each must therefore contain every color.
 
 Every pair of the $2^d$ corner cells lies on a line, which forces $n \le 1$ or $n \ge 2^d$ (Taylor's Proposition 4).  Taylor's 1972 Problem 3 asks two questions — in his notation, where P(m, n) asks whether there exists an n-cube of order m: "For every $n$ does there exist $M$ such that $P(m, n)$ whenever $m \ge M$?  May one take $M = 2^n$?"  His Problem 2 asks in particular about order 9 in dimension 3. 
 
@@ -67,10 +67,10 @@ indexed (in C) by $(i \cdot n + j) \cdot n + k$, which at $n = 9$ is $81i + 9j +
 A line has $n$ cells, so it carries all $n$ colors exactly when it
 carries each of them once.  Call a set of cells meeting every line exactly
 once a **support**, and write $T(n)$ for the set of supports of $[n]^3$.  The
-*color classes* $A^{-1}(v)$ of an FDLH are therefore supports, and an FDLH of
+*color classes* $A^{-1}(\text{color})$ of an FDLH are therefore supports, and an FDLH of
 order $n$ exists **iff** $T(n)$ contains $n$ pairwise disjoint members.
 
-*Proof.*  Every support has exactly $n^2$ cells: the $n^2$ pillars $\{(i,j,\ast)\}$
+*Proof.*  Every support has exactly $n^2$ cells: the $n^2$ pillars $\lbrace(i,j,\ast)\rbrace$
 are lines (only the third coordinate varies), they are pairwise disjoint,
 they cover the cube, and a support meets each once.  So $n$ pairwise disjoint
 supports occupy $n \cdot n^2 = n^3$ cells and therefore partition $[n]^3$.  Give
@@ -93,22 +93,22 @@ plane diagonals, 4 space diagonals), 244 at $n = 8$.
 
 Every support $T$ of $[n]^3$ must be of the form
 
-$$T = \{(i, j, L(i,j)) : i, j \in [n]\}$$
+$$T = \lbrace(i, j, L(i,j)) : i, j \in [n]\rbrace$$
 
 for a unique Latin square $L : [n]^2 \to [n]$, and its first row $p = L(0, \cdot)$
 must have **exactly one fixed point** and **exactly one reflected point**: exactly one
 solution each to $p(t) = t$ and $p(t) = r(t)$.
 
 
-Supports have the form $\{(i, j, L(i,j)) : i, j \in [n]\}$ merely due to the requirement that the support contain one cell from each *axis* line — that part of the statement would be true even for supports of merely Latin cubes (i.e. the more general notion of support that permits choosing zero or multiple cells from a diagonal).  The fixed point comes from the requirement that the support hit the positive diagonal of the plane $i = 0$, while the reverse point comes from the requirement to hit the negative diagonal:
+Supports have the form $\lbrace(i, j, L(i,j)) : i, j \in [n]\rbrace$ merely due to the requirement that the support contain one cell from each *axis* line — that part of the statement would be true even for supports of merely Latin cubes (i.e. the more general notion of support that permits choosing zero or multiple cells from a diagonal).  The fixed point comes from the requirement that the support hit the positive diagonal of the plane $i = 0$, while the reverse point comes from the requirement to hit the negative diagonal:
 
 
-*Proof.*  The pillar $\{(i,j,\ast)\}$ is a line (third coordinate $t$, the other
+*Proof.*  The pillar $\lbrace(i,j,\ast)\rbrace$ is a line (third coordinate $t$, the other
 two constant), and $T$ meets it exactly once, which picks out the single value
-$L(i,j)$.  Meeting each of the lines $\{(i,\ast,k)\}$ and $\{(\ast,j,k)\}$ exactly
+$L(i,j)$.  Meeting each of the lines $\lbrace(i,\ast,k)\rbrace$ and $\lbrace(\ast,j,k)\rbrace$ exactly
 once says that every row and every column of $L$ contains every value once, so
 $L$ is a Latin square and its first row $p$ is a permutation.  Finally the plane $i = 0$
-contains the two lines $\{(0,t,t)\}$ and $\{(0,t,r(t))\}$ — first coordinate
+contains the two lines $\lbrace(0,t,t)\rbrace$ and $\lbrace(0,t,r(t))\rbrace$ — first coordinate
 constant at $0$, the other two varying — and meeting each exactly once gives
 the two conditions on $p$. ∎
 
@@ -141,13 +141,13 @@ The symmetries used here permute the axes, reverse individual axes, and relabel 
 relabelling, but a diagonal such as $(t, 8-t, 3)$ survives only if the
 relabelling respects the pairing $u \leftrightarrow 8-u$: relabel $0 \leftrightarrow 1$ alone and the
 cells $(0,8,3), (1,7,3), \ldots$ become $(1,8,3), (0,7,3), \ldots$, which lie on no line.  So
-the relabellings used are those that shuffle the pairs $\{0,8\}, \{1,7\}, \{2,6\}, \{3,5\}$ as blocks and optionally flip each, leaving $4$ fixed — the permutations
+the relabellings used are those that shuffle the pairs $\lbrace0,8\rbrace, \lbrace1,7\rbrace, \lbrace2,6\rbrace, \lbrace3,5\rbrace$ as blocks and optionally flip each, leaving $4$ fixed — the permutations
 that commute with reversal.
 
 Precisely, let $C(r)$ be the centraliser of $r$ in $S_n$, the symmetric group
 on $[n]$: that is, the set of elements of $S_n$ that communte with $r$. $C(r)$ consists of the permutations $\tau$ of the coordinate values such that $\tau(r(t)) = r(\tau(t))$ for all $t$.  ($r$ is written `rev` in `src/orbits.c`.)  
 
-For $\pi \in S_3$, $\varepsilon \in \{\mathrm{id}, r\}^3$ and $\tau \in C(r)$ define a map $g \colon [n]^3 \to [n]^3$ on cells $x = (x_0, x_1, x_2)$ by
+For $\pi \in S_3$, $\varepsilon \in \lbrace\mathrm{id}, r\rbrace^3$ and $\tau \in C(r)$ define a map $g \colon [n]^3 \to [n]^3$ on cells $x = (x_0, x_1, x_2)$ by
 
 $$g(x)_i = \tau\bigl( \varepsilon_i\bigl( x_{\pi(i)} \bigr) \bigr).$$
 
@@ -168,10 +168,10 @@ to $t$.  Applying the same $\tau$ to all three coordinates: take a line with, sa
 constant coordinate and both varying patterns, and follow it through:
 
 $$\begin{aligned}
-L   &= \{ (c,\ t,\ r(t)) : t \in [n] \} \\
-\tau L  &= \{ (\tau(c),\ \tau(t),\ \tau(r(t))) : t \in [n] \} \\
-    &= \{ (\tau(c),\ \tau(t),\ r(\tau(t))) : t \in [n] \} \quad\text{since } \tau \text{ commutes with } r \\
-    &= \{ (\tau(c),\ s,\ r(s)) : s \in [n] \} \quad\text{writing } s = \tau(t);\ \tau \text{ is a bijection, so } s \text{ runs over all of } [n]
+L   &= \lbrace (c,\ t,\ r(t)) : t \in [n] \rbrace \\
+\tau L  &= \lbrace (\tau(c),\ \tau(t),\ \tau(r(t))) : t \in [n] \rbrace \\
+    &= \lbrace (\tau(c),\ \tau(t),\ r(\tau(t))) : t \in [n] \rbrace \quad\text{since } \tau \text{ commutes with } r \\
+    &= \lbrace (\tau(c),\ s,\ r(s)) : s \in [n] \rbrace \quad\text{writing } s = \tau(t);\ \tau \text{ is a bijection, so } s \text{ runs over all of } [n]
 \end{aligned}$$
 
 The result is again a line: the constant went to a constant and the varying
@@ -221,7 +221,7 @@ $\tau = \tau'$ — the triples are identical — or all three are flipped and
 $\tau' = \tau \circ r$.  Every map therefore has exactly two descriptions, and
 $\lvert G\rvert = 6 \cdot 8 \cdot \lvert C(r)\rvert / 2$.
 
-A $\tau$ commuting with $r$ permutes the $\lfloor n/2 \rfloor$ pairs $\{t, r(t)\}$ as
+A $\tau$ commuting with $r$ permutes the $\lfloor n/2 \rfloor$ pairs $\lbrace t, r(t)\rbrace$ as
 blocks and may flip each, and fixes the middle point when $n$ is odd, so
 $\lvert C(r)\rvert = 2^{\lfloor n/2\rfloor} \cdot \lfloor n/2\rfloor!$ — $384$ at $n = 8$ and $n = 9$, so
 $\lvert G\rvert = 9216$.  The program `orbits` builds all
@@ -232,7 +232,7 @@ all of them. ∎
 ### Lemma 5 (the clique bound: what actually kills order 9)
 
 Completing a support $T$ to an FDLH requires $n-1$ further supports, disjoint
-from $T$ and from one another.  Let $P(T) = \{ S \in T(n) : S \cap T = \emptyset \}$ be the
+from $T$ and from one another.  Let $P(T) = \lbrace S \in T(n) : S \cap T = \emptyset \rbrace$ be the
 **companion pool** of $T$, and let $\Gamma(T)$ be the graph on $P(T)$ joining
 two companions when they are disjoint.  Because the catalogue is complete,
 every possible companion is in the pool, so $n-1$ such supports are exactly a
@@ -334,11 +334,11 @@ the image shard, so one shard per orbit can be enumerated and the rest
 recovered by symmetry — 157 searches instead of 48 912.  **The theorem above
 does not use it**, and neither do `verify.sh full` and `verify.sh fast`.
 
-Write $P = \{x_0 = 0\}$ for the plane whose contents define a shard: by Lemma 2 a
-support's intersection with $P$ is $\{(0, j, p(j))\}$ for an admissible
+Write $P = \lbrace x_0 = 0\rbrace$ for the plane whose contents define a shard: by Lemma 2 a
+support's intersection with $P$ is $\lbrace(0, j, p(j))\rbrace$ for an admissible
 permutation $p$, and the shard $S_p$ is the set of supports with that row 0.
 
-> Let $H = \{ g \in G : g(P) = P \}$ be the setwise stabiliser of $P$ in the group
+> Let $H = \lbrace g \in G : g(P) = P \rbrace$ be the setwise stabiliser of $P$ in the group
 > $G$ of Lemma 4.  Then
 >
 > (a) $H$ consists of exactly those $g = g(\pi, \varepsilon, \tau)$ with $\pi(0) = 0$ and
@@ -364,8 +364,8 @@ and then the image's first coordinate is the constant $\tau(\varepsilon_0(0))$, 
 must be $0$.  Conversely every such $g$ maps $P$ into $P$, and an injection of a
 finite set into itself is onto it.  $H$ is the stabiliser of a subset, hence a
 subgroup, and $[G:H]$ is the size of the $G$-orbit of $P$.  That orbit is
-$\{ \{x_a = c\} \}$ with $a$ any of the three axes and $c$ any value of $\tau(0)$ or
-$\tau(n-1)$: since $\tau$ permutes the pairs $\{t, n-1-t\}$ as blocks, $c$ ranges
+$\lbrace \lbrace x_a = c\rbrace \rbrace$ with $a$ any of the three axes and $c$ any value of $\tau(0)$ or
+$\tau(n-1)$: since $\tau$ permutes the pairs $\lbrace t, n-1-t\rbrace$ as blocks, $c$ ranges
 over every value except the middle one of an odd $n$, so over $2\lfloor n/2 \rfloor$
 values.  Hence $[G:H] = 3 \cdot 2\lfloor n/2 \rfloor = 24$ and $\lvert H\rvert = 384$.  (`symmetry group` recomputes both by construction: it selects the elements of
 $G$ that fix $P$, exhibits the 24 planes, and forms all $384^2 = 147\,456$
@@ -374,9 +374,9 @@ selected set**, found by lookup.  Checking instead that a product preserves $P$
 would check nothing, since a composition of two plane-preserving maps preserves
 the plane whatever else it does.)
 
-(b)  With $\pi(0) = 0$, $\pi$ restricts to a permutation of $\{1, 2\}$, which gives
-the two displayed forms.  The graph $\{(j, p(j))\}$ is carried to
-$\{(u(j), v(p(j)))\}$, the graph of $v \circ p \circ u^{-1}$, or to $\{(u(p(j)), v(j))\}$, the
+(b)  With $\pi(0) = 0$, $\pi$ restricts to a permutation of $\lbrace1, 2\rbrace$, which gives
+the two displayed forms.  The graph $\lbrace(j, p(j))\rbrace$ is carried to
+$\lbrace(u(j), v(p(j)))\rbrace$, the graph of $v \circ p \circ u^{-1}$, or to $\lbrace(u(p(j)), v(j))\rbrace$, the
 graph of $v \circ p^{-1} \circ u^{-1}$.  For admissibility, note that $u$ and $v$ are each
 $\tau$ or $\tau \circ r$, and that $\tau$ commutes with $r$.  Take the first form and
 put $s = u^{-1}(t)$.  Then $t$ is a fixed point of $p^h$ iff $v(p(s)) = u(s)$,
