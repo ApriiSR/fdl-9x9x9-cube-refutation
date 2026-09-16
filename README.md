@@ -479,7 +479,10 @@ independently, so every lemma above is sanity-checked at an order whose answers 
 
 The expensive artefact is `n9_supports.bin`: all $14\,616\,576$ supports of
 $[9]^3$, $81$ bytes each (byte $9 x_0 + x_1$ is $x_2$ for the cell $`(x_0,x_1,x_2)`$),
-$1\,183\,942\,656$ bytes in all.  It is written in a **canonical order**: shards in
+$1\,183\,942\,656$ bytes in all.  It is not in the repository; a copy is at
+[files.apriiori.com/fdlh/n9/n9_supports.bin](https://files.apriiori.com/fdlh/n9/n9_supports.bin),
+and `verify.sh fast` checks its SHA-256 against `checksums.txt` before using
+it.  It is written in a **canonical order**: shards in
 increasing shard index — which is the lexicographic rank of the shard's row 0
 among the admissible permutations — and records sorted lexicographically inside
 each shard.  Since a record begins with its own row 0, this is simply *all
