@@ -263,10 +263,12 @@ itself: a support lies in a cover iff its pool graph has a 7-clique.
 The recorded triangle counts alone rule out every root case, with no clique
 computation at all.  An 8-clique contains $C(8,3) = 56$ triangles, whereas
 every one of the 2 049 computed companion graphs has either $0$ or $8$.  None
-of them can contain an 8-clique, so by Lemma 5 no root lies in a partition.  A
-triangle count is an elementary property of a finite graph; it is what
-`catalogue.py validate` checks, and it is the shortest route from the graph
-data to the conclusion.
+of them can contain an 8-clique, so by Lemma 5 no root lies in a partition.
+Counting triangles is a cheap way to rule out 8-cliques: `pack` builds the
+adjacency bitmap of each companion graph, and for every edge $ab$ counts the
+common neighbours of $a$ and $b$ with a popcount over the two rows' AND;
+summing over edges counts each triangle three times.  `catalogue.py validate`
+checks the recorded counts against the $56$ threshold.
 
 `pack` also computes each maximum clique outright, by the recursive branch and
 bound `bk()`, and gets 2 for 2 048 of the orbits and 4 for one.  That is a
