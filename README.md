@@ -449,9 +449,7 @@ default, drawn with a fixed seed from the 48 755 never enumerated) agrees
 byte-identically with a direct re-enumeration; and that the assembled catalogue
 has the canonical SHA-256, which is a statement about the whole set of
 $14\,616\,576$ supports and is where an error anywhere in the mapping would
-surface.  A referee who distrusts the shard symmetry (Lemma 5) need not argue with it: `full` and
-`symmetric` produce the same $1\,183\,942\,656$ bytes, and `full` never mentions
-it.
+surface.
 
 ### What the order-8 control checks
 
