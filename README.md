@@ -233,7 +233,7 @@ $\mathrm{id}$ or $r$, and it is the *same* element for every $i$ because the lef
 side does not depend on $i$.  So either all three reversal bits agree and
 $\tau = \tau'$ — the triples are identical — or all three are flipped and
 $\tau' = \tau \circ r$.  Every map therefore has exactly two descriptions, and
-$\lvert G\rvert = \lvert S_6 \rvert \cdot \lvert C_2^3 \rvert \cdot \lvert C(r) \rvert / 2 = 6 \cdot 8 \cdot \lvert C(r)\rvert / 2$.
+$\lvert G\rvert = \lvert S_3 \rvert \cdot \lvert C_2^3 \rvert \cdot \lvert C(r) \rvert / 2 = 6 \cdot 8 \cdot \lvert C(r)\rvert / 2$.
 
 A $\tau$ commuting with $r$ permutes the $\lfloor n/2 \rfloor$ pairs $\lbrace t, r(t)\rbrace$ as
 blocks and may flip each, and fixes the middle point when $n$ is odd, so
