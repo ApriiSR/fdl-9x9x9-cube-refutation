@@ -304,8 +304,7 @@ each of the $2\,049$ pools: all $2\,049$ are exhausted, with $0$ covers found,
 and no branch survives past a root plus **one** companion.  That is the depth
 the exact-cover search reaches, not a bound on the size of a disjoint packing:
 the search must cover every cell of the cube and kills a branch as soon as some
-uncovered cell has no surviving candidate, which a mere packing is never asked
-to do.  The five-support packing below is compatible with it.
+uncovered cell has no surviving candidate. While some of the packings are able to three or more supports (i.e. the ones from the exceptional orbit described below), by the second support there is always some cell in the cube which can't be reached by any compatible support.
 
 Either argument alone is sufficient.  They are different algorithms run over
 the same pools by the same program; `catalogue.py validate` requires both of
@@ -313,17 +312,13 @@ them, and the triangle bound, to hold before the run is called a success.
 
 ### An aside: a maximum packing containing a root
 
-Nothing above needs a witness, but one is instructive.  The single exceptional
-orbit — the one whose pool graph has clique number 4 rather than 2 — yields a
+There's a unique exceptional orbit whose pool graph has clique number 4 rather than 2. This yields a
 set of **five** pairwise disjoint supports of $[9]^3$, written out explicitly in
 `data/exceptional_packing.json` and re-verified from the definition by
-`check.py witness`.  A cube would need nine.  Any future proof of "the packing
-dies early at order 9" that does not survive this example is wrong.
+`check.py witness`.  A cube would need nine.  This exception may deserve further study.
 
 This is a maximum packing *containing a root*, which is all the computation
-bounds.  It is not a claim about incomplete packings that avoid the center
-cell: the root observation applies to partitions, not to arbitrary packings, so nothing here
-says five is the global maximum.
+bounds; we have not ruled out the possibility of a packing containing six pairwise disjoint supports such that none of them contain $(4, 4, 4)$.
 
 ### Lemma 5 (the plane-fixing subgroup, and the shard orbits)
 
