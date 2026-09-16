@@ -45,8 +45,8 @@ You need a 64-bit POSIX platform with GCC or Clang, GNU make, `bash`, and
 Python 3.8+ with numpy (details under *Reproducing it*).  The pool re-derivation
 is the one memory-hungry stage: on an 8 GB machine pass `--pool-workers 1`.
 
-There are three modes.  `full` recomputes the catalogue from nothing and uses no mathematics beyond Lemmata 1-4.
-`symmetric` recomputes it too, but enumerates only 157 of the 48,912 shards (sets of supports sharing the same first face) and obtains the rest by symmetry — three hundred times less search, at the cost of also requiring the validity of Lemma 5.  `fast` takes the catalogue as
+There are three modes.  `full` recomputes the catalogue from nothing and uses no mathematics beyond the clique bound (Lemmata 1-4).
+`symmetric` recomputes it too, but enumerates only 157 of the 48,912 shards (sets of supports sharing the same first face) and obtains the rest by symmetry — three hundred times less search, at the cost of also relying on the shard symmetry (Lemma 5).  `fast` takes the catalogue as
 given, verifies its SHA-256 before reading it, and redoes everything downstream.
 
 A failed check aborts the run, so reaching the final `done --` line means every
@@ -112,7 +112,7 @@ contains the two lines $\lbrace(0,t,t)\rbrace$ and $\lbrace(0,t,r(t))\rbrace$ �
 constant at $0$, the other two varying — and meeting each exactly once gives
 the two conditions on $p$. ∎
 
-Call a permutation with one fixed point and one reflected point **admissible**.  A **shard** is the set of all supports whose Latin squares $L$ have one specified first row, or equivalently the set of all supports that share one specified $i=0$ plane. Lemma 2 ensures that it suffices for an exhaustive enumeration to consider the shards corresponding to every admissible row (some of which may turn out to be empty).
+Call a permutation with one fixed point and one reflected point **admissible**.  A **shard** is the set of all supports whose Latin squares $L$ have one specified first row, or equivalently the set of all supports that share one specified $i=0$ plane. Since every support's first row is admissible (Lemma 2), an exhaustive enumeration need only consider the shards corresponding to every admissible row (some of which may turn out to be empty).
 
 
 The numbers of admissible permutations are [OEIS A007016](https://oeis.org/A007016): $8, 20, 96, 656, 5568, 48912$ for $n = 4..9$.  This repository computes the order-9 count in two different ways, by brute force over all $9! = 362\,880$ permutations (`shards.c`) and by inclusion–exclusion in closed form (`check.py a007016 N`), and both agree with OEIS.
@@ -151,7 +151,7 @@ For $\pi \in S_3$, $\varepsilon \in \lbrace\mathrm{id}, r\rbrace^3$ and $\tau \i
 
 $$g(x)_i = \tau\bigl( \varepsilon_i\bigl( x_{\pi(i)} \bigr) \bigr).$$
 
-These form a group $G$ (a subgroup of $`S_{n^3}`$).  Lemma 3 states that $G$ 
+These form a group $G$ (a subgroup of $`S_{n^3}`$).  The claim is that $G$ 
 (i) permutes the lines, hence maps supports to
 supports; (ii) fixes the center cell (when n is odd); and (iii) maps partitions to partitions.
 
@@ -249,8 +249,8 @@ from $T$ and from one another.  Let $P(T) = \lbrace S \in T(n) : S \cap T = \emp
 **companion pool** of $T$, and let $\Gamma(T)$ be the graph on $P(T)$ joining
 two companions when they are disjoint.  Because the catalogue is complete,
 every possible companion is in the pool, so $n-1$ such supports are exactly a
-clique of size $n-1$ in $\Gamma(T)$, and by Lemma 1 any such clique together with
-$T$ is a partition.  Hence, for every $n$,
+clique of size $n-1$ in $\Gamma(T)$, and any such clique together with $T$ is
+$n$ pairwise disjoint supports, hence a partition (Lemma 1).  Hence, for every $n$,
 
 $$T \text{ belongs to a partition} \iff \Gamma(T) \text{ contains a clique of size } n - 1,$$
 
@@ -263,7 +263,8 @@ itself: a support lies in a cover iff its pool graph has a 7-clique.
 The recorded triangle counts alone rule out every root case, with no clique
 computation at all.  An 8-clique contains $C(8,3) = 56$ triangles, whereas
 every one of the 2 049 computed companion graphs has either $0$ or $8$.  None
-of them can contain an 8-clique, so by Lemma 4 no root lies in a partition.
+of them can contain an 8-clique, so no root lies in a partition, which would
+require one (Lemma 4).
 Counting triangles is a cheap way to rule out 8-cliques: `pack` builds the
 adjacency bitmap of each companion graph, and for every edge $ab$ counts the
 common neighbours of $a$ and $b$ with a popcount over the two rows' AND;
@@ -301,10 +302,11 @@ this code did not produce.  Each check is an instance of a lemma at $n = 8$:
 
 > There is no fully diagonalised Latin cube of order 9.
 
-*Proof.*  Suppose $A$ is an FDLH of order 9.  By Lemma 1 its color classes are
-nine pairwise disjoint supports.  One of them, $T$, contains the
-center $c_0$.  By Lemma 3 we may replace the whole cube by its image under any
-$g \in G$, so we may assume $T$ is the chosen representative of its $G$-orbit.
+*Proof.*  Suppose $A$ is an FDLH of order 9.  Its color classes are nine
+pairwise disjoint supports (Lemma 1).  One of them, $T$, contains the
+center $c_0$.  The symmetries in $G$ carry partitions to partitions and fix
+the center (Lemma 3), so we may replace the whole cube by its image under any
+$g \in G$, and assume $T$ is the chosen representative of its $G$-orbit.
 The computation (Part II) establishes:
 
 * $T(9)$ has exactly $14\,616\,576$ members, enumerated exhaustively;
@@ -314,9 +316,10 @@ The computation (Part II) establishes:
   (it is a filter over the complete catalogue, re-derived independently), and
   $\omega(\Gamma(T)) \le 4$ — in fact $2$ for $2\,048$ of them, $4$ for one.
 
-By Lemma 4, $T$ belongs to no partition.  Contradiction. ∎
+A partition containing $T$ would give a clique of size 8 in $\Gamma(T)$
+(Lemma 4), so $T$ belongs to no partition.  Contradiction. ∎
 
-A second argument, independent of Lemma 4, runs a depth-first exact cover over
+A second argument, independent of the clique bound (Lemma 4), runs a depth-first exact cover over
 each of the $2\,049$ pools: all $2\,049$ are exhausted, with $0$ covers found,
 and no branch survives past a root plus **one** companion.  That is the depth
 the exact-cover search reaches, not a bound on the size of a disjoint packing:
@@ -350,12 +353,12 @@ the image shard, so one shard per orbit can be enumerated and the rest
 recovered by symmetry — 157 searches instead of 48 912.  **The theorem above
 does not use it**, and neither do `verify.sh full` and `verify.sh fast`.
 
-Write $P = \lbrace x_0 = 0\rbrace$ for the plane whose contents define a shard: by Lemma 2 a
+Write $P = \lbrace x_0 = 0\rbrace$ for the plane whose contents define a shard: a
 support's intersection with $P$ is $\lbrace(0, j, p(j))\rbrace$ for an admissible
-permutation $p$, and the shard $S_p$ is the set of supports with that row 0.
+permutation $p$ (Lemma 2), and the shard $S_p$ is the set of supports with that row 0.
 
 > Let $H = \lbrace g \in G : g(P) = P \rbrace$ be the setwise stabiliser of $P$ in the group
-> $G$ of Lemma 3.  Then
+> $G$ of the orbit reduction (Lemma 3).  Then
 >
 > (a) $H$ consists of exactly those $g = g(\pi, \varepsilon, \tau)$ with $\pi(0) = 0$ and
 > $\tau(\varepsilon_0(0)) = 0$, and
@@ -411,8 +414,8 @@ list.  It reports the number of images it checked, and stops if that is not
 $\text{shards} \times \lvert H \rvert$.)
 
 (c)  $h$ is a bijection of the cells with $h(P) = P$, so for any set $T$,
-$h(T) \cap P = h(T \cap P)$.  Let $T$ be a support whose row 0 is $p$.  By Lemma 3,
-$hT$ is a support, and its row 0 is $h(T \cap P) = p^h$ by (b).  Hence
+$h(T) \cap P = h(T \cap P)$.  Let $T$ be a support whose row 0 is $p$.  Then
+$hT$ is a support, since $G$ maps supports to supports (Lemma 3), and its row 0 is $h(T \cap P) = p^h$ by (b).  Hence
 $h(S_p) \subseteq S_{p^h}$.  Applying the same to $h^{-1}$, which is in $H$ because $H$
 is a group, gives $h^{-1}(S_{p^h}) \subseteq S_p$, i.e. $S_{p^h} \subseteq h(S_p)$.  The two
 are therefore equal. ∎
@@ -433,7 +436,7 @@ default, drawn with a fixed seed from the 48 755 never enumerated) agrees
 byte-identically with a direct re-enumeration; and that the assembled catalogue
 has the canonical SHA-256, which is a statement about the whole set of
 $14\,616\,576$ supports and is where an error anywhere in the mapping would
-surface.  A referee who distrusts Lemma 5 need not argue with it: `full` and
+surface.  A referee who distrusts the shard symmetry (Lemma 5) need not argue with it: `full` and
 `symmetric` produce the same $1\,183\,942\,656$ bytes, and `full` never mentions
 it.
 
@@ -642,7 +645,7 @@ catalogue costs 35-43 core-hours.  Exhausting all 2 049 root cases costs
 representatives cost **2 512 814 852** search nodes against A's measured
 7.83 x 10^11 for all 48 912, a factor of **312** — the reduction factor
 48 912 / 157 almost exactly.  That agreement is a measurement rather than a
-consequence: Lemma 5 equates the number of supports in symmetry-related shards,
+consequence: the shard symmetry (Lemma 5) equates the number of supports in symmetry-related shards,
 not their search effort.  In wall-clock terms, comparing within a single run —
 the representatives against the per-shard cost of the 320-shard control drawn
 from the same sweep, at the same moment — the three sessions give **326**,
@@ -759,7 +762,8 @@ exclude a whole missing orbit; and a matching checksum establishes agreement
 with reference bytes rather than exhaustion.
 
 `full` establishes completeness by exhaustive search over every admissible row.
-`symmetric` uses exhaustive representative searches together with Lemma 5.
+`symmetric` uses exhaustive representative searches together with the shard
+symmetry (Lemma 5).
 `fast` **assumes** the supplied catalogue is complete, checking its reference
 digest before performing anything downstream.
 
@@ -803,8 +807,8 @@ one.
    26.0 seconds against a 3 600-second cap), and are separately tested to fire —
    against an injected clock, so the test does not itself depend on wall time.
 
-5. **Which mode was run.**  `full` and `fast` rest on Lemmas 1-5 only.
-   `symmetric` additionally rests on Lemma 5 and on `src/symmetry.c`
+5. **Which mode was run.**  `full` and `fast` rest on the clique bound and what leads to it (Lemmata 1-4) only.
+   `symmetric` additionally rests on the shard symmetry (Lemma 5) and on `src/symmetry.c`
    implementing it: a wrong subgroup, element index or record image would mean
    48 755 of the 48 912 shards came from an untrusted map rather than a search.
    Three things stand against that, all described under Lemma 5: the n = 8
