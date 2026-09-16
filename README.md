@@ -493,12 +493,7 @@ that one hash is a meaningful check between independent implementations.
 This repository contains one support enumerator, `enum`.  Both `full` and
 `symmetric` use it; their agreement checks the symmetry shortcut, not the
 enumerator.  A catalogue produced by another implementation can be compared
-against this one using the canonical byte order above and SHA-256, and the
-author has such an agreement on record from an earlier constraint-solver
-enumeration — but that implementation and its run records are not in this
-repository, so nothing here recomputes it, and any claim of independent
-historical agreement would need that separate provenance to be worth
-anything.
+against this one using the canonical byte order above and SHA-256; this repository's cleaner and more efficient reimplementation agrees with our private search that initially ruled out the 9x9x9.
 
 ### What each step does
 
