@@ -294,7 +294,7 @@ The computation (Part II) establishes:
   whose sizes sum to $11\,821\,056$;
 * for each of the $2\,049$ orbit representatives, the companion pool is complete
   (it is a filter over the complete catalogue, re-derived independently), and
-  $\omega(\Gamma(T)) \le 4$ — in fact $2$ for $2\,048$ of them, $4$ for one.
+  $\omega(\Gamma(T)) \le 4$ — in fact $2$ for $2\,048$ of them, $4$ for one (the representative from the "exceptional orbit").
 
 A partition containing $T$ would give a clique of size 8 in $\Gamma(T)$
 (Lemma 4), so $T$ belongs to no partition.  Contradiction. ∎
@@ -304,15 +304,15 @@ each of the $2\,049$ pools: all $2\,049$ are exhausted, with $0$ covers found,
 and no branch survives past a root plus **one** companion.  That is the depth
 the exact-cover search reaches, not a bound on the size of a disjoint packing:
 the search must cover every cell of the cube and kills a branch as soon as some
-uncovered cell has no surviving candidate. While some of the packings are able to three or more supports (i.e. the ones from the exceptional orbit described below), by the second support there is always some cell in the cube which can't be reached by any compatible support.
+uncovered cell has no surviving candidate. While the exceptional orbit's maximal packings can reach more than two supports, by the second support there is always some cell in the cube which can't be reached by any compatible support.
 
 Either argument alone is sufficient.  They are different algorithms run over
 the same pools by the same program; `catalogue.py validate` requires both of
 them, and the triangle bound, to hold before the run is called a success.
 
-### An aside: a maximum packing containing a root
+### An aside: the exceptional orbit
 
-There's a unique exceptional orbit whose pool graph has clique number 4 rather than 2. This yields a
+As observed above, there's a unique exceptional orbit whose pool graph has clique number 4 rather than 2. This yields a
 set of **five** pairwise disjoint supports of $[9]^3$, written out explicitly in
 `data/exceptional_packing.json` and re-verified from the definition by
 `check.py witness`.  A cube would need nine.  This exception may deserve further study.
