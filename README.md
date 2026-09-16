@@ -59,7 +59,7 @@ line per root orbit: `status` is `EXHAUSTED` and `covers` is `0` on all 2 049.
 ## Part I. The mathematics
 
 Throughout, $n$ is the order — $9$ in every concrete example, $8$ in the
-controls — $r(t) = n-1-t$, and cells of $[n]^3$ are written $(x_0, x_1, x_2)$ and
+controls — $r(t) = n-1-t$, and cells of $[n]^3$ are written $x = (x_0, x_1, x_2)$ and
 indexed (in C) by $(x_0 \cdot n + x_1) \cdot n + x_2$, which at $n = 9$ is $81 x_0 + 9 x_1 + x_2$.  (The source code and its comments write the
 same three coordinates as `i`, `j`, `k`.)
 
@@ -224,7 +224,7 @@ in $\lbrace\mathrm{id}, r\rbrace$ because $r \circ r = \mathrm{id}$.
 The identity is $(\mathrm{id}, \mathrm{id}, \mathrm{id})$, and a finite composition-closed family of
 bijections of a finite set contains inverses.  So $G$ is a group.
 
-*The count.*  Suppose two parameter triples define the same cell map.  Each
+*The count.*  Suppose two parameter triples define the same cell map $g$.  Each
 output coordinate depends bijectively on exactly one input coordinate, so the
 two coordinate permutations agree; write $\pi$ for both.  Equating the $i$-th
 output coordinates gives $\tau(\varepsilon_i(x)) = \tau'(\varepsilon'_i(x))$ for all $x$, i.e.
