@@ -196,17 +196,30 @@ disjoint supports covering the cube iff $gT_1, \ldots, gT_n$ are.
 Finally, that these maps form a group, and how many of them there are.
 
 *Closure.*  If $g = (\pi, \varepsilon, \tau)$ and $h = (\rho, \delta, \sigma)$, then
-$g \circ h$ is the map with parameters
+$g \circ h$ (apply $h$ first) is the map with parameters
 
 $$\begin{aligned}
 \pi'   &= \rho \circ \pi, \\
 \varepsilon'_i &= \varepsilon_i \circ \delta_{\pi(i)}, \\
-\tau'  &= \tau \circ \sigma,
+\tau'  &= \tau \circ \sigma.
 \end{aligned}$$
 
-which is again of the displayed form: $\tau \circ \sigma$ lies in $C(r)$ because
-$C(r)$ is a subgroup, and the reversals can be gathered on the left of the
-value permutation precisely because $\tau$ and $\sigma$ each commute with $r$.
+To see this, substitute $`h(x)_j = \sigma(\delta_j(x_{\rho(j)}))`$ into the
+definition of $g$, with $j = \pi(i)$:
+
+$$\begin{aligned}
+(g \circ h)(x)_i &= \tau\bigl(\varepsilon_i\bigl(h(x)_{\pi(i)}\bigr)\bigr) \\
+  &= \tau\bigl(\varepsilon_i\bigl(\sigma\bigl(\delta_{\pi(i)}\bigl(x_{\rho(\pi(i))}\bigr)\bigr)\bigr)\bigr) \\
+  &= \tau\bigl(\sigma\bigl(\varepsilon_i\bigl(\delta_{\pi(i)}\bigl(x_{\rho(\pi(i))}\bigr)\bigr)\bigr)\bigr)
+     \quad\text{since } \varepsilon_i \in \lbrace\mathrm{id}, r\rbrace \text{ commutes with } \sigma \in C(r) \\
+  &= (\tau \circ \sigma)\Bigl((\varepsilon_i \circ \delta_{\pi(i)})\bigl(x_{(\rho \circ \pi)(i)}\bigr)\Bigr).
+\end{aligned}$$
+
+The third line is the one step that needs anything: a reversal has to be moved
+past a value permutation, and that is legitimate exactly because $\sigma$
+commutes with $r$.  The result is of the displayed form, with $\tau \circ \sigma$
+in $C(r)$ because $C(r)$ is a subgroup and each $\varepsilon_i \circ \delta_{\pi(i)}$
+in $\lbrace\mathrm{id}, r\rbrace$ because $r \circ r = \mathrm{id}$.
 The identity is $(\mathrm{id}, \mathrm{id}, \mathrm{id})$, and a finite composition-closed family of
 bijections of a finite set contains inverses.  So $G$ is a group.
 
