@@ -264,7 +264,7 @@ $6 \cdot 8 \cdot 384 = 18\,432$ maps, deduplicates them, and checks that $9216$ 
 that all of them fix $c_0$, and that six explicitly named generators generate
 all of them. ∎
 
-### Lemma 4 (the clique bound: what actually kills order 9)
+### Lemma 4 (the clique bound)
 
 > Let $T$ be a support of $[n]^3$, let $P(T)$ be the set of supports disjoint
 > from $T$, and let $\Gamma(T)$ be the graph on $P(T)$ joining two supports when
