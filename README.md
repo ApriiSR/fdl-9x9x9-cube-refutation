@@ -65,6 +65,12 @@ same three coordinates as `i`, `j`, `k`.)
 
 ### Lemma 1 (supports and partitions)
 
+> Let $A \colon [n]^3 \to [n]$.  (a) $A$ is an FDLH iff every color class
+> $A^{-1}(v)$, $v \in [n]$, is a support.  (b) Every support has exactly $n^2$
+> cells.  (c) An FDLH of order $n$ exists iff $T(n)$ contains $n$ pairwise
+> disjoint members: any $n$ pairwise disjoint supports partition $[n]^3$, and
+> giving them distinct colors yields an FDLH.
+
 A line has $n$ cells, so it carries all $n$ colors exactly when it
 carries each of them once.  Call a set of cells meeting every line exactly
 once a **support**, and write $T(n)$ for the set of supports of $[n]^3$.  The
@@ -92,9 +98,16 @@ plane diagonals, 4 space diagonals), 244 at $n = 8$.
 
 ### Lemma 2 (Latin-square form, and what row 0 must be)
 
+> Every support $T$ of $[n]^3$ is $\lbrace(x_0, x_1, L(x_0,x_1)) : x_0, x_1 \in [n]\rbrace$
+> for a unique Latin square $L \colon [n]^2 \to [n]$, and the row $p = L(0, \cdot)$
+> is a permutation of $[n]$ with exactly one fixed point and exactly one
+> reflected point (exactly one solution each of $p(t) = t$ and $p(t) = r(t)$).
+> Consequently $T(n)$ is the disjoint union of the shards $S_p$ over the
+> admissible permutations $p$.
+
 Every support $T$ of $[n]^3$ must be of the form
 
-$$T = \lbrace(i, j, L(i,j)) : i, j \in [n]\rbrace$$
+$$T = \lbrace(x_0, x_1, L(x_0,x_1)) : x_0, x_1 \in [n]\rbrace$$
 
 for a unique Latin square $L : [n]^2 \to [n]$, and its first row $p = L(0, \cdot)$
 must have **exactly one fixed point** and **exactly one reflected point**: exactly one
@@ -135,6 +148,14 @@ runs its root search on every support instead, see below.)
 An aside, not needed for the proof: all four space diagonals pass through $c_0$. A root meets all four with that one cell, while a support avoiding the center must meet them at four distinct cells.  That may be why roots are more common than one might naively expect — $11\,821\,056$ of the $14\,616\,576$ supports, 80.9 %, contain the center.
 
 ### Lemma 3 (orbit reduction)
+
+> The maps $g = g(\pi, \varepsilon, \tau)$ defined below, for $\pi \in S_3$,
+> $\varepsilon \in \lbrace\mathrm{id}, r\rbrace^3$ and $\tau \in C(r)$, form a group $G$ of
+> permutations of $[n]^3$, of order $6 \cdot 8 \cdot \lvert C(r) \rvert / 2$ when $n \ge 2$
+> ($9216$ at $n = 8$ and $n = 9$), and every $g \in G$ (i) maps lines to lines,
+> hence supports to supports; (ii) fixes the center cell $c_0$ when $n$ is odd;
+> (iii) maps partitions of $[n]^3$ into supports to partitions.  Consequently,
+> for odd $n$, a root $T$ lies in a partition iff $gT$ does, for every $g \in G$.
 
 We need test only one root from each symmetry class, for some suitable notion of symmetry classes. For example, if two roots are reflections of each other, ruling out that one of them occurs in an FDLH also implies that the other does not. To maximize the efficiency of our exhaustive enumeration, we wish to use the largest valid choice of symmetry group we can, i.e. the group which maximizes the size of each root's symmetry class while still ensuring that checking one representative from each class is sufficient.
 
@@ -244,6 +265,12 @@ that all of them fix $c_0$, and that six explicitly named generators generate
 all of them. ∎
 
 ### Lemma 4 (the clique bound: what actually kills order 9)
+
+> Let $T$ be a support of $[n]^3$, let $P(T)$ be the set of supports disjoint
+> from $T$, and let $\Gamma(T)$ be the graph on $P(T)$ joining two supports when
+> they are disjoint.  Then $T$ lies in a partition of $[n]^3$ into supports iff
+> $\Gamma(T)$ contains a clique of size $n - 1$.  In particular, if
+> $\omega(\Gamma(T)) \lt n - 1$ then $T$ lies in no partition.
 
 Completing a support $T$ to an FDLH requires $n-1$ further supports, disjoint
 from $T$ and from one another.  Let $P(T) = \lbrace S \in T(n) : S \cap T = \emptyset \rbrace$ be the
