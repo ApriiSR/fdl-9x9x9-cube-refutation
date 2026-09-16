@@ -475,11 +475,11 @@ independently, so every lemma above is sanity-checked at an order whose answers 
 
 ## Part II. The computation
 
-### The catalogue is a canonical object
+### The support catalogue
 
 The expensive artefact is `n9_supports.bin`: all $14\,616\,576$ supports of
 $[9]^3$, $81$ bytes each (byte $9 x_0 + x_1$ is $x_2$ for the cell $`(x_0,x_1,x_2)`$),
-$1\,183\,942\,656$ bytes in all.  It is not in the repository; a copy is at
+$1\,183\,942\,656$ bytes in all.  Because of the size it is not in the repository; a copy is at
 [files.apriiori.com/fdlh/n9/n9_supports.bin](https://files.apriiori.com/fdlh/n9/n9_supports.bin),
 and `verify.sh fast` checks its SHA-256 against `checksums.txt` before using
 it.  It is written in a **canonical order**: shards in
