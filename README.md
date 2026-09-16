@@ -254,7 +254,8 @@ $T$ is a partition.  Hence, for every $n$,
 
 $$T \text{ belongs to a partition} \iff \Gamma(T) \text{ contains a clique of size } n - 1,$$
 
-and in particular $\omega(\Gamma(T)) \lt n - 1$ rules $T$ out.  At $n = 9$ a bound of
+and in particular $\omega(\Gamma(T)) \lt n - 1$ rules $T$ out (here $\omega$ is the
+*clique number*, the size of the largest clique).  At $n = 9$ a bound of
 $\omega(\Gamma(T)) \le 4$ already suffices, and a *triangle-free* $\Gamma(T)$ ($`\omega \le 2`$)
 suffices very comfortably.  At $n = 8$ the control checks the equivalence
 itself: a support lies in a cover iff its pool graph has a 7-clique.
