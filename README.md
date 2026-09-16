@@ -67,7 +67,7 @@ same three coordinates as `i`, `j`, `k`.)
 
 > Let $A \colon [n]^3 \to [n]$.  (a) $A$ is an FDLH iff every color class
 > $A^{-1}(\text{color})$, $\text{color} \in [n]$, is a support.  (b) Every support has exactly $n^2$
-> cells.  (c) An FDLH of order $n$ exists iff $T(n)$ contains $n$ pairwise
+> cells.  (c) An FDLH of order $n$ exists iff there is a subset of $T(n)$ containing $n$ pairwise
 > disjoint members: any $n$ pairwise disjoint supports partition $[n]^3$, and
 > giving them distinct colors yields an FDLH.
 
