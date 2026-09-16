@@ -26,7 +26,7 @@
  * with u = tau . eps_1 and v = tau . eps_2.  So a shard's row 0, the
  * permutation p, is carried to v.p.u^{-1} or to v.p^{-1}.u^{-1}: the image
  * depends on p alone, and H permutes the admissible permutations among
- * themselves.  That is Lemma 6 of the README, and this program is its
+ * themselves.  That is Lemma 5 of the README, and this program is its
  * computational half: `orbits` checks the closure explicitly and `expand`
  * produces each shard's contents as the image of its orbit representative's.
  *

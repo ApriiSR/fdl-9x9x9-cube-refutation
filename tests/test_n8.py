@@ -11,7 +11,7 @@ can be checked against an answer that was not produced by this code:
     same root search that is run at order 9.
 
 It also runs the whole of `verify.sh symmetric` at order 8: 25 of the 5 568
-shards enumerated, the rest produced by the plane-fixing subgroup of Lemma 6,
+shards enumerated, the rest produced by the plane-fixing subgroup of Lemma 5,
 and the result required to be the census byte for byte.
 
 The suite also checks that the time caps fire, and that the mapping's guard

@@ -25,7 +25,7 @@ The rough outline of this algorithm is as follows:
 {"Part II states the machine's part as a table of programs, inputs,
 expected outputs and SHA-256 checksums, so a reader can rerun any line
 independently.  *From nothing* means regenerating the order-9 catalogue rather
-than supplying a precomputed one.  A sixth lemma, proved afterwards, proves
+than supplying a precomputed one.  A fifth lemma, proved afterwards, proves
 nothing about order 9: it justifies a symmetry shortcut used by one
 verification mode." i probably want to rewrite this but i need to go see what's actually in part 2 first.}
 
@@ -45,8 +45,8 @@ You need a 64-bit POSIX platform with GCC or Clang, GNU make, `bash`, and
 Python 3.8+ with numpy (details under *Reproducing it*).  The pool re-derivation
 is the one memory-hungry stage: on an 8 GB machine pass `--pool-workers 1`.
 
-There are three modes.  `full` recomputes the catalogue from nothing and uses no mathematics beyond Lemmata 1-5.
-`symmetric` recomputes it too, but enumerates only 157 of the 48,912 shards (sets of supports sharing the same first face) and obtains the rest by symmetry — three hundred times less search, at the cost of also requiring the validity of Lemma 6.  `fast` takes the catalogue as
+There are three modes.  `full` recomputes the catalogue from nothing and uses no mathematics beyond Lemmata 1-4.
+`symmetric` recomputes it too, but enumerates only 157 of the 48,912 shards (sets of supports sharing the same first face) and obtains the rest by symmetry — three hundred times less search, at the cost of also requiring the validity of Lemma 5.  `fast` takes the catalogue as
 given, verifies its SHA-256 before reading it, and redoes everything downstream.
 
 A failed check aborts the run, so reaching the final `done --` line means every
@@ -121,7 +121,7 @@ Within each shard the enumerator solves an exact-cover problem: the 301 lines
 must each be covered exactly once, and choosing a cell covers the lines through
 it.  Nine cells are fixed by $L$'s first row / the support's $i=0$ plane.  The search is [Knuth's Algorithm X with dancing links](https://en.wikipedia.org/wiki/Knuth's_Algorithm_X).
 
-### Lemma 3 (every FLDH of odd order has a root)
+### Roots
 
 When $n$ is odd, $[n]^3$ has a center cell $c_0 = (m,m,m)$ with $m = (n-1)/2$
 — $(4,4,4)$ at $n = 9$ — and exactly one color class of an FDLH of order $n$
@@ -133,7 +133,7 @@ runs its root search on every support instead, see below.)
 
 An aside, not needed for the proof: all four space diagonals pass through $c_0$. A root meets all four with that one cell, while a support avoiding the center must meet them at four distinct cells.  That may be why roots are more common than one might naively expect — $11\,821\,056$ of the $14\,616\,576$ supports, 80.9 %, contain the center.
 
-### Lemma 4 (orbit reduction)
+### Lemma 3 (orbit reduction)
 
 We need test only one root from each symmetry class, for some suitable notion of symmetry classes. For example, if two roots are reflections of each other, ruling out that one of them occurs in an FDLH also implies that the other does not. To maximize the efficiency of our exhaustive enumeration, we wish to use the largest valid choice of symmetry group we can, i.e. the group which maximizes the size of each root's symmetry class while still ensuring that checking one representative from each class is sufficient.
 
@@ -151,7 +151,7 @@ For $\pi \in S_3$, $\varepsilon \in \lbrace\mathrm{id}, r\rbrace^3$ and $\tau \i
 
 $$g(x)_i = \tau\bigl( \varepsilon_i\bigl( x_{\pi(i)} \bigr) \bigr).$$
 
-These form a group $G$ (a subgroup of $`S_{n^3}`$).  Lemma 4 states that $G$ 
+These form a group $G$ (a subgroup of $`S_{n^3}`$).  Lemma 3 states that $G$ 
 (i) permutes the lines, hence maps supports to
 supports; (ii) fixes the center cell (when n is odd); and (iii) maps partitions to partitions.
 
@@ -242,7 +242,7 @@ $6 \cdot 8 \cdot 384 = 18\,432$ maps, deduplicates them, and checks that $9216$ 
 that all of them fix $c_0$, and that six explicitly named generators generate
 all of them. ∎
 
-### Lemma 5 (the clique bound: what actually kills order 9)
+### Lemma 4 (the clique bound: what actually kills order 9)
 
 Completing a support $T$ to an FDLH requires $n-1$ further supports, disjoint
 from $T$ and from one another.  Let $P(T) = \lbrace S \in T(n) : S \cap T = \emptyset \rbrace$ be the
@@ -263,7 +263,7 @@ itself: a support lies in a cover iff its pool graph has a 7-clique.
 The recorded triangle counts alone rule out every root case, with no clique
 computation at all.  An 8-clique contains $C(8,3) = 56$ triangles, whereas
 every one of the 2 049 computed companion graphs has either $0$ or $8$.  None
-of them can contain an 8-clique, so by Lemma 5 no root lies in a partition.
+of them can contain an 8-clique, so by Lemma 4 no root lies in a partition.
 Counting triangles is a cheap way to rule out 8-cliques: `pack` builds the
 adjacency bitmap of each companion graph, and for every edge $ab$ counts the
 common neighbours of $a$ and $b$ with a popcount over the two rows' AND;
@@ -285,25 +285,25 @@ this code did not produce.  Each check is an instance of a lemma at $n = 8$:
 * the catalogue is built from the $5\,568$ admissible first rows — Lemma 2's
   shard universe at $n = 8$ — and every record passes the definition of a
   support against the $244$ lines (Lemma 1's definition);
-* $T(8)$ is closed under $G$ and splits into six orbits — Lemma 4 (i);
+* $T(8)$ is closed under $G$ and splits into six orbits — Lemma 3 (i);
   clause (ii) is not used, since there is no center;
 * the exact cover of $[8]^3$ by supports has $198\,624$ solutions, i.e.
   $8! \cdot 198\,624$ labelled cubes — the correspondence of Lemma 1;
 * for every one of the $13\,056$ supports, the root search finds exactly the
   number of covers through it that the census predicts, and a support lies in
-  a cover iff its pool graph has a $7$-clique — Lemma 5 at $n = 8$, checked
+  a cover iff its pool graph has a $7$-clique — Lemma 4 at $n = 8$, checked
   exhaustively rather than one root per orbit, because without a center there
-  is no root and Lemma 3 does not apply;
+  is no root;
 * the symmetric mode reproduces the catalogue byte for byte from $25$ of the
-  $5\,568$ shards — Lemma 6 at $n = 8$.
+  $5\,568$ shards — Lemma 5 at $n = 8$.
 
 ### Theorem
 
 > There is no fully diagonalised Latin cube of order 9.
 
 *Proof.*  Suppose $A$ is an FDLH of order 9.  By Lemma 1 its color classes are
-nine pairwise disjoint supports.  By Lemma 3 one of them, $T$, contains the
-center $c_0$.  By Lemma 4 we may replace the whole cube by its image under any
+nine pairwise disjoint supports.  One of them, $T$, contains the
+center $c_0$.  By Lemma 3 we may replace the whole cube by its image under any
 $g \in G$, so we may assume $T$ is the chosen representative of its $G$-orbit.
 The computation (Part II) establishes:
 
@@ -314,9 +314,9 @@ The computation (Part II) establishes:
   (it is a filter over the complete catalogue, re-derived independently), and
   $\omega(\Gamma(T)) \le 4$ — in fact $2$ for $2\,048$ of them, $4$ for one.
 
-By Lemma 5, $T$ belongs to no partition.  Contradiction. ∎
+By Lemma 4, $T$ belongs to no partition.  Contradiction. ∎
 
-A second argument, independent of Lemma 5, runs a depth-first exact cover over
+A second argument, independent of Lemma 4, runs a depth-first exact cover over
 each of the $2\,049$ pools: all $2\,049$ are exhausted, with $0$ covers found,
 and no branch survives past a root plus **one** companion.  That is the depth
 the exact-cover search reaches, not a bound on the size of a disjoint packing:
@@ -339,10 +339,10 @@ dies early at order 9" that does not survive this example is wrong.
 
 This is a maximum packing *containing a root*, which is all the computation
 bounds.  It is not a claim about incomplete packings that avoid the center
-cell: Lemma 3 applies to partitions, not to arbitrary packings, so nothing here
+cell: the root observation applies to partitions, not to arbitrary packings, so nothing here
 says five is the global maximum.
 
-### Lemma 6 (the plane-fixing subgroup, and the shard orbits)
+### Lemma 5 (the plane-fixing subgroup, and the shard orbits)
 
 This optional lemma justifies `verify.sh symmetric`: a symmetry that preserves
 the plane defining a shard carries every support in that shard to a support in
@@ -355,7 +355,7 @@ support's intersection with $P$ is $\lbrace(0, j, p(j))\rbrace$ for an admissibl
 permutation $p$, and the shard $S_p$ is the set of supports with that row 0.
 
 > Let $H = \lbrace g \in G : g(P) = P \rbrace$ be the setwise stabiliser of $P$ in the group
-> $G$ of Lemma 4.  Then
+> $G$ of Lemma 3.  Then
 >
 > (a) $H$ consists of exactly those $g = g(\pi, \varepsilon, \tau)$ with $\pi(0) = 0$ and
 > $\tau(\varepsilon_0(0)) = 0$, and
@@ -411,7 +411,7 @@ list.  It reports the number of images it checked, and stops if that is not
 $\text{shards} \times \lvert H \rvert$.)
 
 (c)  $h$ is a bijection of the cells with $h(P) = P$, so for any set $T$,
-$h(T) \cap P = h(T \cap P)$.  Let $T$ be a support whose row 0 is $p$.  By Lemma 4,
+$h(T) \cap P = h(T \cap P)$.  Let $T$ be a support whose row 0 is $p$.  By Lemma 3,
 $hT$ is a support, and its row 0 is $h(T \cap P) = p^h$ by (b).  Hence
 $h(S_p) \subseteq S_{p^h}$.  Applying the same to $h^{-1}$, which is in $H$ because $H$
 is a group, gives $h^{-1}(S_{p^h}) \subseteq S_p$, i.e. $S_{p^h} \subseteq h(S_p)$.  The two
@@ -433,7 +433,7 @@ default, drawn with a fixed seed from the 48 755 never enumerated) agrees
 byte-identically with a direct re-enumeration; and that the assembled catalogue
 has the canonical SHA-256, which is a statement about the whole set of
 $14\,616\,576$ supports and is where an error anywhere in the mapping would
-surface.  A referee who distrusts Lemma 6 need not argue with it: `full` and
+surface.  A referee who distrusts Lemma 5 need not argue with it: `full` and
 `symmetric` produce the same $1\,183\,942\,656$ bytes, and `full` never mentions
 it.
 
@@ -642,7 +642,7 @@ catalogue costs 35-43 core-hours.  Exhausting all 2 049 root cases costs
 representatives cost **2 512 814 852** search nodes against A's measured
 7.83 x 10^11 for all 48 912, a factor of **312** — the reduction factor
 48 912 / 157 almost exactly.  That agreement is a measurement rather than a
-consequence: Lemma 6 equates the number of supports in symmetry-related shards,
+consequence: Lemma 5 equates the number of supports in symmetry-related shards,
 not their search effort.  In wall-clock terms, comparing within a single run —
 the representatives against the per-shard cost of the 320-shard control drawn
 from the same sweep, at the same moment — the three sessions give **326**,
@@ -759,7 +759,7 @@ exclude a whole missing orbit; and a matching checksum establishes agreement
 with reference bytes rather than exhaustion.
 
 `full` establishes completeness by exhaustive search over every admissible row.
-`symmetric` uses exhaustive representative searches together with Lemma 6.
+`symmetric` uses exhaustive representative searches together with Lemma 5.
 `fast` **assumes** the supplied catalogue is complete, checking its reference
 digest before performing anything downstream.
 
@@ -804,10 +804,10 @@ one.
    against an injected clock, so the test does not itself depend on wall time.
 
 5. **Which mode was run.**  `full` and `fast` rest on Lemmas 1-5 only.
-   `symmetric` additionally rests on Lemma 6 and on `src/symmetry.c`
+   `symmetric` additionally rests on Lemma 5 and on `src/symmetry.c`
    implementing it: a wrong subgroup, element index or record image would mean
    48 755 of the 48 912 shards came from an untrusted map rather than a search.
-   Three things stand against that, all described under Lemma 6: the n = 8
+   Three things stand against that, all described under Lemma 5: the n = 8
    census reproduced the same way and 320 mapped shards re-enumerated
    byte-identically, which are samples, and the canonical SHA-256 of the whole
    catalogue, which is not.  A reader who wants no lemma beyond 1-5 should run `full`.
@@ -832,7 +832,7 @@ src/shards.c         the admissible row-0 permutations (A007016)
 src/orbits.c         the order-9216 cell group; closure and orbit classification
 src/pools.c          companion pools as a filter over a complete catalogue
 src/pack.c           exhaustive exact cover, and the packing ceiling
-src/symmetry.c       the plane-fixing subgroup, and the shard orbits (Lemma 6)
+src/symmetry.c       the plane-fixing subgroup, and the shard orbits (Lemma 5)
 src/util.h           record loading and byte-range checks, the clock (real or
                      injected), payload digests and manifest recovery
 src/check.py         definition-level checks in numpy, independent of the C

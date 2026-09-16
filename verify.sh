@@ -12,7 +12,7 @@
 #       The same catalogue, enumerated one shard per orbit of the subgroup that
 #       fixes the plane x = 0, the rest of the shards produced by applying the
 #       group element.  157 shards are enumerated instead of 48 912.  This mode
-#       additionally relies on Lemma 6, and it checks that reliance: the n = 8
+#       additionally relies on Lemma 5, and it checks that reliance: the n = 8
 #       census is reproduced the same way, a sample of mapped n = 9 shards is
 #       re-enumerated directly and compared, and the catalogue must still have
 #       the canonical SHA-256.
@@ -311,7 +311,7 @@ elif [ "$MODE" = symmetric ]; then
     say "3. enumerate one shard per orbit  (157 shards, not 48 912)"
     sweep "$WORK/n9_reps.txt" "$N9/shards" "$N9" "T(9) representatives"
 
-    say "3b. map every other shard onto its orbit representative (Lemma 6)"
+    say "3b. map every other shard onto its orbit representative (Lemma 5)"
     mkdir -p "$N9/logs"
     merge_manifests "$N9" 'x_*.jsonl' "$N9/xdone.jsonl"
     t0=$(date +%s); k=0; JOBS=()
