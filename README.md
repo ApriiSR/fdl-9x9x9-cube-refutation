@@ -483,7 +483,7 @@ $1\,183\,942\,656$ bytes in all.  Because of the size it is not in the repositor
 [files.apriiori.com/fdlh/n9/n9_supports.bin](https://files.apriiori.com/fdlh/n9/n9_supports.bin),
 and `verify.sh fast` checks its SHA-256 against `checksums.txt` before using
 it.  It is written in a **canonical order**: shards in
-increasing shard index — which is the lexicographic rank of the shard's row 0
+increasing shard index — which is the lexicographic rank of the shard's Latin square's row 0
 among the admissible permutations — and records sorted lexicographically inside
 each shard.  Since a record begins with its own row 0, this is simply *all
 supports in lexicographic order*.  Its SHA-256 therefore depends on the set
