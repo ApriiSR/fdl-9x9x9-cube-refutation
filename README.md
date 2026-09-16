@@ -286,7 +286,7 @@ independent as *algorithms*, not as implementations.
 pairwise disjoint supports (Lemma 1).  One of them, $T$, contains the
 center $c_0$.  The symmetries in $G$ carry partitions to partitions and fix
 the center (Lemma 3), so we may replace the whole cube by its image under any
-$g \in G$, and assume $T$ is the chosen representative of its $G$-orbit.
+$g \in G$; thus we can WLOG assume $T$ is the chosen representative of its $G$-orbit.
 The computation (Part II) establishes:
 
 * $T(9)$ has exactly $14\,616\,576$ members, enumerated exhaustively;
