@@ -101,7 +101,7 @@ plane diagonals, 4 space diagonals), 244 at $n = 8$.
 > Every support $T$ of $[n]^3$ is $\lbrace(x_0, x_1, L(x_0,x_1)) : x_0, x_1 \in [n]\rbrace$
 > for a unique Latin square $L \colon [n]^2 \to [n]$, and the row $p = L(0, \cdot)$
 > is a permutation of $[n]$ with exactly one fixed point and exactly one
-> reflected point (exactly one solution each of $p(t) = t$ and $p(t) = r(t)$).
+> reflected point (exactly one solution each of $p(t) = t$ and $`p(t) = r(t)`$).
 > Consequently $T(n)$ is the disjoint union of the shards $S_p$ over the
 > admissible permutations $p$.
 
