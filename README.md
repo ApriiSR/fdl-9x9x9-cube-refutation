@@ -266,13 +266,13 @@ computation at all.  An 8-clique contains $C(8,3) = 56$ triangles, whereas
 every one of the 2 049 computed companion graphs has either $0$ or $8$.  None
 of them can contain an 8-clique, so no root lies in a partition, which would
 require one (Lemma 4).
-Counting triangles is a cheap way to rule out 8-cliques: `pack` builds the
+Counting triangles is a cheap way to rule out 8-cliques: `pack.c` builds the
 adjacency bitmap of each companion graph, and for every edge $ab$ counts the
 common neighbours of $a$ and $b$ with a popcount over the two rows' AND;
 summing over edges counts each triangle three times.  `catalogue.py validate`
 checks the recorded counts against the $56$ threshold.
 
-`pack` also computes each maximum clique outright, by the recursive branch and
+`pack.c` also computes each maximum clique outright, by the recursive branch and
 bound `bk()`, and gets 2 for 2 048 of the orbits and 4 for one.  That is a
 different algorithm from the exact cover — but the two live in the same program
 and share its record loader, its cell masks and its `disjoint()`, so they are
