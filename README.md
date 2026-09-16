@@ -278,27 +278,6 @@ different algorithm from the exact cover — but the two live in the same progra
 and share its record loader, its cell masks and its `disjoint()`, so they are
 independent as *algorithms*, not as implementations.
 
-### What the order-8 control checks
-
-Order 8 is where a cube exists and the census (Part II) is known
-independently, so every lemma above is exercised at an order whose answers
-this code did not produce.  Each check is an instance of a lemma at $n = 8$:
-
-* the catalogue is built from the $5\,568$ admissible first rows — Lemma 2's
-  shard universe at $n = 8$ — and every record passes the definition of a
-  support against the $244$ lines (Lemma 1's definition);
-* $T(8)$ is closed under $G$ and splits into six orbits — Lemma 3 (i);
-  clause (ii) is not used, since there is no center;
-* the exact cover of $[8]^3$ by supports has $198\,624$ solutions, i.e.
-  $8! \cdot 198\,624$ labelled cubes — the correspondence of Lemma 1;
-* for every one of the $13\,056$ supports, the root search finds exactly the
-  number of covers through it that the census predicts, and a support lies in
-  a cover iff its pool graph has a $7$-clique — Lemma 4 at $n = 8$, checked
-  exhaustively rather than one root per orbit, because without a center there
-  is no root;
-* the symmetric mode reproduces the catalogue byte for byte from $25$ of the
-  $5\,568$ shards — Lemma 5 at $n = 8$.
-
 ### Theorem
 
 > There is no fully diagonalised Latin cube of order 9.
@@ -451,6 +430,26 @@ $14\,616\,576$ supports and is where an error anywhere in the mapping would
 surface.  A referee who distrusts the shard symmetry (Lemma 5) need not argue with it: `full` and
 `symmetric` produce the same $1\,183\,942\,656$ bytes, and `full` never mentions
 it.
+
+### What the order-8 control checks
+
+Order 8 is where a cube exists and the census (Part II) is known
+independently, so every lemma above is sanity-checked at an order whose answers we had already determined with earlier code.  Each check is an instance of a lemma at $n = 8$:
+
+* the catalogue is built from the $5\,568$ admissible first rows — Lemma 2's
+  shard universe at $n = 8$ — and every record passes the definition of a
+  support against the $244$ lines (Lemma 1's definition);
+* $T(8)$ is closed under $G$ and splits into six orbits — Lemma 3 (i);
+  clause (ii) is not used, since there is no center;
+* the exact cover of $[8]^3$ by supports has $198\,624$ solutions, i.e.
+  $8! \cdot 198\,624$ labelled cubes — the correspondence of Lemma 1;
+* for every one of the $13\,056$ supports, the root search finds exactly the
+  number of covers through it that the census predicts, and a support lies in
+  a cover iff its pool graph has a $7$-clique — Lemma 4 at $n = 8$, checked
+  exhaustively rather than one root per orbit, because without a center there
+  is no root;
+* the symmetric mode reproduces the catalogue byte for byte from $25$ of the
+  $5\,568$ shards — Lemma 5 at $n = 8$.
 
 ---
 
