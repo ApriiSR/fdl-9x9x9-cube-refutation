@@ -347,11 +347,22 @@ says five is the global maximum.
 
 ### Lemma 5 (the plane-fixing subgroup, and the shard orbits)
 
-This optional lemma justifies `verify.sh symmetric`: a symmetry that preserves
-the plane defining a shard carries every support in that shard to a support in
-the image shard, so one shard per orbit can be enumerated and the rest
-recovered by symmetry — 157 searches instead of 48 912.  **The theorem above
-does not use it**, and neither do `verify.sh full` and `verify.sh fast`.
+This optional lemma is what `verify.sh symmetric` rests on.  It groups the
+shards (the sets of supports sharing a given first face, one shard per
+admissible row) into orbits under a symmetry group, such that once one shard
+in an orbit has been enumerated, the contents of every other shard in that
+orbit can be written down cheaply by transforming it, with no further search.
+Precisely: let $H$ be the symmetries in $G$ that map the plane $x_0 = 0$ to
+itself.  Each $h \in H$ sends a first-face row $p$ to another admissible row
+$p^h$, and the claim is that $h$ maps the whole shard $S_p$ onto the whole
+shard $S_{p^h}$ — $S_{p^h} = h(S_p)$, with equality, not just containment.
+The shards therefore fall into $H$-orbits, 157 of them at order 9, and the
+full catalogue is recovered from one enumerated shard per orbit by applying
+every $h \in H$.  Nothing downstream changes: roots, pools and cliques are
+computed from the reconstructed catalogue exactly as `full` computes them from
+the searched one, and the two catalogues are compared byte for byte.  **The
+theorem above does not depend on this lemma**, and neither do `verify.sh full`
+and `verify.sh fast`.
 
 Write $P = \lbrace x_0 = 0\rbrace$ for the plane whose contents define a shard: a
 support's intersection with $P$ is $\lbrace(0, j, p(j))\rbrace$ for an admissible
