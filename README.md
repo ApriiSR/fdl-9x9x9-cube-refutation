@@ -59,8 +59,9 @@ line per root orbit: `status` is `EXHAUSTED` and `covers` is `0` on all 2 049.
 ## Part I. The mathematics
 
 Throughout, $n$ is the order — $9$ in every concrete example, $8$ in the
-controls — $r(t) = n-1-t$, and cells of $[n]^3$ are written $(i,j,k)$ and
-indexed (in C) by $(i \cdot n + j) \cdot n + k$, which at $n = 9$ is $81i + 9j + k$.
+controls — $r(t) = n-1-t$, and cells of $[n]^3$ are written $(x_0, x_1, x_2)$ and
+indexed (in C) by $(x_0 \cdot n + x_1) \cdot n + x_2$, which at $n = 9$ is $81 x_0 + 9 x_1 + x_2$.  (The source code and its comments write the
+same three coordinates as `i`, `j`, `k`.)
 
 ### Lemma 1 (supports and partitions)
 
@@ -70,7 +71,7 @@ once a **support**, and write $T(n)$ for the set of supports of $[n]^3$.  The
 *color classes* $A^{-1}(\text{color})$ of an FDLH are therefore supports, and an FDLH of
 order $n$ exists **iff** $T(n)$ contains $n$ pairwise disjoint members.
 
-*Proof.*  Every support has exactly $n^2$ cells: the $n^2$ pillars $\lbrace(i,j,\ast)\rbrace$
+*Proof.*  Every support has exactly $n^2$ cells: the $n^2$ pillars $\lbrace(x_0,x_1,\ast)\rbrace$
 are lines (only the third coordinate varies), they are pairwise disjoint,
 they cover the cube, and a support meets each once.  So $n$ pairwise disjoint
 supports occupy $n \cdot n^2 = n^3$ cells and therefore partition $[n]^3$.  Give
@@ -100,26 +101,26 @@ must have **exactly one fixed point** and **exactly one reflected point**: exact
 solution each to $p(t) = t$ and $p(t) = r(t)$.
 
 
-Supports have the form $\lbrace(i, j, L(i,j)) : i, j \in [n]\rbrace$ merely due to the requirement that the support contain one cell from each *axis* line — that part of the statement would be true even for supports of merely Latin cubes (i.e. the more general notion of support that permits choosing zero or multiple cells from a diagonal).  The fixed point comes from the requirement that the support hit the positive diagonal of the plane $i = 0$, while the reverse point comes from the requirement to hit the negative diagonal:
+Supports have the form $\lbrace(x_0, x_1, L(x_0,x_1)) : x_0, x_1 \in [n]\rbrace$ merely due to the requirement that the support contain one cell from each *axis* line — that part of the statement would be true even for supports of merely Latin cubes (i.e. the more general notion of support that permits choosing zero or multiple cells from a diagonal).  The fixed point comes from the requirement that the support hit the positive diagonal of the plane $x_0 = 0$, while the reverse point comes from the requirement to hit the negative diagonal:
 
 
-*Proof.*  The pillar $\lbrace(i,j,\ast)\rbrace$ is a line (third coordinate $t$, the other
+*Proof.*  The pillar $\lbrace(x_0,x_1,\ast)\rbrace$ is a line (third coordinate $t$, the other
 two constant), and $T$ meets it exactly once, which picks out the single value
-$L(i,j)$.  Meeting each of the lines $\lbrace(i,\ast,k)\rbrace$ and $\lbrace(\ast,j,k)\rbrace$ exactly
-once says that every row and every column of $L$ contains every value once, so
-$L$ is a Latin square and its first row $p$ is a permutation.  Finally the plane $i = 0$
+$L(x_0,x_1)$.  Meeting each of the lines $\lbrace(x_0,\ast,x_2)\rbrace$ and $\lbrace(\ast,x_1,x_2)\rbrace$ exactly
+once says that every row ($x_0$ fixed) and every column ($x_1$ fixed) of $L$ contains every value once, so
+$L$ is a Latin square and its first row $p$ is a permutation.  Finally the plane $x_0 = 0$
 contains the two lines $\lbrace(0,t,t)\rbrace$ and $\lbrace(0,t,r(t))\rbrace$ — first coordinate
 constant at $0$, the other two varying — and meeting each exactly once gives
 the two conditions on $p$. ∎
 
-Call a permutation with one fixed point and one reflected point **admissible**.  A **shard** is the set of all supports whose Latin squares $L$ have one specified first row, or equivalently the set of all supports that share one specified $i=0$ plane. Since every support's first row is admissible (Lemma 2), an exhaustive enumeration need only consider the shards corresponding to every admissible row (some of which may turn out to be empty).
+Call a permutation with one fixed point and one reflected point **admissible**.  A **shard** is the set of all supports whose Latin squares $L$ have one specified first row, or equivalently the set of all supports that share one specified $x_0 = 0$ plane. Since every support's first row is admissible (Lemma 2), an exhaustive enumeration need only consider the shards corresponding to every admissible row (some of which may turn out to be empty).
 
 
 The numbers of admissible permutations are [OEIS A007016](https://oeis.org/A007016): $8, 20, 96, 656, 5568, 48912$ for $n = 4..9$.  This repository computes the order-9 count in two different ways, by brute force over all $9! = 362\,880$ permutations (`shards.c`) and by inclusion–exclusion in closed form (`check.py a007016 N`), and both agree with OEIS.
 
 Within each shard the enumerator solves an exact-cover problem: the 301 lines
 must each be covered exactly once, and choosing a cell covers the lines through
-it.  Nine cells are fixed by $L$'s first row / the support's $i=0$ plane.  The search is [Knuth's Algorithm X with dancing links](https://en.wikipedia.org/wiki/Knuth's_Algorithm_X).
+it.  Nine cells are fixed by $L$'s first row / the support's $x_0 = 0$ plane.  The search is [Knuth's Algorithm X with dancing links](https://en.wikipedia.org/wiki/Knuth's_Algorithm_X).
 
 ### Roots
 
@@ -365,7 +366,7 @@ theorem above does not depend on this lemma**, and neither do `verify.sh full`
 and `verify.sh fast`.
 
 Write $P = \lbrace x_0 = 0\rbrace$ for the plane whose contents define a shard: a
-support's intersection with $P$ is $\lbrace(0, j, p(j))\rbrace$ for an admissible
+support's intersection with $P$ is $\lbrace(0, x_1, p(x_1))\rbrace$ for an admissible
 permutation $p$ (Lemma 2), and the shard $S_p$ is the set of supports with that row 0.
 
 > Let $H = \lbrace g \in G : g(P) = P \rbrace$ be the setwise stabiliser of $P$ in the group
@@ -377,8 +378,8 @@ permutation $p$ (Lemma 2), and the shard $S_p$ is the set of supports with that 
 > $$\lvert H \rvert = \lvert G \rvert / (3 \cdot 2\lfloor n/2 \rfloor) = 9216 / 24 = 384 \quad \text{at } n = 8 \text{ and } n = 9;$$
 >
 > (b) writing $u = \tau \circ \varepsilon_1$ and $v = \tau \circ \varepsilon_2$, an $h \in H$ acts on $P$
-> by $(0,j,k) \to (0, u(j), v(k))$ if $\pi$ fixes the last two coordinates and by
-> $(0,j,k) \to (0, u(k), v(j))$ if $\pi$ swaps them; so it carries the row $p$ to
+> by $(0,x_1,x_2) \to (0, u(x_1), v(x_2))$ if $\pi$ fixes the last two coordinates and by
+> $(0,x_1,x_2) \to (0, u(x_2), v(x_1))$ if $\pi$ swaps them; so it carries the row $p$ to
 > $p^h = v \circ p \circ u^{-1}$ or $v \circ p^{-1} \circ u^{-1}$, which is again admissible.  Hence the
 > shard universe is closed under $H$, which permutes it;
 >
@@ -405,8 +406,8 @@ would check nothing, since a composition of two plane-preserving maps preserves
 the plane whatever else it does.)
 
 (b)  With $\pi(0) = 0$, $\pi$ restricts to a permutation of $\lbrace1, 2\rbrace$, which gives
-the two displayed forms.  The graph $\lbrace(j, p(j))\rbrace$ is carried to
-$\lbrace(u(j), v(p(j)))\rbrace$, the graph of $v \circ p \circ u^{-1}$, or to $\lbrace(u(p(j)), v(j))\rbrace$, the
+the two displayed forms.  The graph $\lbrace(x_1, p(x_1))\rbrace$ is carried to
+$\lbrace(u(x_1), v(p(x_1)))\rbrace$, the graph of $v \circ p \circ u^{-1}$, or to $\lbrace(u(p(x_1)), v(x_1))\rbrace$, the
 graph of $v \circ p^{-1} \circ u^{-1}$.  For admissibility, note that $u$ and $v$ are each
 $\tau$ or $\tau \circ r$, and that $\tau$ commutes with $r$.  Take the first form and
 put $s = u^{-1}(t)$.  Then $t$ is a fixed point of $p^h$ iff $v(p(s)) = u(s)$,
@@ -458,7 +459,7 @@ it.
 ### The catalogue is a canonical object
 
 The expensive artefact is `n9_supports.bin`: all $14\,616\,576$ supports of
-$[9]^3$, $81$ bytes each (byte $i \cdot 9 + j$ is $k$ for the cell $`(i,j,k)`$),
+$[9]^3$, $81$ bytes each (byte $9 x_0 + x_1$ is $x_2$ for the cell $`(x_0,x_1,x_2)`$),
 $1\,183\,942\,656$ bytes in all.  It is written in a **canonical order**: shards in
 increasing shard index — which is the lexicographic rank of the shard's row 0
 among the admissible permutations — and records sorted lexicographically inside
