@@ -486,9 +486,7 @@ it.  It is written in a **canonical order**: shards in
 increasing shard index — which is the lexicographic rank of the shard's Latin square's row 0
 among the admissible permutations — and records sorted lexicographically inside
 each shard.  Since a record begins with its own row 0, this is simply *all
-supports in lexicographic order*.  Its SHA-256 therefore depends on the set
-alone, not on which program found it or in what order, which is why comparing
-that one hash is a meaningful check between independent implementations.
+supports in lexicographic order*.  Writing lists of supports in this manner makes it possible to quickly compare two purported lists of supports by looking at their SHA-256s.
 
 This repository contains one support enumerator, `enum`.  Both `full` and
 `symmetric` use it; their agreement checks the symmetry shortcut, not the
