@@ -4,7 +4,7 @@ This repository aims to cleanly demonstrate a negative answer to a question whic
 
 A d-dimensional **fully diagonalised Latin hypercube** (FDLH) (called *completely Latin* by Arkin, Hoggatt and Straus) is a coloring $A : [n]^d \to [n]$, where $[n] = \lbrace0, 1, \ldots, n-1\rbrace$, in which each color occurs exactly once on every *line*.  A line is obtained by letting $t$ run over $[n]$ and taking each coordinate to be a constant, $t$, or $n-1-t$, with at least one coordinate varying.  In dimension 3 the lines are the rows, the columns and the pillars, the diagonals of every planar cross-section of the cube, and the four space diagonals; each must therefore contain every color.
 
-Every pair of the $2^d$ corner cells lies on a line, which forces $n \le 1$ or $n \ge 2^d$ (Taylor's Proposition 4).  Taylor's 1972 Problem 3 asks two questions — in his notation, where P(m, n) asks whether there exists an n-cube of order m: "For every $n$ does there exist $M$ such that $P(m, n)$ whenever $m \ge M$?  May one take $M = 2^n$?"  His Problem 2 asks in particular about order 9 in dimension 3. 
+Every pair of the $2^d$ corner cells lies on a line, which forces $n \le 1$ or $n \ge 2^d$ (Taylor's Proposition 4).  Taylor writes $P(m, n)$ for the existence of such an $n$-dimensional cube of order $m$, and his Problem 3 asks two questions: "For every $n$ does there exist $M$ such that $P(m, n)$ whenever $m \ge M$?  May one take $M = 2^n$?"  His Problem 2 asks in particular about order 9 in dimension 3.
 
 
 (His Problem 1, the 12x12 square, was settled almost immediately: Hilton (1973) and, independently, Faber constructed doubly diagonalized Latin squares of every order at least 4, as Taylor notes in proof, and Gergely (1974) gave a simpler construction.)
@@ -29,8 +29,8 @@ than supplying a precomputed one.  A fifth lemma, proved afterwards, proves
 nothing about order 9: it justifies a symmetry shortcut used by one
 verification mode." i probably want to rewrite this but i need to go see what's actually in part 2 first.}
 
-Start with `make` and `./verify.sh test`; then pick `full`, `symmetric` or
-`fast` according to how much you want to recompute.
+Start with `make` and `./verify.sh test`, then pick a mode according to how
+much you want to recompute:
 
 ```
 make                      # six C programs, no libraries
@@ -41,18 +41,23 @@ make                      # six C programs, no libraries
                                                # catalogue     (7-13 minutes)
 ```
 
+* `full` recomputes the catalogue from nothing and relies on no mathematics
+  beyond the clique bound (Lemmata 1–4).
+* `symmetric` recomputes it too, but enumerates only 157 of the 48,912 shards
+  (sets of supports sharing the same first face) and obtains the rest by
+  symmetry — three hundred times less search, at the cost of also relying on
+  the shard symmetry (Lemma 5).
+* `fast` takes the catalogue as given, verifies its SHA-256 before reading it,
+  and redoes everything downstream.
+
 You need a 64-bit POSIX platform with GCC or Clang, GNU make, `bash`, and
 Python 3.8+ with numpy (details under *Reproducing it*).  The pool re-derivation
 is the one memory-hungry stage: on an 8 GB machine pass `--pool-workers 1`.
 
-There are three modes.  `full` recomputes the catalogue from nothing and uses no mathematics beyond the clique bound (Lemmata 1-4).
-`symmetric` recomputes it too, but enumerates only 157 of the 48,912 shards (sets of supports sharing the same first face) and obtains the rest by symmetry — three hundred times less search, at the cost of also relying on the shard symmetry (Lemma 5).  `fast` takes the catalogue as
-given, verifies its SHA-256 before reading it, and redoes everything downstream.
-
 A failed check aborts the run, so reaching the final `done --` line means every
 step passed, the last of them comparing all seven SHA-256s against
-`checksums.txt`.  The result itself is then `work/n9_root_results.jsonl`, one
-line per root orbit: `status` is `EXHAUSTED` and `covers` is `0` on all 2 049.
+`checksums.txt`.  The result is `work/n9_root_results.jsonl`, one line per root
+orbit; all 2 049 lines have `status` `EXHAUSTED` and `covers` `0`.
 
 ---
 
