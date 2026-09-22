@@ -190,14 +190,15 @@ cells $(0,8,3), (1,7,3), \ldots$ become $(1,8,3), (0,7,3), \ldots$, which lie on
 the relabelings used are those that shuffle the pairs $\lbrace0,8\rbrace, \lbrace1,7\rbrace, \lbrace2,6\rbrace, \lbrace3,5\rbrace$ as blocks and optionally flip each, leaving $4$ fixed — the permutations
 that commute with reversal.
 
-Precisely, let $C(r)$ be the centralizer of $r$ in the symmetric group $S_n$
-on $[n]$: the permutations $\tau$ of the coordinate values that commute with
-$r$, i.e. with $\tau(r(t)) = r(\tau(t))$ for all $t$.  ($r$ is written `rev` in
-`src/orbits.c`.)  For $\pi \in S_3$, $\varepsilon \in \lbrace\mathrm{id}, r\rbrace^3$ and
-$\tau \in C(r)$, define $g = g(\pi, \varepsilon, \tau) \colon [n]^3 \to [n]^3$ by
+More precisely: 
 
-$$g(x)_i = \tau\bigl( \varepsilon_i\bigl( x_{\pi(i)} \bigr) \bigr).$$
-
+> Let $C(r)$ be the centralizer of $r$ in the symmetric group $S_n$
+> on $[n]$: the permutations $\tau$ of the coordinate values that commute with
+> $r$, i.e. with $\tau(r(t)) = r(\tau(t))$ for all $t$. For $\pi \in S_3$, $\varepsilon \in \lbrace\mathrm{id}, r\rbrace^3$ and
+> $\tau \in C(r)$, define $g = g(\pi, \varepsilon, \tau) \colon [n]^3 \to [n]^3$ by
+>
+> $$g(x)_i = \tau\bigl( \varepsilon_i\bigl( x_{\pi(i)} \bigr) \bigr).$$
+> 
 > These maps form a group $G$ of permutations of $[n]^3$, of order
 > $6 \cdot 8 \cdot \lvert C(r) \rvert / 2$ when $n \ge 2$ ($9216$ at $n = 8$ and $n = 9$),
 > and every $g \in G$ (i) maps lines to lines, hence supports to supports;
