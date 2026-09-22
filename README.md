@@ -185,26 +185,26 @@ We need to test only one root from each symmetry class, for some suitable notion
 
 The symmetries used here include permutations of the axes and reversals of individual axes. It should be intuitively clear that those both preserve all the properties we need: they just amount to choosing a different set of axes to use for describing your cube, and all the diagonals are still diagonals regardless of what set of axes you choose. 
 
-We also use some particular relabelings of the coordinate *values*: we pick a permutation $\tau$ of $\lbrace 0, \ldots, 8\rbrace$ and apply it to every coordinate of every cell at once. 
+Reversing an axis is one example of a more general move: relabeling the *values* along each axis.  Pick a permutation $\sigma_i$ of $\lbrace 0, \ldots, 8\rbrace$ for each coordinate $i$, and replace the $i$-th coordinate $x_i$ of every cell by $\sigma_i(x_i)$.  Reversing axis $i$ is the relabeling $\sigma_i = r$, $t \mapsto 8 - t$, with the other two left alone.
 
-Call $u$ and $8 - u$ **partners**.  Axis lines survive any relabeling, but diagonals do not: along the diagonal $(t, 8-t, 3)$ the first two coordinates are always partners, so after relabeling they still have to be.  That is the whole condition on $\tau$: it must send partners to partners, so that whenever $\tau(u) = v$, also $\tau(8 - u) = 8 - v$.  (Swap just $0$ and $1$, and the cells $(0,8,3), (1,7,3), \ldots$ become $(1,8,3), (0,7,3), \ldots$; since $1$ and $8$ are not partners, these lie on no line.)
+Axis lines survive any relabeling, but diagonals do not.  Call $u$ and $8 - u$ **partners**.  Along a diagonal, the two varying coordinates are either always partners, as in $(t, 8 - t, 3)$, or always equal, as in $(t, t, 3)$, and after relabeling they have to still be one or the other.  That takes two conditions.
 
-It helps to fold the values in half at $4$:
+**Each $\sigma_i$ sends partners to partners**: whenever $\sigma_i(u) = v$, also $\sigma_i(8 - u) = 8 - v$.  (Swap just $0$ and $1$ in the first coordinate, and the cells $(0,8,3), (1,7,3), \ldots$ become $(1,8,3), (0,7,3), \ldots$; since $1$ and $8$ are not partners, these lie on no line.)  It helps to fold the values in half at $4$:
 
 | distance from $4$ | $0$ | $1$ | $2$ | $3$ | $4$ |
 |---|:-:|:-:|:-:|:-:|:-:|
 | values | $4$ | $3, 5$ | $2, 6$ | $1, 7$ | $0, 8$ |
 
-$4$ is its own partner, so $\tau$ must fix it.  Every other value belongs to one of the four pairs, and a $\tau$ that sends partners to partners carries each pair onto a pair.  So choosing $\tau$ means two independent choices:
+$4$ is its own partner, so a partner-respecting $\sigma$ must fix it.  Every other value belongs to one of the four pairs, and $\sigma$ carries each pair onto a pair.  So choosing $\sigma$ means two independent choices:
 
 1. where each pair goes: any rearrangement of the four pairs, $4! = 24$ ways;
 2. for each pair, which of its two values goes to which value of its new pair: $2^4 = 16$ ways.
 
-That makes $24 \cdot 16 = 384$ relabelings.  For example, the $\tau$ in the figure above swaps the pairs $\lbrace 0, 8\rbrace$ and $\lbrace 1, 7\rbrace$, sending $0 \to 1$ and $8 \to 7$ and back; the $\tau$ that leaves every pair in place and flips only $\lbrace 3, 5\rbrace$ swaps $3$ and $5$ and fixes everything else; and leaving every pair in place but flipping all four is $r$ itself, $t \mapsto 8 - t$.
+That makes $24 \cdot 16 = 384$ partner-respecting permutations.  For example, the relabeling in the figure above swaps the pairs $\lbrace 0, 8\rbrace$ and $\lbrace 1, 7\rbrace$, sending $0 \to 1$ and $8 \to 7$ and back; the one that leaves every pair in place and flips only $\lbrace 3, 5\rbrace$ swaps $3$ and $5$ and fixes everything else; and leaving every pair in place but flipping all four is $r$ itself.  In symbols, "partners go to partners" is $\sigma(r(t)) = r(\sigma(t))$ for every $t$: $\sigma$ of $t$'s partner is the partner of $\sigma(t)$.  The permutations satisfying it are the ones that commute with $r$, which group theory calls the centralizer of $r$.
 
-In symbols, "partners go to partners" is $\tau(r(t)) = r(\tau(t))$ for every $t$: $\tau$ of $t$'s partner is the partner of $\tau(t)$.  The permutations satisfying it are the ones that commute with $r$, which group theory calls the centralizer of $r$.
+**The three $\sigma_i$ agree up to $r$**: each of $\sigma_1$ and $\sigma_2$ is either $\sigma_0$ itself or $\sigma_0$ followed by $r$.  Partner-respecting relabelings chosen independently are not enough.  (Swap $3$ and $5$ in the second coordinate only, and $(t, t, 3)$ becomes $(3, 5, 3)$ at $t = 3$ but $(0, 0, 3)$ at $t = 0$: its first two coordinates are neither always equal nor always partners.)
 
-**Putting them together.**  Reversing one axis is itself a partner-respecting relabeling, applied to that one coordinate only.  So all three kinds of symmetry fit a single description: permute the axes, then relabel each coordinate by its own partner-respecting permutation $\sigma_i$.  The three relabelings cannot be chosen independently, though.  Along a diagonal the two varying coordinates are either always equal, as in $(t, t, 3)$, or always partners, as in $(t, 8-t, 3)$, and they have to stay that way.  They do if each $\sigma_i$ is either $\sigma_0$ or $\sigma_0$ followed by $r$.  (Relabel only the second coordinate, by swapping $3$ and $5$, and $(t, t, 3)$ becomes $(3, 5, 3)$ at $t = 3$ but $(0, 0, 3)$ at $t = 0$: its first two coordinates are neither always equal nor always partners.)  In this description, reversing $x_0$ is $\sigma = (r, \mathrm{id}, \mathrm{id})$, and relabeling every value by the same $\tau$ is $\sigma = (\tau, \tau, \tau)$.
+So a symmetry permutes the axes by some $\pi$ and then relabels coordinate $i$ by $\sigma_i$, subject to those two conditions.  Reversing $x_0$ is $\sigma = (r, \mathrm{id}, \mathrm{id})$, and relabeling every axis the same way is $\sigma_0 = \sigma_1 = \sigma_2$.
 
 More precisely:
 
