@@ -183,12 +183,24 @@ An aside, not needed for the proof: all four space diagonals pass through $c_0$.
 
 We need to test only one root from each symmetry class, for some suitable notion of symmetry classes. For example, if two roots are reflections of each other, ruling out that one of them occurs in an FDLH also implies that the other does not. To maximize the efficiency of our exhaustive enumeration, we wish to use the largest valid choice of symmetry group we can, i.e. the group which maximizes the size of each root's symmetry class while still ensuring that checking one representative from each class is sufficient.
 
-The symmetries used here permute the axes, reverse individual axes, and relabel the coordinate *values* by one permutation applied on every axis at once.  Axis lines survive any
-relabeling, but a diagonal such as $(t, 8-t, 3)$ survives only if the
-relabeling respects the pairing $u \leftrightarrow 8-u$: relabel $0 \leftrightarrow 1$ alone and the
-cells $(0,8,3), (1,7,3), \ldots$ become $(1,8,3), (0,7,3), \ldots$, which lie on no line.  So
-the relabelings used are those that shuffle the pairs $\lbrace0,8\rbrace, \lbrace1,7\rbrace, \lbrace2,6\rbrace, \lbrace3,5\rbrace$ as blocks and optionally flip each, leaving $4$ fixed — the permutations
-that commute with reversal.
+The symmetries used here permute the axes, reverse individual axes, and relabel the coordinate *values*: pick a permutation $\tau$ of $\lbrace 0, \ldots, 8\rbrace$ and apply it to every coordinate of every cell at once.
+
+Call $u$ and $8 - u$ **partners**.  Axis lines survive any relabeling, but diagonals do not: along the diagonal $(t, 8-t, 3)$ the first two coordinates are always partners, so after relabeling they still have to be.  That is the whole condition on $\tau$: it must send partners to partners, so that whenever $\tau(u) = v$, also $\tau(8 - u) = 8 - v$.  (Swap just $0$ and $1$, and the cells $(0,8,3), (1,7,3), \ldots$ become $(1,8,3), (0,7,3), \ldots$; since $1$ and $8$ are not partners, these lie on no line.)
+
+It helps to fold the values in half at $4$:
+
+| distance from $4$ | $0$ | $1$ | $2$ | $3$ | $4$ |
+|---|:-:|:-:|:-:|:-:|:-:|
+| values | $4$ | $3, 5$ | $2, 6$ | $1, 7$ | $0, 8$ |
+
+$4$ is its own partner, so $\tau$ must fix it.  Every other value belongs to one of the four pairs, and a $\tau$ that sends partners to partners carries each pair onto a pair.  So choosing $\tau$ means two independent choices:
+
+1. where each pair goes: any rearrangement of the four pairs, $4! = 24$ ways;
+2. for each pair, which of its two values goes to which value of its new pair: $2^4 = 16$ ways.
+
+That makes $24 \cdot 16 = 384$ relabelings.  For example, the $\tau$ in the figure above swaps the pairs $\lbrace 0, 8\rbrace$ and $\lbrace 1, 7\rbrace$, sending $0 \to 1$ and $8 \to 7$ and back; the $\tau$ that leaves every pair in place and flips only $\lbrace 3, 5\rbrace$ swaps $3$ and $5$ and fixes everything else; and leaving every pair in place but flipping all four is $r$ itself, $t \mapsto 8 - t$.
+
+In symbols, "partners go to partners" is $\tau(r(t)) = r(\tau(t))$ for every $t$: $\tau$ of $t$'s partner is the partner of $\tau(t)$.  The permutations satisfying it are the ones that commute with $r$, which group theory calls the centralizer of $r$.
 
 More precisely: 
 
@@ -280,8 +292,10 @@ $\tau = \tau'$ — the triples are identical — or all three are flipped and
 $\tau' = \tau \circ r$.  Every map therefore has exactly two descriptions, and
 $\lvert G\rvert = \lvert S_3 \rvert \cdot \lvert C_2^3 \rvert \cdot \lvert C(r) \rvert / 2 = 6 \cdot 8 \cdot \lvert C(r)\rvert / 2$.
 
-A $\tau$ commuting with $r$ permutes the $\lfloor n/2 \rfloor$ pairs $\lbrace t, r(t)\rbrace$ as
-blocks and may flip each, and fixes the middle point when $n$ is odd, so
+If $\tau$ commutes with $r$ and $\tau(t) = s$, then $\tau(r(t)) = r(s)$, so $\tau$ carries the
+pair $\lbrace t, r(t)\rbrace$ onto the pair $\lbrace s, r(s)\rbrace$.  So, as described before the
+lemma, $\tau$ rearranges the $\lfloor n/2 \rfloor$ pairs, flips any of them, and fixes the
+middle value when $n$ is odd; conversely every such rearrangement commutes with $r$.  Hence
 $\lvert C(r)\rvert = 2^{\lfloor n/2\rfloor} \cdot \lfloor n/2\rfloor!$ — $384$ at $n = 8$ and $n = 9$, so
 $\lvert G\rvert = 9216$.  The program `orbits` builds all
 $6 \cdot 8 \cdot 384 = 18\,432$ maps, deduplicates them, and checks that $9216$ remain,
