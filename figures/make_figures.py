@@ -386,12 +386,11 @@ def matrix_cube(rec, u, theme, opacity=None, segments=(), plane=False, s=0.62,
             out.append('<circle cx="%.1f" cy="%.1f" r="2.2" fill="%s"/>'
                        % (A[0], A[1], Th['text']))
     # axes: x0 down the left of the front face, x1 along its bottom, x2 away
-    # along the bottom right edge.  x0 and x2 are labelled past their
-    # arrowheads, x1 under its middle, clear of the x2 arrow
+    # along the bottom right edge, each labelled beside its middle
     g = 1.0
-    arrows = (((lo, lo - g, lo), (hi, lo - g, lo), '0', 1, (0, 16)),
+    arrows = (((lo, lo - g, lo), (hi, lo - g, lo), '0', 0.5, (-14, 5)),
               ((hi + g, lo, lo), (hi + g, hi, lo), '1', 0.5, (0, 20)),
-              ((hi + g, hi + g * 0.6, lo), (hi + g, hi + g * 0.6, hi), '2', 1, (12, 2)))
+              ((hi + g, hi + g * 0.6, lo), (hi + g, hi + g * 0.6, hi), '2', 0.5, (13, 14)))
     for p0, p1, name, t, (dx, dy) in arrows:
         A, B = P(*p0), P(*p1)
         out.append('<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" stroke="%s" '
@@ -453,7 +452,8 @@ def fig_lemma2(d, theme):
                             segments=(0,), plane=True)
     w0, ht = box[2] - box[0], box[3] - box[1]
     out.append(place(frag, box, 0, 0))
-    out.append(label(w0 / 2, ht + 18, 'the support T, with the plane x₀ = 0', theme, 14))
+    cap = max(ht, (ht - N * 24) / 2 + N * 24 + 40)
+    out.append(label(w0 / 2, cap + 18, 'the support T, with the plane x₀ = 0', theme, 14))
 
     # (b) the plane x0 = 0 seen from above: x1 across, x2 away from the front face
     c = 24
@@ -486,26 +486,26 @@ def fig_lemma2(d, theme):
         out.append('<circle cx="%.1f" cy="%.1f" r="14" fill="none" stroke="%s" '
                    'stroke-width="1.6"%s/>' % (cx, cy, Th['text'], dash))
     for (x0_, y0_, x1_, y1_), name, (lx, ly) in (
-            ((X, Y + N * c + 12, X + N * c, Y + N * c + 12), '1', (X + N * c + 14, Y + N * c + 17)),
-            ((X - 12, Y + N * c, X - 12, Y), '2', (X - 12, Y - 8))):
+            ((X, Y + N * c + 12, X + N * c, Y + N * c + 12), '1', (X + N * c / 2, Y + N * c + 32)),
+            ((X - 12, Y + N * c, X - 12, Y), '2', (X - 26, Y + N * c / 2 + 5))):
         out.append('<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" stroke="%s" '
                    'stroke-width="1.2" marker-end="url(#arrow-%s)"/>'
                    % (x0_, y0_, x1_, y1_, Th['text'], theme))
         out.append(var(lx, ly, name, theme))
-    out.append(label(X + N * c / 2, ht + 18, 'the plane x₀ = 0 from above', theme, 14))
+    out.append(label(X + N * c / 2, cap + 18, 'the plane x₀ = 0 from above', theme, 14))
 
     # (c) the Latin square, row 0 highlighted
     X2 = X + N * c + 44
     out.append(latin_panel(T, X2, Y, c, theme, rows=(0,), rings=rings))
     out.append(label(X2 + N * c + 8, Y + c / 2 + 5, 'row 0', theme, 12, anchor='start'))
-    out.append(label(X2 + N * c / 2, ht + 18, 'its Latin square L(x₀, x₁) = x₂', theme, 14))
+    out.append(label(X2 + N * c / 2, cap + 18, 'its Latin square L(x₀, x₁) = x₂', theme, 14))
     W = X2 + N * c + 48
     t0, t1 = fixed[0], refl[0]
-    out.append(label(W / 2, ht + 44,
+    out.append(label(W / 2, cap + 44,
                      'solid ring: the one fixed point, p(%d) = %d;  dashed ring: the one '
                      'reflected point, p(%d) = %d = 8 − %d' % (t0, p[t0], t1, p[t1], t1),
                      theme, 13))
-    return svg(''.join(out), (-4, min(-4, Y - 26), W + 4, ht + 56), theme,
+    return svg(''.join(out), (-4, min(-4, Y - 26), W + 4, cap + 56), theme,
                'A support, its plane x0 = 0, and its Latin square')
 
 
