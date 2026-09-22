@@ -288,7 +288,9 @@ def fig_graph(d, theme):
         clique = a in A and b in A or a not in A and b not in A
         w = 2.2 if clique else 1.4
         if y0 == y1 and abs(x1 - x0) > side + gap:     # the long matching edges
-            bend = -95 if y0 == 0 else 95
+            # control point far enough out that the curve clears the boxes
+            # it passes over (a quadratic reaches half its control offset)
+            bend = -170 if y0 == 0 else 170
             out.append('<path d="M%.1f %.1f Q%.1f %.1f %.1f %.1f" fill="none" '
                        'stroke="%s" stroke-width="%.1f"/>'
                        % (x0, y0, (x0 + x1) / 2, y0 + bend, x1, y1, Th['line'], w))
@@ -304,7 +306,7 @@ def fig_graph(d, theme):
                    % (x - r, y - r, 2 * r, 2 * r, Th['bg'], Th['line']))
         w, h = box[2] - box[0], box[3] - box[1]
         out.append(place(frag, box, x - w / 2, y - h / 2))
-    return svg(''.join(out), (-r - 6, -r - 10, 3 * side + gap + r + 6, side + r + 10),
+    return svg(''.join(out), (-r - 6, -r - 48, 3 * side + gap + r + 6, side + r + 48),
                theme, 'The component of the companion graph containing its 4-cliques')
 
 
