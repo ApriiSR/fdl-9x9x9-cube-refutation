@@ -92,7 +92,7 @@ of an FDLH are $n$ pairwise disjoint supports. ∎
 **Listing and counting lines.**  Replacing $t$ by $r(t)$ throughout traces
 the same line in the opposite direction, so to list each line once, require its
 first varying coordinate to use the pattern $t$.  In dimension $d$, choose the
-$s$ varying coordinates, the direction ($t$ or $r(t)$) of each varying
+$s$ varying coordinates, the direction ($`t`$ or $`r(t)`$) of each varying
 coordinate after the first, and the fixed values of the $d-s$ others:
 
 $$\sum_{s=1}^{d} \binom{d}{s}\, 2^{s-1}\, n^{d-s},$$
