@@ -58,6 +58,10 @@ def extract():
                 comp.add(w)
                 stack.append(w)
     comp = sorted(comp)
+    deg = adj.sum(1)
+    isolated = int((deg == 0).nonzero()[0][0])
+    pair = next([v, int(adj[v].nonzero()[0][0])] for v in map(int, (deg == 1).nonzero()[0])
+                if deg[adj[v].nonzero()[0][0]] == 1)
     out = dict(
         query=q,
         root=pk['squares'][0],
@@ -67,6 +71,12 @@ def extract():
         packing=pk['members'][1:],
         component={str(v): [int(b) for b in pool[v]] for v in comp},
         edges=[[a, b] for a in comp for b in comp if a < b and adj[a, b]],
+        # a component that is a single edge, and a vertex with no edges
+        pair=pair,
+        isolated=isolated,
+        others={str(v): [int(b) for b in pool[v]] for v in pair + [isolated]},
+        single_edges=int(sum(1 for v in range(len(pool)) if deg[v] == 1
+                             and deg[adj[v].nonzero()[0][0]] == 1) // 2),
     )
     with open(DATA, 'w') as f:
         json.dump(out, f, indent=1)
@@ -297,16 +307,26 @@ def fig_graph(d, theme):
         else:
             out.append('<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" stroke="%s" '
                        'stroke-width="%.1f"/>' % (x0, y0, x1, y1, Th['line'], w))
+    # below: a component that is one edge, and a vertex with no edges
+    sup = dict(d['component'], **d['others'])
+    a, b = d['pair']
+    row = side + 190
+    pos[a], pos[b] = (0, row), (side, row)             # under the left square
+    pos[d['isolated']] = (side + gap + side / 2, row)  # under the right one
+    col[a], col[b], col[d['isolated']] = 0, 1, 0
+    out.append('<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" stroke="%s" '
+               'stroke-width="2.2"/>' % (pos[a][0], row, pos[b][0], row, Th['line']))
+    nodes = nodes + [a, b, d['isolated']]
     r = 44
     for v in nodes:
-        frag, box = cube([(COMPANIONS[col[v]], d['component'][str(v)], 1)], 4.2, theme)
+        frag, box = cube([(COMPANIONS[col[v]], sup[str(v)], 1)], 4.2, theme)
         x, y = pos[v]
         out.append('<rect x="%.1f" y="%.1f" width="%d" height="%d" rx="10" fill="%s" '
                    'stroke="%s" stroke-width="1.2"/>'
                    % (x - r, y - r, 2 * r, 2 * r, Th['bg'], Th['line']))
         w, h = box[2] - box[0], box[3] - box[1]
         out.append(place(frag, box, x - w / 2, y - h / 2))
-    return svg(''.join(out), (-r - 6, -r - 48, 2 * side + gap + r + 6, side + r + 48),
+    return svg(''.join(out), (-r - 6, -r - 48, 2 * side + gap + r + 6, row + r + 8),
                theme, 'The component of the companion graph containing its 4-cliques')
 
 
