@@ -63,12 +63,16 @@ orbit; all 2 049 lines have `status` `EXHAUSTED` and `covers` `0`.
 
 ## Part I. The mathematics
 
-Throughout, $n$ is the order — $9$ in every concrete example, $8$ in the
-controls — $r(t) = n-1-t$, and cells of $[n]^3$ are written $x = (x_0, x_1, x_2)$ and
-indexed (in C) by $(x_0 \cdot n + x_1) \cdot n + x_2$, which at $n = 9$ is $81 x_0 + 9 x_1 + x_2$.  (The source code and its comments write the
-same three coordinates as `i`, `j`, `k`.)
+Throughout, $n$ is the order ($9$ in every concrete example, $8$ in the
+controls), $r(t) = n-1-t$ is reversal, and a cell of $[n]^3$ is written
+$x = (x_0, x_1, x_2)$ and stored (in C) at index $(x_0 \cdot n + x_1) \cdot n + x_2$,
+which at $n = 9$ is $81 x_0 + 9 x_1 + x_2$.  The source code and its comments
+write the same three coordinates as `i`, `j`, `k`.
 
 ### Lemma 1 (supports and partitions)
+
+Call a set of cells meeting every line exactly once a **support**, and write
+$T(n)$ for the set of supports of $[n]^3$.
 
 > Let $A \colon [n]^3 \to [n]$.  (a) $A$ is an FDLH iff every color class
 > $A^{-1}(\text{color})$, $\text{color} \in [n]$, is a support.  (b) Every support has exactly $n^2$
@@ -76,25 +80,20 @@ same three coordinates as `i`, `j`, `k`.)
 > disjoint members: any $n$ pairwise disjoint supports partition $[n]^3$, and
 > giving them distinct colors yields an FDLH.
 
-A line has $n$ cells, so it carries all $n$ colors exactly when it
-carries each of them once.  Call a set of cells meeting every line exactly
-once a **support**, and write $T(n)$ for the set of supports of $[n]^3$.  The
-*color classes* $A^{-1}(\text{color})$ of an FDLH are therefore supports, and an FDLH of
-order $n$ exists **iff** $T(n)$ contains $n$ pairwise disjoint members.
-
-*Proof.*  Every support has exactly $n^2$ cells: the $n^2$ pillars $\lbrace(x_0,x_1,\ast)\rbrace$
-are lines (only the third coordinate varies), they are pairwise disjoint,
-they cover the cube, and a support meets each once.  So $n$ pairwise disjoint
-supports occupy $n \cdot n^2 = n^3$ cells and therefore partition $[n]^3$.  Give
-each a different color; every line then carries each color exactly once,
-so the array is an FDLH.  Conversely the color classes of an FDLH partition
-the cube and meet every line once, so each is a support. ∎
+*Proof.*  (a) A line has $n$ cells, so it carries all $n$ colors exactly when
+it carries each of them once, that is, when it meets every color class once.
+(b) The $n^2$ pillars $\lbrace(x_0,x_1,\ast)\rbrace$ are lines (only the third
+coordinate varies), they are pairwise disjoint and they cover the cube, and a
+support meets each of them once.  (c) By (b), $n$ pairwise disjoint supports
+occupy $n \cdot n^2 = n^3$ cells and so partition $[n]^3$; give each a different
+color and (a) says the result is an FDLH.  Conversely, by (a) the color classes
+of an FDLH are $n$ pairwise disjoint supports. ∎
 
 **Listing and counting lines.**  Replacing $t$ by $r(t)$ throughout traces
 the same line in the opposite direction, so to list each line once, require its
 first varying coordinate to use the pattern $t$.  In dimension $d$, choose the
-$s$ varying coordinates, their $2^{s-1}$ sets of directions ($t$ or $r(t)$ for each varying coordinate besides the first), and the fixed values of the
-$d-s$ others:
+$s$ varying coordinates, the direction ($t$ or $r(t)$) of each varying
+coordinate after the first, and the fixed values of the $d-s$ others:
 
 $$\sum_{s=1}^{d} \binom{d}{s}\, 2^{s-1}\, n^{d-s},$$
 
@@ -110,17 +109,7 @@ plane diagonals, 4 space diagonals), 244 at $n = 8$.
 > Consequently $T(n)$ is the disjoint union of the shards $S_p$ over the
 > admissible permutations $p$.
 
-Every support $T$ of $[n]^3$ must be of the form
-
-$$T = \lbrace(x_0, x_1, L(x_0,x_1)) : x_0, x_1 \in [n]\rbrace$$
-
-for a unique Latin square $L : [n]^2 \to [n]$, and its first row $p = L(0, \cdot)$
-must have **exactly one fixed point** and **exactly one reflected point**: exactly one
-solution each to $p(t) = t$ and $p(t) = r(t)$.
-
-
-Supports have the form $\lbrace(x_0, x_1, L(x_0,x_1)) : x_0, x_1 \in [n]\rbrace$ merely due to the requirement that the support contain one cell from each *axis* line — that part of the statement would be true even for supports of merely Latin cubes (i.e. the more general notion of support that permits choosing zero or multiple cells from a diagonal).  The fixed point comes from the requirement that the support hit the positive diagonal of the plane $x_0 = 0$, while the reverse point comes from the requirement to hit the negative diagonal:
-
+Supports have the form $\lbrace(x_0, x_1, L(x_0,x_1)) : x_0, x_1 \in [n]\rbrace$ merely due to the requirement that the support contain one cell from each *axis* line — that part of the statement would be true even for supports of merely Latin cubes (i.e. the more general notion of support that permits choosing zero or multiple cells from a diagonal).  The fixed point comes from the requirement that the support hit the positive diagonal of the plane $x_0 = 0$, while the reflected point comes from the requirement to hit the negative diagonal.
 
 *Proof.*  The pillar $\lbrace(x_0,x_1,\ast)\rbrace$ is a line (third coordinate $t$, the other
 two constant), and $T$ meets it exactly once, which picks out the single value
@@ -138,7 +127,8 @@ The numbers of admissible permutations are [OEIS A007016](https://oeis.org/A0070
 
 Within each shard the enumerator solves an exact-cover problem: the 301 lines
 must each be covered exactly once, and choosing a cell covers the lines through
-it.  Nine cells are fixed by $L$'s first row / the support's $x_0 = 0$ plane.  The search is [Knuth's Algorithm X with dancing links](https://en.wikipedia.org/wiki/Knuth's_Algorithm_X).
+it.  The shard's row fixes the support's nine cells in the plane $x_0 = 0$, so
+the search places the other 72.  It is [Knuth's Algorithm X with dancing links](https://en.wikipedia.org/wiki/Knuth's_Algorithm_X).
 
 ### Roots
 
