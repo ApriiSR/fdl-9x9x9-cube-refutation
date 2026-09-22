@@ -138,9 +138,9 @@ plane diagonals, 4 space diagonals), 244 at $n = 8$.
 > Consequently $T(n)$ is the disjoint union of the shards $S_p$ over the
 > admissible permutations $p$.
 
-<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="figures/latin-depth-dark.svg"><img src="figures/latin-depth-light.svg" width="322" alt="The root in a cube with x0 running down and x1 across, each red cell joined to the front face by a segment"></picture></p>
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="figures/latin-depth-dark.svg"><img src="figures/latin-depth-light.svg" width="584" alt="The root in a cube with x0 running down and x1 across, each red cell joined to the front face by a segment"></picture></p>
 
-The root from the figures above, drawn with $x_0$ running down and $x_1$ across, like the rows and columns of a matrix, and $x_2$ running away from the viewer.  Each pillar $\lbrace(x_0, x_1, \ast)\rbrace$ holds exactly one red cell, so the support is a $9 \times 9$ array of depths: the segment from the front face to the cell at $(x_0, x_1)$ crosses $L(x_0, x_1)$ cells.
+The root from the figures above, drawn with $x_0$ running down and $x_1$ across, like the rows and columns of a matrix, and $x_2$ running away from the viewer.  Each pillar $\lbrace(x_0, x_1, \ast)\rbrace$ holds exactly one red cell, so the support is a $9 \times 9$ array of depths: the number written on the front face at $(x_0, x_1)$ is $L(x_0, x_1)$, and the segment from it to the red cell crosses exactly that many cells.  The same numbers, read as a grid, are the Latin square on the right.
 
 Supports have the form $\lbrace(x_0, x_1, L(x_0,x_1)) : x_0, x_1 \in [n]\rbrace$ merely due to the requirement that the support contain one cell from each *axis* line — that part of the statement would be true even for supports of merely Latin cubes (i.e. the more general notion of support that permits choosing zero or multiple cells from a diagonal).  The fixed point comes from the requirement that the support hit the positive diagonal of the plane $x_0 = 0$, while the reflected point comes from the requirement to hit the negative diagonal.
 

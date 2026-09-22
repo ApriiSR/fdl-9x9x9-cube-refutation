@@ -324,7 +324,8 @@ def matrix_projector(u, az=0.36, el=0.30):
     return P
 
 
-def matrix_cube(rec, u, theme, opacity=None, segments=(), plane=False, s=0.62):
+def matrix_cube(rec, u, theme, opacity=None, segments=(), plane=False, s=0.62,
+                seg_width=1.6, numbers=False):
     """The support rec in the matrix view.  opacity(x0) fades cells by row;
     segments lists the rows whose cells get a line back to the front face."""
     Th = THEMES[theme]
@@ -371,35 +372,71 @@ def matrix_cube(rec, u, theme, opacity=None, segments=(), plane=False, s=0.62):
                 A, B = P(x0, x1, z0), P(x0, x1, z1)
                 items.append((P(x0, x1, (z0 + z1) / 2)[2],
                               '<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" stroke="%s" '
-                              'stroke-width="1.6" stroke-linecap="round"/>'
-                              % (A[0], A[1], B[0], B[1], Th['text'])))
+                              'stroke-width="%.1f" stroke-linecap="round"/>'
+                              % (A[0], A[1], B[0], B[1], Th['text'], seg_width)))
     items.sort(key=lambda t: -t[0])
     out += [g for _, g in items]
     for x0, x1, x2 in cells_of(rec):
-        if x0 in segments:
-            A = P(x0, x1, lo)
+        A = P(x0, x1, lo)
+        if numbers:      # the Latin square written on the front face
+            out.append('<text x="%.1f" y="%.1f" text-anchor="middle" font-size="%.1f" '
+                       'fill="%s" stroke="%s" stroke-width="2.5" paint-order="stroke" %s>%d</text>'
+                       % (A[0], A[1] + u * 0.2, u * 0.55, Th['text'], Th['bg'], SANS, x2))
+        elif x0 in segments:
             out.append('<circle cx="%.1f" cy="%.1f" r="2.2" fill="%s"/>'
                        % (A[0], A[1], Th['text']))
     # axes: x0 down the left of the front face, x1 along its bottom, x2 away
-    # along the bottom right edge; each label sits past its arrowhead
+    # along the bottom right edge.  x0 and x2 are labelled past their
+    # arrowheads, x1 under its middle, clear of the x2 arrow
     g = 1.0
-    arrows = (((lo, lo - g, lo), (hi, lo - g, lo), '0', (0, 16)),
-              ((hi + g, lo, lo), (hi + g, hi, lo), '1', (14, 4)),
-              ((hi + g, hi + g * 0.6, lo), (hi + g, hi + g * 0.6, hi), '2', (12, 2)))
-    for p0, p1, name, (dx, dy) in arrows:
+    arrows = (((lo, lo - g, lo), (hi, lo - g, lo), '0', 1, (0, 16)),
+              ((hi + g, lo, lo), (hi + g, hi, lo), '1', 0.5, (0, 20)),
+              ((hi + g, hi + g * 0.6, lo), (hi + g, hi + g * 0.6, hi), '2', 1, (12, 2)))
+    for p0, p1, name, t, (dx, dy) in arrows:
         A, B = P(*p0), P(*p1)
         out.append('<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" stroke="%s" '
                    'stroke-width="1.2" marker-end="url(#arrow-%s)"/>'
                    % (A[0], A[1], B[0], B[1], Th['text'], theme))
-        out.append(var(B[0] + dx, B[1] + dy, name, theme))
+        out.append(var(A[0] + t * (B[0] - A[0]) + dx, A[1] + t * (B[1] - A[1]) + dy,
+                       name, theme))
     pts = [P(a, b, c) for a in (lo, hi + 2.2) for b in (lo - 1.8, hi + 1.6) for c in (lo, hi)]
     xs, ys = [q[0] for q in pts], [q[1] for q in pts]
     return ''.join(out), (min(xs) - 6, min(ys) - 6, max(xs) + 6, max(ys) + 6)
 
 
+def latin_panel(T, X, Y, c, theme, rows=(), rings=()):
+    """The Latin square of T as a grid of numbers, some rows shaded."""
+    Th = THEMES[theme]
+    out = []
+    for a in rows:
+        out.append('<rect x="%.1f" y="%.1f" width="%d" height="%d" fill="%s" '
+                   'fill-opacity="0.18"/>' % (X, Y + a * c, N * c, c, Th['plane']))
+    for i in range(N + 1):
+        out.append('<path d="M%.1f %.1fv%dM%.1f %.1fh%d" stroke="%s" stroke-width="%.1f"/>'
+                   % (X + i * c, Y, N * c, X, Y + i * c, N * c,
+                      Th['line'] if i in (0, N) else Th['faint'], 1.2 if i in (0, N) else 1))
+    for a in range(N):
+        for b in range(N):
+            out.append('<text x="%.1f" y="%.1f" text-anchor="middle" font-size="13" '
+                       'fill="%s" %s>%d</text>' % (X + b * c + c / 2, Y + a * c + c / 2 + 4.5,
+                                                   Th['text'], SANS, T[N * a + b]))
+    for t, dash in rings:
+        out.append('<circle cx="%.1f" cy="%.1f" r="10" fill="none" stroke="%s" '
+                   'stroke-width="1.6"%s/>' % (X + t * c + c / 2, Y + c / 2, Th['text'], dash))
+    return ''.join(out)
+
+
 def fig_depth(d, theme):
-    frag, box = matrix_cube(d['root'], 21, theme, segments=range(N))
-    return svg(frag, box, theme, 'A support as a Latin square read from the front face')
+    T = d['root']
+    frag, box = matrix_cube(T, 21, theme, segments=range(N), seg_width=0.9, numbers=True)
+    w0, ht = box[2] - box[0], box[3] - box[1]
+    c = 24
+    X, Y = w0 + 36, (ht - N * c) / 2
+    out = [place(frag, box, 0, 0), latin_panel(T, X, Y, c, theme)]
+    out.append(label(w0 / 2, ht + 18, 'the support, seen from the front', theme, 14))
+    out.append(label(X + N * c / 2, ht + 18, 'its Latin square L(x₀, x₁) = x₂', theme, 14))
+    return svg(''.join(out), (-4, -4, X + N * c + 6, ht + 28), theme,
+               'A support as a Latin square read from the front face')
 
 
 def fig_lemma2(d, theme):
@@ -459,20 +496,7 @@ def fig_lemma2(d, theme):
 
     # (c) the Latin square, row 0 highlighted
     X2 = X + N * c + 44
-    out.append('<rect x="%.1f" y="%.1f" width="%d" height="%d" fill="%s" fill-opacity="0.18"/>'
-               % (X2, Y, N * c, c, Th['plane']))
-    for i in range(N + 1):
-        out.append('<path d="M%.1f %.1fv%dM%.1f %.1fh%d" stroke="%s" stroke-width="%.1f"/>'
-                   % (X2 + i * c, Y, N * c, X2, Y + i * c, N * c,
-                      Th['line'] if i in (0, N) else Th['faint'], 1.2 if i in (0, N) else 1))
-    for a in range(N):
-        for b in range(N):
-            out.append('<text x="%.1f" y="%.1f" text-anchor="middle" font-size="13" '
-                       'fill="%s" %s>%d</text>' % (X2 + b * c + c / 2, Y + a * c + c / 2 + 4.5,
-                                                   Th['text'], SANS, T[N * a + b]))
-    for t, dash in rings:
-        out.append('<circle cx="%.1f" cy="%.1f" r="10" fill="none" stroke="%s" '
-                   'stroke-width="1.6"%s/>' % (X2 + t * c + c / 2, Y + c / 2, Th['text'], dash))
+    out.append(latin_panel(T, X2, Y, c, theme, rows=(0,), rings=rings))
     out.append(label(X2 + N * c + 8, Y + c / 2 + 5, 'row 0', theme, 12, anchor='start'))
     out.append(label(X2 + N * c / 2, ht + 18, 'its Latin square L(x₀, x₁) = x₂', theme, 14))
     W = X2 + N * c + 48
