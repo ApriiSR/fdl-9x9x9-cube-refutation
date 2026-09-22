@@ -20,7 +20,7 @@ The basic idea of the proof is to show that is impossible to pick nine supports 
 
 The rough outline of our algorithm is as follows:
 1. Enumerate every support. This part is relatively straightforward — there end up being only $14\,616\,576$, so the hard part is working through all the possible sets of several supports. Call a support containing the center cell a *root*.
-2. Pick a symmetry group $G$ that acts on $[9]^3$ and maps supports to supports and roots to roots (and therefore FLDHs to FLDHs).
+2. Pick a symmetry group $G$ that acts on $[9]^3$ and maps supports to supports and roots to roots (and therefore FDLHs to FDLHs).
 3. Use $G$ to divide the supports into symmetry classes. Some of these symmetry classes will contain only roots, and the others will contain only non-roots. From each symmetry class containing roots, pick one representative root $T$.
 4. Form the graph $\Gamma(T)$ consisting of all the supports disjoint with $T$. Connect two supports with an edge iff they are disjoint.
 5. Show for each such $\Gamma(T)$ that it contains no 8-cliques (groups of 8 vertices where every vertex is connected to every other vertex).
