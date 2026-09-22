@@ -330,26 +330,20 @@ bounds; we have not ruled out the possibility of a packing containing six pairwi
 
 ### Lemma 5 (the plane-fixing subgroup, and the shard orbits)
 
-This optional lemma is what `verify.sh symmetric` rests on.  It groups the
-shards (the sets of supports sharing a given first face, one shard per
-admissible row) into orbits under a symmetry group, such that once one shard
-in an orbit has been enumerated, the contents of every other shard in that
-orbit can be written down cheaply by transforming it, with no further search.
-Precisely: let $H$ be the symmetries in $G$ that map the plane $x_0 = 0$ to
-itself.  Each $h \in H$ sends a first-face row $p$ to another admissible row
-$p^h$, and the claim is that $h$ maps the whole shard $S_p$ onto the whole
-shard $S_{p^h}$ — $S_{p^h} = h(S_p)$, with equality, not just containment.
-The shards therefore fall into $H$-orbits, 157 of them at order 9, and the
-full catalogue is recovered from one enumerated shard per orbit by applying
-every $h \in H$.  Nothing downstream changes: roots, pools and cliques are
-computed from the reconstructed catalogue exactly as `full` computes them from
-the searched one, and the two catalogues are compared byte for byte.  **The
-theorem above does not depend on this lemma**, and neither do `verify.sh full`
-and `verify.sh fast`.
+This optional lemma is what `verify.sh symmetric` rests on; **the theorem
+above does not depend on it**, and neither do `full` and `fast`.  It groups the
+shards into orbits under the symmetries that preserve the plane $x_0 = 0$, so
+that once one shard in an orbit has been enumerated, every other shard in that
+orbit is its image and can be written down with no further search.  At order 9
+there are 157 such orbits.  Nothing downstream changes: roots, pools and
+cliques are computed from the reconstructed catalogue exactly as `full`
+computes them from the searched one, and the reconstructed catalogue must have
+the same SHA-256.
 
 Write $P = \lbrace x_0 = 0\rbrace$ for the plane whose contents define a shard: a
 support's intersection with $P$ is $\lbrace(0, x_1, p(x_1))\rbrace$ for an admissible
-permutation $p$ (Lemma 2), and the shard $S_p$ is the set of supports with that row 0.
+permutation $p$ (Lemma 2), and the shard $S_p$ is the set of supports with that
+row 0.
 
 > Let $H = \lbrace g \in G : g(P) = P \rbrace$ be the setwise stabiliser of $P$ in the group
 > $G$ of the orbit reduction (Lemma 3).  Then
@@ -423,14 +417,16 @@ contains two shards with different support counts.
 `verify.sh symmetric` does exactly what (c) licenses: it enumerates the 157
 representatives with the same exact-cover search `full` uses, writes every other
 shard as the image of its representative's payload under a recorded element of
-$H$, and then checks three things — that at $n = 8$ the same construction from
-25 enumerated shards reproduces `data/n8_supports.bin` set-equal *and*
-byte-identical; that at $n = 9$ a uniform sample of the *mapped* shards (320 by
-default, drawn with a fixed seed from the 48 755 never enumerated) agrees
-byte-identically with a direct re-enumeration; and that the assembled catalogue
-has the canonical SHA-256, which is a statement about the whole set of
-$14\,616\,576$ supports and is where an error anywhere in the mapping would
-surface.
+$H$, and then checks
+
+* that at $n = 8$ the same construction from 25 enumerated shards reproduces
+  `data/n8_supports.bin`, set-equal *and* byte-identical;
+* that at $n = 9$ a uniform sample of the *mapped* shards (320 by default,
+  drawn with a fixed seed from the 48 755 never enumerated) is byte-identical
+  to a direct re-enumeration;
+* that the assembled catalogue has the canonical SHA-256.  This is a statement
+  about the whole set of $14\,616\,576$ supports, and it is where an error
+  anywhere in the mapping would surface.
 
 ### What the order-8 control checks
 
