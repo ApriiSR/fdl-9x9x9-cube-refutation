@@ -687,38 +687,42 @@ overhead.
 
 ### Reproducing it
 
-`--workers N` defaults to the machine's core count; `--pool-workers N` sizes the
-one memory-hungry stage separately (see *Memory and disk*); `--nice N` keeps the
-machine usable; `--work DIR` puts the scratch somewhere else; `--cap SEC` is the
-per-shard wall-clock cap in the sweep (default 3 600 s; the slowest shard
-observed anywhere is 26.0 s, and that on a throttled laptop).  In `enum` the cap
-bounds the search, which is essentially the whole of a shard's work; in `pack`
-it is a deadline on the whole query, consulted by the graph construction and the
-clique bound as well as the exact cover.  Setting `FDLH_CLOCK_STEP` to a
-positive number of seconds replaces the monotonic clock with a virtual one that
-advances by exactly that much per reading, which is how the caps are tested.
+Options to `verify.sh`:
 
-Both sweeping modes are **resumable per shard**, at any worker count: each
+* `--workers N` — worker count, default the machine's core count;
+* `--pool-workers N` — workers for the memory-hungry pool stage alone (see
+  *Memory and disk*);
+* `--nice N` — keeps the machine usable;
+* `--work DIR` — where the scratch goes, default `./work`;
+* `--cap SEC` — the per-shard wall-clock cap in the sweep, default 3 600 s (the
+  slowest shard observed anywhere took 26.0 s, on a throttled laptop).  In
+  `enum` the cap bounds the search, which is essentially all of a shard's work;
+  in `pack` it is a deadline on the whole query, consulted by the graph
+  construction and the clique bound as well as the exact cover.
+
+Setting `FDLH_CLOCK_STEP` to a positive number of seconds replaces the
+monotonic clock with a virtual one that advances by exactly that much per
+reading; this is how the caps are tested.
+
+Both sweeping modes are **resumable per shard**, at any worker count.  Each
 worker appends to its own manifest, and the manifests are merged and handed to
-every worker at the start of the next run.  A payload is written to a `.part`
-name, flushed and renamed before its manifest line is appended, so an interrupt
-leaves no half-written shard, and a stray `.part` is removed before its shard is
-redone.  A shard is skipped only if **both** its manifest record has the exact
-shape a writer produces **and** its payload is still on disk at the recorded
-length and FNV-1a digest; otherwise it is redone and the reason is printed.  A
-manifest line torn by a kill is discarded before the next append, so two records
-can never be joined; a malformed line anywhere *else* is an error.  A shard that
-hits `--cap` is reported, is not marked done, and leaves no payload; if any
-shard is unfinished when the sweep ends, the run stops with the list rather than
-assembling a catalogue quietly short of a shard.  Once 200 shards — or a quarter
-of them — have finished, the sweep prints its throughput and an ETA.
+every worker at the start of the next run.  A payload is written under a
+`.part` name, flushed and renamed before its manifest line is appended, so an
+interrupt leaves no half-written shard.  A shard is skipped on resume only if
+its manifest record has exactly the shape a writer produces **and** its payload
+is still on disk at the recorded length and FNV-1a digest; otherwise it is
+redone and the reason printed.  A manifest line torn by a kill is discarded
+before the next append; a malformed line anywhere else is an error.  If any
+shard is unfinished when the sweep ends (for instance because it hit
+`--cap`), the run stops with the list rather than assembling a catalogue
+quietly short of a shard.  Once 200 shards, or a quarter of them, have
+finished, the sweep prints its throughput and an ETA.
 
-Every parallel stage keeps its workers' process ids and requires each to exit 0,
-and every stage that writes one report per worker requires exactly one complete
-report per worker and requires the reports between them to cover the whole
-universe of work — all 2 049 query ids for the pool re-derivation, all
-14 616 576 records for the definition check.  A killed or out-of-memory worker
-is a failure, not a silence.
+Every parallel stage requires each of its workers to exit 0, and every stage
+that writes one report per worker requires exactly one complete report from
+each, together covering the whole universe of work: all 2 049 query ids for
+the pool re-derivation, all 14 616 576 records for the definition check.  A
+killed or out-of-memory worker is a failure, not a silence.
 
 Requirements: a 64-bit POSIX platform, and GCC or Clang.  The C is C99 plus
 POSIX 2001 (`clock_gettime(CLOCK_MONOTONIC)`, `mkdir`, `ftruncate`, `unlink`)
@@ -730,10 +734,9 @@ virtualenv, set `PYTHON=/path/to/python`.  Tested on macOS 15 arm64
 with Apple Clang 21 and Python 3.14.5 / numpy 2.5.1, and on Linux arm64 with
 GCC.
 
-`fast` checks the supplied catalogue's SHA-256 **before** anything reads it and
-refuses to continue on a mismatch, so a wrong or truncated catalogue cannot
-propagate downstream; `full` and `symmetric` check the same hash on the
-catalogue they have just assembled, likewise before anything reads it.
+Every mode checks the catalogue's SHA-256 **before** anything reads it: `fast`
+on the supplied file, refusing to continue on a mismatch, and `full` and
+`symmetric` on the catalogue they have just assembled.
 
 Every binary takes `--help`.  Nothing in this repository downloads anything or
 sends anything anywhere.  All output goes under `--work` (default `./work`),
@@ -743,15 +746,15 @@ under the system temporary directory when run on its own.
 
 ---
 
-## What a referee still has to take on trust
+## What still rests on trust
 
-Part I reduces the theorem to enumerating every support, covering every root
-orbit, and constructing and bounding the resulting 2 049 companion graphs —
-"here are 2 049 finite graphs, count their triangles", which a reader can check
-by hand.  Those computational premises remain.  Checking every stored record
-establishes validity, not completeness; closure under the group does not
-exclude a whole missing orbit; and a matching checksum establishes agreement
-with reference bytes rather than exhaustion.
+Part I reduces the theorem to three computational premises: that the catalogue
+contains every support, that every root orbit is represented, and that the
+2 049 companion graphs were built and bounded correctly.  Those premises
+remain, and the checks above do not all speak to them equally.  Checking every
+stored record establishes validity, not completeness; closure under the group
+does not exclude a whole missing orbit; and a matching checksum establishes
+agreement with reference bytes rather than exhaustion.
 
 `full` establishes completeness by exhaustive search over every admissible row.
 `symmetric` uses exhaustive representative searches together with the shard
@@ -806,7 +809,8 @@ one.
    Three things stand against that, all described under Lemma 5: the n = 8
    census reproduced the same way and 320 mapped shards re-enumerated
    byte-identically, which are samples, and the canonical SHA-256 of the whole
-   catalogue, which is not.  A reader who wants no lemma beyond 1-5 should run `full`.
+   catalogue, which is not.  A reader who wants to rely on no lemma beyond 1–4
+   should run `full`.
 
 6. **The scope.**  This computation establishes nonexistence at order 9 in
    dimension 3.  It does not determine existence at order 10 or order 12, says
@@ -858,7 +862,7 @@ curl -O https://files.apriiori.com/fdlh/n9/n9_supports.bin      # 1 183 942 656 
 ## Provenance
 
 The programs, the verification script and this README were written with
-Claude Code (Anthropic), working from the mathematics above; the lemmas, the
+Claude Code (Anthropic), working from the mathematics above; the lemmata, the
 checks and the checksums were reviewed by a human before being published, and
 the point of the three verification modes is that nothing here need be taken
 on trust from either.
