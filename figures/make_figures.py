@@ -92,11 +92,15 @@ def rev(t):
     return N - 1 - t
 
 
-def apply(rec, pi, eps, tau):
-    """g(x)_i = tau(eps_i(x_{pi(i)})), as in Lemma 3."""
+def apply(rec, pi, sigma):
+    """g(x)_i = sigma_i(x_{pi(i)}), as in Lemma 3."""
+    R = [rev(t) for t in range(N)]
+    for sg in sigma:
+        assert all(sg[R[t]] == R[sg[t]] for t in range(N))          # in C(r)
+        assert sg == sigma[0] or sg == [sigma[0][R[t]] for t in range(N)]
     out = [None] * 81
     for x in cells_of(rec):
-        y = [tau[eps[i](x[pi[i]])] for i in range(3)]
+        y = [sigma[i][x[pi[i]]] for i in range(3)]
         assert out[N * y[0] + y[1]] is None
         out[N * y[0] + y[1]] = y[2]
     return out
@@ -234,16 +238,16 @@ def fig_pair(d, theme, az=0.52):
 
 
 def fig_orbit(d, theme):
-    I = (lambda t: t)
     idt = list(range(N))
+    R = [rev(t) for t in range(N)]
     tau = idt[:]
     tau[0], tau[1], tau[N - 2], tau[N - 1] = 1, 0, N - 1, N - 2
     T = d['root']
     panels = [
         (T, ['the root T']),
-        (apply(T, (1, 2, 0), (I, I, I), idt), ['π: cycle the axes', 'x₀ → x₂ → x₁ → x₀']),
-        (apply(T, (0, 1, 2), (rev, I, I), idt), ['ε: reverse x₀', '(turn the cube over)']),
-        (apply(T, (0, 1, 2), (I, I, I), tau), ['τ: relabel values', '0 ↔ 1 and 7 ↔ 8']),
+        (apply(T, (1, 2, 0), (idt, idt, idt)), ['cycle the axes', 'x₀ → x₂ → x₁ → x₀']),
+        (apply(T, (0, 1, 2), (R, idt, idt)), ['reverse x₀', '(turn the cube over)']),
+        (apply(T, (0, 1, 2), (tau, tau, tau)), ['relabel values', '0 ↔ 1 and 7 ↔ 8']),
     ]
     out, x = [], 0
     for rec, lines in panels:

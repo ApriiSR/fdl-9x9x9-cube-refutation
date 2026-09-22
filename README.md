@@ -34,7 +34,7 @@ The rough outline of our algorithm is as follows:
 
 <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="figures/orbit-dark.svg"><img src="figures/orbit-light.svg" width="670" alt="The root and its images under three symmetries"></picture></p>
 
-The root above and three other members of its symmetry class, each the image under one kind of symmetry in $G$: $\pi$ permutes the axes, $\varepsilon$ reverses an axis, and $\tau$ relabels the values $0, \ldots, 8$ in a way that keeps each pair $\lbrace t, 8 - t\rbrace$ together.  All four contain the center cell.  This root's class has 384 members.
+The root above and three other members of its symmetry class, each its image under one simple element of $G$: one that cycles the axes, one that reverses the axis $x_0$, and one that relabels the values $0, \ldots, 8$ on every axis at once, in a way that keeps each pair $\lbrace t, 8 - t\rbrace$ together.  All four contain the center cell.  This root's class has 384 members.
 
 <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="figures/companion-graph-dark.svg"><img src="figures/companion-graph-light.svg" width="590" alt="Eight small cubes in four colors, joined as two 4-cliques and a matching between them"></picture></p>
 
@@ -185,7 +185,7 @@ We need to test only one root from each symmetry class, for some suitable notion
 
 The symmetries used here include permutations of the axes and reversals of individual axes. It should be intuitively clear that those both preserve all the properties we need: they just amount to choosing a different set of axes to use for describing your cube, and all the diagonals are still diagonals regardless of what set of axes you choose. 
 
-We also use some particular relabellings of the coordinate *values*: we pick a permutation $\tau$ of $\lbrace 0, \ldots, 8\rbrace$ and apply it to every coordinate of every cell at once. 
+We also use some particular relabelings of the coordinate *values*: we pick a permutation $\tau$ of $\lbrace 0, \ldots, 8\rbrace$ and apply it to every coordinate of every cell at once. 
 
 Call $u$ and $8 - u$ **partners**.  Axis lines survive any relabeling, but diagonals do not: along the diagonal $(t, 8-t, 3)$ the first two coordinates are always partners, so after relabeling they still have to be.  That is the whole condition on $\tau$: it must send partners to partners, so that whenever $\tau(u) = v$, also $\tau(8 - u) = 8 - v$.  (Swap just $0$ and $1$, and the cells $(0,8,3), (1,7,3), \ldots$ become $(1,8,3), (0,7,3), \ldots$; since $1$ and $8$ are not partners, these lie on no line.)
 
@@ -204,50 +204,51 @@ That makes $24 \cdot 16 = 384$ relabelings.  For example, the $\tau$ in the figu
 
 In symbols, "partners go to partners" is $\tau(r(t)) = r(\tau(t))$ for every $t$: $\tau$ of $t$'s partner is the partner of $\tau(t)$.  The permutations satisfying it are the ones that commute with $r$, which group theory calls the centralizer of $r$.
 
-More precisely: 
+**Putting them together.**  Reversing one axis is itself a partner-respecting relabeling, applied to that one coordinate only.  So all three kinds of symmetry fit a single description: permute the axes, then relabel each coordinate by its own partner-respecting permutation $\sigma_i$.  The three relabelings cannot be chosen independently, though.  Along a diagonal the two varying coordinates are either always equal, as in $(t, t, 3)$, or always partners, as in $(t, 8-t, 3)$, and they have to stay that way.  They do if each $\sigma_i$ is either $\sigma_0$ or $\sigma_0$ followed by $r$.  (Relabel only the second coordinate, by swapping $3$ and $5$, and $(t, t, 3)$ becomes $(3, 5, 3)$ at $t = 3$ but $(0, 0, 3)$ at $t = 0$: its first two coordinates are neither always equal nor always partners.)  In this description, reversing $x_0$ is $\sigma = (r, \mathrm{id}, \mathrm{id})$, and relabeling every value by the same $\tau$ is $\sigma = (\tau, \tau, \tau)$.
 
-> Let $C(r)$ be the centralizer of $r$ in the symmetric group $S_n$
-> on $[n]$: the permutations $\tau$ of the coordinate values that commute with
-> $r$, i.e. with $\tau(r(t)) = r(\tau(t))$ for all $t$. For $\pi \in S_3$, $\varepsilon \in \lbrace\mathrm{id}, r\rbrace^3$ and
-> $\tau \in C(r)$, define $g = g(\pi, \varepsilon, \tau) \colon [n]^3 \to [n]^3$ by
+More precisely:
+
+> Let $C(r)$ be the centralizer of $r$ in the symmetric group $S_n$ on $[n]$:
+> the permutations $\sigma$ of the coordinate values with $\sigma(r(t)) = r(\sigma(t))$
+> for all $t$.  For $\pi \in S_3$ and $\sigma_0, \sigma_1, \sigma_2 \in C(r)$ with each of
+> $\sigma_1, \sigma_2$ equal to $\sigma_0$ or $\sigma_0 \circ r$, define
+> $g = g(\pi; \sigma_0, \sigma_1, \sigma_2) \colon [n]^3 \to [n]^3$ by
 >
-> $$g(x)_i = \tau\bigl( \varepsilon_i\bigl( x_{\pi(i)} \bigr) \bigr).$$
-> 
+> $$g(x)_i = \sigma_i\bigl( x_{\pi(i)} \bigr).$$
+>
 > These maps form a group $G$ of permutations of $[n]^3$, of order
-> $6 \cdot 8 \cdot \lvert C(r) \rvert / 2$ when $n \ge 2$ ($9216$ at $n = 8$ and $n = 9$),
+> $6 \cdot 4 \cdot \lvert C(r) \rvert$ when $n \ge 2$ ($9216$ at $n = 8$ and $n = 9$),
 > and every $g \in G$ (i) maps lines to lines, hence supports to supports;
 > (ii) fixes the center cell $c_0$ when $n$ is odd; (iii) maps partitions of
 > $[n]^3$ into supports to partitions.  Consequently, for odd $n$, a root $T$
 > lies in a partition iff $gT$ does, for every $g \in G$, so it suffices to
 > test one root per $G$-orbit.
 
+Throughout the proof, write $\sigma_i = \sigma_0 \circ \varepsilon_i$ with $\varepsilon_0 = \mathrm{id}$ and $\varepsilon_1, \varepsilon_2 \in \lbrace \mathrm{id}, r\rbrace$.  Two facts do all the work: every element of $C(r)$ commutes with $r$ by definition, and $C(r)$ is closed under composition and inverses, being a centralizer.
+
 *Proof.*  (i)  Describe a line by its pattern in each coordinate: a constant
-$c$, $t$, or $`r(t)`$.  $\pi$ permutes the coordinates, so it permutes the
-patterns among them and leaves at least one varying.  $\varepsilon_i = r$ replaces a
-constant $c$ in coordinate $i$ by $r(c)$ and swaps the patterns $t$ and $r(t)$
-there.  $\tau$ acts on all three coordinates at once; take for example a line
-with one constant coordinate and both varying patterns:
+$c$, $t$, or $`r(t)`$, with at least one varying.  Coordinate $i$ of the image is
+$\sigma_i$ applied to coordinate $\pi(i)$ of the line, and $\pi$ is a bijection, so
+at least one image coordinate still varies.  A constant $c$ becomes the constant
+$\sigma_i(c)$.  A varying pattern $q(t) \in \lbrace t, r(t)\rbrace$ becomes
+$\sigma_0(\varepsilon_i(q(t)))$, where $\varepsilon_i(q(t))$ is again $t$ or $r(t)$, and
 
-$$\begin{aligned}
-\ell   &= \lbrace (c,\ t,\ r(t)) : t \in [n] \rbrace \\
-\tau \ell  &= \lbrace (\tau(c),\ \tau(t),\ \tau(r(t))) : t \in [n] \rbrace \\
-    &= \lbrace (\tau(c),\ \tau(t),\ r(\tau(t))) : t \in [n] \rbrace \quad\text{since } \tau \text{ commutes with } r \\
-    &= \lbrace (\tau(c),\ s,\ r(s)) : s \in [n] \rbrace \quad\text{writing } s = \tau(t);\ \tau \text{ is a bijection, so } s \text{ runs over all of } [n]
-\end{aligned}$$
+$$\sigma_0(r(t)) = r(\sigma_0(t))$$
 
-The constant went to a constant and the varying coordinates still carry the
-patterns $s$ and $r(s)$, so $\tau \ell$ is a line.  The middle step is the only
-place commutation is used; without it the third coordinate would be
-$\tau(r(\tau^{-1}(s)))$, in general neither $s$ nor $r(s)$.  Every other line is
-the same computation with a different pattern in each coordinate.
+because $\sigma_0$ commutes with $r$.  So writing $s = \sigma_0(t)$, which runs over
+all of $[n]$ as $t$ does, every varying coordinate of the image is $s$ or $r(s)$,
+and the image is again a line.  That displayed step is the only place
+commutation is used.  Without it $\sigma_0(r(t))$ would be $\sigma_0(r(\sigma_0^{-1}(s)))$,
+in general neither $s$ nor $r(s)$; and if the $\sigma_i$ did not all agree with
+$\sigma_0$ up to $r$, different coordinates would need different substitutions.
 
 A bijection of cells that permutes the lines carries a set meeting every
 line once to a set meeting every line once, so $G$ maps $T(n)$ to $T(n)$.
 
 (ii)  For odd $n$, $r$ has the unique fixed point $m = (n-1)/2$, and
-$\tau r = r \tau$ forces $\tau$ to permute the fixed points of $r$, so $\tau(m) = m$; also
-$\varepsilon_i(m) = m$; and $\pi$ merely permutes the equal coordinates of $(m,m,m)$.
-So $g(c_0) = c_0$ for every $g \in G$.  (For even $n$ there is no fixed point and
+$\sigma r = r \sigma$ forces each $\sigma \in C(r)$ to permute the fixed points of $r$, so
+$\sigma_i(m) = m$; and $\pi$ merely permutes the equal coordinates of $(m,m,m)$.  So
+$g(c_0) = c_0$ for every $g \in G$.  (For even $n$ there is no fixed point and
 no center; (i) and (iii) are unaffected.)
 
 (iii)  $g$ is a bijection of the cell set, so $T_1, \ldots, T_n$ are pairwise
@@ -255,54 +256,33 @@ disjoint supports covering the cube iff $gT_1, \ldots, gT_n$ are.
 
 It remains to show that these maps form a group, and to count them.
 
-*Closure.*  If $g = (\pi, \varepsilon, \tau)$ and $h = (\rho, \delta, \sigma)$, then
-$g \circ h$ (apply $h$ first) is the map with parameters
+*Closure.*  Let $g = g(\pi; \sigma_0, \sigma_1, \sigma_2)$ and $`h = g(\rho; \sigma'_0, \sigma'_1, \sigma'_2)`$.  Then, applying $h$ first,
 
-$$\begin{aligned}
-\pi'   &= \rho \circ \pi, \\
-\varepsilon'_i &= \varepsilon_i \circ \delta_{\pi(i)}, \\
-\tau'  &= \tau \circ \sigma.
-\end{aligned}$$
+$$(g \circ h)(x)_i = \sigma_i\bigl(h(x)_{\pi(i)}\bigr) = \sigma_i\bigl(\sigma'_{\pi(i)}\bigl(x_{\rho(\pi(i))}\bigr)\bigr),$$
 
-To see this, substitute $`h(x)_j = \sigma(\delta_j(x_{\rho(j)}))`$ into the
-definition of $g$, with $j = \pi(i)$:
-
-$$\begin{aligned}
-(g \circ h)(x)_i &= \tau\bigl(\varepsilon_i\bigl(h(x)_{\pi(i)}\bigr)\bigr) \\
-  &= \tau\bigl(\varepsilon_i\bigl(\sigma\bigl(\delta_{\pi(i)}\bigl(x_{\rho(\pi(i))}\bigr)\bigr)\bigr)\bigr) \\
-  &= \tau\bigl(\sigma\bigl(\varepsilon_i\bigl(\delta_{\pi(i)}\bigl(x_{\rho(\pi(i))}\bigr)\bigr)\bigr)\bigr)
-     \quad\text{since } \varepsilon_i \in \lbrace\mathrm{id}, r\rbrace \text{ commutes with } \sigma \in C(r) \\
-  &= (\tau \circ \sigma)\Bigl((\varepsilon_i \circ \delta_{\pi(i)})\bigl(x_{(\rho \circ \pi)(i)}\bigr)\Bigr).
-\end{aligned}$$
-
-The third line is the one step that needs anything: a reversal has to be moved
-past a value permutation, and that is legitimate exactly because $\sigma$
-commutes with $r$.  The result is of the displayed form, with $\tau \circ \sigma$
-in $C(r)$ because $C(r)$ is a subgroup and each $\varepsilon_i \circ \delta_{\pi(i)}$
-in $\lbrace\mathrm{id}, r\rbrace$ because $r \circ r = \mathrm{id}$.
-The identity is $(\mathrm{id}, \mathrm{id}, \mathrm{id})$, and a finite composition-closed family of
+so $g \circ h$ has coordinate permutation $\rho \circ \pi$ and relabelings
+$`\sigma''_i = \sigma_i \circ \sigma'_{\pi(i)}`$.  Each $`\sigma''_i`$ is in $C(r)$, and they still agree up
+to $r$: writing $\sigma_i = \sigma_0 \varepsilon_i$ and $`\sigma'_j = \sigma'_0 \varepsilon'_j`$, and moving the
+reversals past $`\sigma'_0`$ (they commute with it),
+$`\sigma''_i = \sigma_0 \sigma'_0 \, \varepsilon_i \varepsilon'_{\pi(i)}`$, where each $`\varepsilon_i \varepsilon'_{\pi(i)}`$ is $\mathrm{id}$ or $r$.  So
+every $`\sigma''_i`$ is $`\sigma''_0`$ or $`\sigma''_0 \circ r`$, and $g \circ h$ is again in $G$.  The identity
+is $g(\mathrm{id}; \mathrm{id}, \mathrm{id}, \mathrm{id})$, and a finite composition-closed family of
 bijections of a finite set contains inverses.  So $G$ is a group.
 
-*The count.*  Suppose two parameter triples define the same cell map $g$.  Each
-output coordinate depends bijectively on exactly one input coordinate, so the
-two coordinate permutations agree; write $\pi$ for both.  Equating the $i$-th
-output coordinates gives $\tau(\varepsilon_i(x)) = \tau'(\varepsilon'_i(x))$ for all $x$, i.e.
-$\tau'^{-1} \tau = \varepsilon'_i \varepsilon_i^{-1}$ for every $i$.  The right-hand side is
-$\mathrm{id}$ or $r$, and it is the *same* element for every $i$ because the left-hand
-side does not depend on $i$.  So either all three reversal bits agree and
-$\tau = \tau'$ — the triples are identical — or all three are flipped and
-$\tau' = \tau \circ r$.  Every map therefore has exactly two descriptions, and
-$\lvert G\rvert = \lvert S_3 \rvert \cdot \lvert C_2^3 \rvert \cdot \lvert C(r) \rvert / 2 = 6 \cdot 8 \cdot \lvert C(r)\rvert / 2$.
+*The count.*  For $n \ge 2$ a map $g$ determines its parameters: output
+coordinate $i$ depends on input coordinate $\pi(i)$ alone, which fixes $\pi$, and
+it is $\sigma_i$ of that input, which fixes $\sigma_i$.  So distinct parameters give
+distinct maps, and there are $6$ choices of $\pi$, $\lvert C(r)\rvert$ of $\sigma_0$, and
+$2$ each of $\sigma_1$ and $\sigma_2$: $\lvert G\rvert = 6 \cdot 4 \cdot \lvert C(r)\rvert$.
 
-If $\tau$ commutes with $r$ and $\tau(t) = s$, then $\tau(r(t)) = r(s)$, so $\tau$ carries the
-pair $\lbrace t, r(t)\rbrace$ onto the pair $\lbrace s, r(s)\rbrace$.  So, as described before the
-lemma, $\tau$ rearranges the $\lfloor n/2 \rfloor$ pairs, flips any of them, and fixes the
-middle value when $n$ is odd; conversely every such rearrangement commutes with $r$.  Hence
-$\lvert C(r)\rvert = 2^{\lfloor n/2\rfloor} \cdot \lfloor n/2\rfloor!$ — $384$ at $n = 8$ and $n = 9$, so
-$\lvert G\rvert = 9216$.  The program `orbits` builds all
-$6 \cdot 8 \cdot 384 = 18\,432$ maps, deduplicates them, and checks that $9216$ remain,
-that all of them fix $c_0$, and that six explicitly named generators generate
-all of them. ∎
+If $\sigma$ commutes with $r$ and $\sigma(t) = s$, then $\sigma(r(t)) = r(s)$, so $\sigma$ carries
+the pair $\lbrace t, r(t)\rbrace$ onto the pair $\lbrace s, r(s)\rbrace$.  So, as described before
+the lemma, $\sigma$ rearranges the $\lfloor n/2 \rfloor$ pairs, flips any of them, and
+fixes the middle value when $n$ is odd; conversely every such rearrangement
+commutes with $r$.  Hence $\lvert C(r)\rvert = 2^{\lfloor n/2\rfloor} \cdot \lfloor n/2\rfloor!$ — $384$
+at $n = 8$ and $n = 9$, so $\lvert G\rvert = 9216$.  The program `orbits` builds all
+$6 \cdot 4 \cdot 384 = 9216$ maps, checks that no two coincide, that all of them fix
+$c_0$, and that six explicitly named generators generate all of them. ∎
 
 ### Lemma 4 (the clique bound)
 
@@ -402,12 +382,12 @@ row 0.
 > Let $H = \lbrace g \in G : g(P) = P \rbrace$ be the setwise stabilizer of $P$ in the group
 > $G$ of the orbit reduction (Lemma 3).  Then
 >
-> (a) $H$ consists of exactly those $g = g(\pi, \varepsilon, \tau)$ with $\pi(0) = 0$ and
-> $\tau(\varepsilon_0(0)) = 0$, and
+> (a) $H$ consists of exactly those $g = g(\pi; \sigma_0, \sigma_1, \sigma_2)$ with $\pi(0) = 0$ and
+> $\sigma_0(0) = 0$, and
 >
 > $$\lvert H \rvert = \lvert G \rvert / (3 \cdot 2\lfloor n/2 \rfloor) = 9216 / 24 = 384 \quad \text{at } n = 8 \text{ and } n = 9;$$
 >
-> (b) writing $u = \tau \circ \varepsilon_1$ and $v = \tau \circ \varepsilon_2$, an $h \in H$ acts on $P$
+> (b) writing $u = \sigma_1$ and $v = \sigma_2$, an $h \in H$ acts on $P$
 > by $(0,x_1,x_2) \to (0, u(x_1), v(x_2))$ if $\pi$ fixes the last two coordinates and by
 > $(0,x_1,x_2) \to (0, u(x_2), v(x_1))$ if $\pi$ swaps them; so it carries the row $p$ to
 > $p^h = v \circ p \circ u^{-1}$ or $v \circ p^{-1} \circ u^{-1}$, which is again admissible.  Hence the
@@ -417,16 +397,16 @@ row 0.
 > is the whole of the image shard, record by record and cell by cell.  In
 > particular $\lvert S_p\rvert = \lvert S_{p^h}\rvert$.
 
-*Proof.*  (a)  The image's first coordinate is $\tau(\varepsilon_0(x_{\pi(0)}))$.  On $P$
+*Proof.*  (a)  The image's first coordinate is $\sigma_0(x_{\pi(0)})$.  On $P$
 the coordinates $x_1, x_2$ are free, so if $\pi(0) \ne 0$ that expression takes
 all $n$ values on $P$ and the image cannot be contained in the plane $x_0 = 0$;
 hence $\pi(0) = 0$,
-and then the image's first coordinate is the constant $\tau(\varepsilon_0(0))$, which
+and then the image's first coordinate is the constant $\sigma_0(0)$, which
 must be $0$.  Conversely every such $g$ maps $P$ into $P$, and an injection of a
 finite set into itself is onto it.  $H$ is the stabilizer of a subset, hence a
 subgroup, and $[G:H]$ is the size of the $G$-orbit of $P$.  That orbit is
-$\lbrace \lbrace x_a = c\rbrace \rbrace$ with $a$ any of the three axes and $c$ any value of $\tau(0)$ or
-$\tau(n-1)$: since $\tau$ permutes the pairs $\lbrace t, n-1-t\rbrace$ as blocks, $c$ ranges
+$\lbrace \lbrace x_a = c\rbrace \rbrace$ with $a$ any of the three axes and $c$ any value of $\sigma(0)$ for
+a $\sigma \in C(r)$: since $\sigma$ carries the pair $\lbrace 0, n-1\rbrace$ onto any pair, either way round, $c$ ranges
 over every value except the middle one of an odd $n$, so over $2\lfloor n/2 \rfloor$
 values.  Hence $[G:H] = 3 \cdot 2\lfloor n/2 \rfloor = 24$ and $\lvert H\rvert = 384$.  (`symmetry group` recomputes both by construction: it selects the elements of
 $G$ that fix $P$, exhibits the 24 planes, and forms all $384^2 = 147\,456$
@@ -439,12 +419,12 @@ the plane whatever else it does.)
 the two displayed forms.  The graph $\lbrace(x_1, p(x_1))\rbrace$ is carried to
 $\lbrace(u(x_1), v(p(x_1)))\rbrace$, the graph of $v \circ p \circ u^{-1}$, or to $\lbrace(u(p(x_1)), v(x_1))\rbrace$, the
 graph of $v \circ p^{-1} \circ u^{-1}$.  For admissibility, note that $u$ and $v$ are each
-$\tau$ or $\tau \circ r$, and that $\tau$ commutes with $r$.  Take the first form and
+$\sigma_0$ or $\sigma_0 \circ r$, and that $\sigma_0$ commutes with $r$.  Take the first form and
 put $s = u^{-1}(t)$.  Then $t$ is a fixed point of $p^h$ iff $v(p(s)) = u(s)$,
-and a reflected point iff $v(p(s)) = r(u(s))$.  Cancelling $\tau$ from both
-sides — legitimate because $\tau$ is a bijection commuting with $r$ — turns
+and a reflected point iff $v(p(s)) = r(u(s))$.  Canceling $\sigma_0$ from both
+sides — legitimate because $\sigma_0$ is a bijection commuting with $r$ — turns
 those two conditions into $p(s) = s$ and $p(s) = r(s)$, in that order when
-$\varepsilon_1 = \varepsilon_2$ and in the opposite order when not.  Each has exactly one
+$u = v$ and in the opposite order when not.  Each has exactly one
 solution because $p$ is admissible, so $p^h$ has exactly one fixed and exactly
 one reflected point.  The second form is the same computation after the
 substitution $s = p^{-1}(u^{-1}(t))$.  So $p^h$ is admissible, and
