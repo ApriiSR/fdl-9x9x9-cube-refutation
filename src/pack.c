@@ -1,6 +1,6 @@
 /* pack.c -- packing supports: exhaustive exact cover, and the packing ceiling.
  *
- * A fully diagonalised Latin cube of order n is a partition of [n]^3 into n
+ * A fully diagonalized Latin cube of order n is a partition of [n]^3 into n
  * pairwise disjoint supports, so it is an exact cover of the n^3 cells by
  * elements of the support catalogue.  Two questions are asked here.
  *

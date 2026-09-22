@@ -1,4 +1,4 @@
-# SHA-256 of every data artefact the pipeline produces.
+# SHA-256 of every data artifact the pipeline produces.
 #
 # `verify.sh full` and `verify.sh symmetric` recompute all of them from nothing
 # and compare -- including n9_supports.bin, whose hash is checked as soon as it
@@ -7,7 +7,7 @@
 # not in this repository:
 #
 #   n9_supports.bin  1 183 942 656 B  the 14 616 576 supports of [9]^3
-#   n9_roots.bin       957 505 536 B  the 11 821 056 of them through the centre
+#   n9_roots.bin       957 505 536 B  the 11 821 056 of them through the center
 #                                     (derived from the catalogue in a second;
 #                                     not checksummed here for that reason)
 #

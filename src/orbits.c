@@ -16,7 +16,7 @@
  * an arbitrary permutation, not an affine map; the description is cell by cell.
  * So the group maps supports to supports.
  *
- * The parametrisation is 2-to-1: eps = (rev,rev,rev) with tau = id is the same
+ * The parametrization is 2-to-1: eps = (rev,rev,rev) with tau = id is the same
  * cell map as eps = id with tau = rev.  Hence
  *     |G| = 6 * 8 * |C(rev)| / 2,
  * and |C(rev)| = 2^{floor(n/2)} * floor(n/2)!  -- 384 at n = 8 and n = 9 --
@@ -30,9 +30,9 @@
  * by their outputs (|G| = 9216, and both report the same subgroup order), and
  * sharing the construction would remove that comparison.
  *
- * Every element of G fixes the centre cell of an odd cube: rev fixes (n-1)/2
+ * Every element of G fixes the center cell of an odd cube: rev fixes (n-1)/2
  * and so does every tau in C(rev).  So G acts on the set of supports through
- * the centre, which is what `classify` is used for.
+ * the center, which is what `classify` is used for.
  *
  * Records are n*n bytes: byte i*n+j is k for the cell (i,j,k).
  *
@@ -58,7 +58,7 @@ static int NGEN;
 
 #define now_s fdlh_now_s
 
-/* ---- the centraliser of rev in S_n -------------------------------------- */
+/* ---- the centralizer of rev in S_n -------------------------------------- */
 /* tau commutes with rev iff it permutes the pairs {t, n-1-t} as blocks,
  * possibly flipping each; the middle point of an odd n is fixed. */
 static int taus[MAXTAU][MAXN];
@@ -381,8 +381,8 @@ static void usage(int rc)
 "        representatives -- the lexicographically least record of each orbit,\n"
 "        so the choice does not depend on the input order -- to reps.bin,\n"
 "        sorted lexicographically.\n"
-"  orbits <n> centre <recs.bin> <out.bin>\n"
-"        Select the records containing the centre cell ((n-1)/2 three times).\n");
+"  orbits <n> center <recs.bin> <out.bin>\n"
+"        Select the records containing the center cell ((n-1)/2 three times).\n");
     exit(rc);
 }
 
@@ -397,10 +397,10 @@ int main(int argc, char **argv)
     NC = N * N * N; RB = N * N;
     const char *mode = argv[2];
 
-    if (!strcmp(mode, "centre")) {
+    if (!strcmp(mode, "center")) {
         if (argc < 5) usage(2);
         int m = (N - 1) / 2;
-        if (N % 2 == 0) { fprintf(stderr, "no centre cell for even n\n"); return 2; }
+        if (N % 2 == 0) { fprintf(stderr, "no center cell for even n\n"); return 2; }
         recs = load(argv[3], &NR);
         FILE *o = fopen(argv[4], "wb");
         if (!o) { perror(argv[4]); return 1; }
@@ -408,7 +408,7 @@ int main(int argc, char **argv)
         for (long long i = 0; i < NR; i++)
             if (recs[i * RB + m * N + m] == m) { fwrite(recs + i * RB, 1, (size_t)RB, o); k++; }
         if (fclose(o)) { perror(argv[4]); return 1; }
-        printf("{\"records\":%lld,\"centre\":[%d,%d,%d],\"selected\":%lld}\n", NR, m, m, m, k);
+        printf("{\"records\":%lld,\"center\":[%d,%d,%d],\"selected\":%lld}\n", NR, m, m, m, k);
         return 0;
     }
 
@@ -426,7 +426,7 @@ int main(int argc, char **argv)
             int m = (N - 1) / 2, bad = 0;
             int c0 = (m * N + m) * N + m;
             for (int i = 0; i < NG; i++) if (G[(size_t)i * NC + c0] != c0) bad++;
-            printf("elements not fixing the centre cell: %d\n", bad);
+            printf("elements not fixing the center cell: %d\n", bad);
             if (bad) return 1;
         }
         return expect == NG ? 0 : 1;

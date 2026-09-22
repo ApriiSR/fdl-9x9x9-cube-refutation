@@ -127,7 +127,7 @@ def a007016(n):
 
     Inclusion-exclusion on the two boards A = {(j,j)} and B = {(j, n-1-j)}.
     Their union is floor(n/2) disjoint 4-cycles plus, for odd n, the shared
-    centre cell; a selection may use that cell as an A-cell, a B-cell or both,
+    center cell; a selection may use that cell as an A-cell, a B-cell or both,
     so the completion factor must count DISTINCT cells -- the u coordinate.
     """
     from math import comb, factorial

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# verify.sh -- reproduce the order-9 result end to end, and check every artefact
+# verify.sh -- reproduce the order-9 result end to end, and check every artifact
 # against checksums.txt.
 #
 #   ./verify.sh full [options]
@@ -391,8 +391,8 @@ say "6. the catalogue is closed under the order-9216 cell group"
 run "$BIN/orbits" 9 group
 run "$BIN/orbits" 9 closure "$CAT"
 
-say "7. the roots: supports through the centre cell, and their orbits"
-run "$BIN/orbits" 9 centre "$CAT" "$WORK/n9_roots.bin"
+say "7. the roots: supports through the center cell, and their orbits"
+run "$BIN/orbits" 9 center "$CAT" "$WORK/n9_roots.bin"
 run "$BIN/orbits" 9 classify "$WORK/n9_roots.bin" "$WORK/n9_orbit_sizes.jsonl" "$WORK/n9_orbit_reps.bin"
 run "$PY" src/catalogue.py orbitstats "$WORK/n9_orbit_sizes.jsonl"
 run "$PY" src/check.py verify 9 "$WORK/n9_orbit_reps.bin"

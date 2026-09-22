@@ -1,14 +1,14 @@
 /* enum.c -- enumerate the supports of [n]^3 as an exact cover.
  *
  * A *support* is a set of cells of [n]^3 meeting every main line exactly once.
- * (Equivalently, the set of cells carrying one symbol in a fully diagonalised
+ * (Equivalently, the set of cells carrying one symbol in a fully diagonalized
  * Latin cube.)  That is an exact-cover problem verbatim:
  *
  *     items   = the 3n^2 + 6n + 4 main lines   (301 at n = 9)
  *     options = the n^3 cells                  (729 at n = 9)
  *     a cell covers exactly the main lines through it -- the 3 axis lines
  *     always, then 0 to 6 of the face diagonals and 0 to 4 of the space
- *     diagonals, so degrees run 3..13 at n = 9 (the centre (4,4,4) is the
+ *     diagonals, so degrees run 3..13 at n = 9 (the center (4,4,4) is the
  *     unique degree-13 cell, on all six face diagonals and all four space
  *     diagonals at once).
  *

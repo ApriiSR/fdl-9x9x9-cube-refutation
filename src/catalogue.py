@@ -22,7 +22,7 @@ Subcommands (each has --help):
   audit N MANIFEST SHARDDIR --shards FILE
                                      full audit against the expected universe
   ledger IN.jsonl OUT.jsonl          drop timing fields, leaving a reproducible
-                                     per-query result file, and summarise it
+                                     per-query result file, and summarize it
   validate N IN.jsonl --queries K    the strict result validator: what the
                                      ledger must SAY for the theorem to follow
   orbitstats IN.jsonl                orbit-size histogram and total
@@ -364,7 +364,7 @@ DROP = ('search_wall', 'clique_wall', 'wall')
 
 
 def cmd_ledger(a):
-    """Canonicalisation only: drop the timings, sort, summarise.
+    """Canonicalization only: drop the timings, sort, summarize.
 
     This deliberately makes no judgement about whether the results are the ones
     the theorem needs -- that is `validate`, kept separate so that neither can
@@ -568,7 +568,7 @@ def cmd_checksums(a):
     """Compare two checksum manifests, requiring exactly the expected names.
 
     Silently overwriting a duplicate name, or comparing whatever names happen to
-    be in both files, would let an artefact go unchecked without anyone
+    be in both files, would let an artifact go unchecked without anyone
     noticing; the set of names is therefore required, not inferred.
     """
     want, got = read_checksums(a.want), read_checksums(a.got)
@@ -587,7 +587,7 @@ def cmd_checksums(a):
             print(f'OK        {name}  {got[name]}')
     for extra in sorted(set(got) - set(want)):
         print(f'UNLISTED  {extra}  was produced but is not in {a.want}'); bad += 1
-    print(f'\n{len(want) - bad} of {len(want)} artefacts match')
+    print(f'\n{len(want) - bad} of {len(want)} artifacts match')
     return 1 if bad else 0
 
 
@@ -609,7 +609,7 @@ def main():
                    help='audit only what the manifest holds; completeness is NOT checked')
     p.set_defaults(fn=cmd_audit)
 
-    p = sub.add_parser('ledger', help='drop timings, sort, and summarise a result file')
+    p = sub.add_parser('ledger', help='drop timings, sort, and summarize a result file')
     p.add_argument('inp'); p.add_argument('out')
     p.set_defaults(fn=cmd_ledger)
 
@@ -643,7 +643,7 @@ def main():
     p = sub.add_parser('checksums', help='compare two checksum manifests strictly')
     p.add_argument('want'); p.add_argument('got')
     p.add_argument('--require', nargs='+', required=True,
-                   help='the exact set of artefact names the manifest must list')
+                   help='the exact set of artifact names the manifest must list')
     p.set_defaults(fn=cmd_checksums)
 
     a = ap.parse_args()

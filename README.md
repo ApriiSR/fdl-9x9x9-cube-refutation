@@ -1,8 +1,8 @@
-# There is no fully diagonalised Latin cube of order 9
+# There is no fully diagonalized Latin cube of order 9
 
 This repository aims to cleanly demonstrate a negative answer to a question which was (to my knowledge) first posed by Walter Taylor in a 1972 paper.
 
-A d-dimensional **fully diagonalised Latin hypercube** (FDLH) (called *completely Latin* by Arkin, Hoggatt and Straus) is a coloring $A : [n]^d \to [n]$, where $[n] = \lbrace0, 1, \ldots, n-1\rbrace$, in which each color occurs exactly once on every *line*.  A line is obtained by letting $t$ run over $[n]$ and taking each coordinate to be a constant, $t$, or $n-1-t$, with at least one coordinate varying.  In dimension 3 the lines are the rows, the columns and the pillars, the diagonals of every planar cross-section of the cube, and the four space diagonals; each must therefore contain every color.
+A d-dimensional **fully diagonalized Latin hypercube** (FDLH) (called *completely Latin* by Arkin, Hoggatt and Straus) is a coloring $A : [n]^d \to [n]$, where $[n] = \lbrace0, 1, \ldots, n-1\rbrace$, in which each color occurs exactly once on every *line*.  A line is obtained by letting $t$ run over $[n]$ and taking each coordinate to be a constant, $t$, or $n-1-t$, with at least one coordinate varying.  In dimension 3 the lines are the rows, the columns and the pillars, the diagonals of every planar cross-section of the cube, and the four space diagonals; each must therefore contain every color.
 
 Every pair of the $2^d$ corner cells lies on a line, which forces $n \le 1$ or $n \ge 2^d$ (Taylor's Proposition 4).  Taylor writes $P(m, n)$ for the existence of such an $n$-dimensional cube of order $m$, and his Problem 3 asks two questions: "For every $n$ does there exist $M$ such that $P(m, n)$ whenever $m \ge M$?  May one take $M = 2^n$?"  His Problem 2 asks in particular about order 9 in dimension 3.
 
@@ -19,15 +19,25 @@ The rough outline of this algorithm is as follows:
 3. Form the graph of which of them can occur in the same FDLH — two vertices share an edge if they represent disjoint supports.  A 9x9x9 would need eight mutually compatible companions to some fixed center support — that is, an 8-clique in that support's graph.  Any 8-clique contains 56 triangles (mutually compatible triples), so counting triangles is enough: for 2 048 of the 2 049 center supports the graph has no triangles at all, and for the last one it has 8.  No graph can contain an 8-clique, so no center support extends to a 9x9x9, and every 9x9x9 would have to contain one.
 
 
-{"Five short lemmata justify that reduction" the reducion seems self-evidently justified to me. Whatever the lemmata justify, it isn't the rough outline above, which doesn't really require justification. Perhaps they justify that our operationalization of "one per symmetry class" is valid? That seems like the one step that actually needs much elaboration.}
+Part I gives the mathematics behind each step, most of all why testing one
+center support per symmetry class is enough.  Part II describes the
+computation:
 
+* **The support catalogue** — the file of all $14\,616\,576$ supports, its
+  byte format and canonical order, and where to download it.
+* **What each step does** — a table of every step of the pipeline, with its
+  program, input and expected output, and which steps each mode runs.
+* **The artifacts and their checksums** — the SHA-256 of every file the
+  pipeline produces.
+* **The order-8 controls** — the test suite, which runs the whole pipeline at
+  order 8, where a cube exists and the answers are known, and checks that
+  every failure path actually fails.
+* **How long it takes**, **Memory and disk** — measured running times and
+  resource use on two machines.
+* **Reproducing it** — options, resuming an interrupted run, and requirements.
 
-{"Part II states the machine's part as a table of programs, inputs,
-expected outputs and SHA-256 checksums, so a reader can rerun any line
-independently.  *From nothing* means regenerating the order-9 catalogue rather
-than supplying a precomputed one.  A fifth lemma, proved afterwards, proves
-nothing about order 9: it justifies a symmetry shortcut used by one
-verification mode." i probably want to rewrite this but i need to go see what's actually in part 2 first.}
+After Part II, *What still rests on trust* lists what the computation does
+not establish by itself.
 
 Start with `make` and `./verify.sh test`, then pick a mode according to how
 much you want to recompute:
@@ -147,13 +157,13 @@ An aside, not needed for the proof: all four space diagonals pass through $c_0$.
 We need to test only one root from each symmetry class, for some suitable notion of symmetry classes. For example, if two roots are reflections of each other, ruling out that one of them occurs in an FDLH also implies that the other does not. To maximize the efficiency of our exhaustive enumeration, we wish to use the largest valid choice of symmetry group we can, i.e. the group which maximizes the size of each root's symmetry class while still ensuring that checking one representative from each class is sufficient.
 
 The symmetries used here permute the axes, reverse individual axes, and relabel the coordinate *values* by one permutation applied on every axis at once.  Axis lines survive any
-relabelling, but a diagonal such as $(t, 8-t, 3)$ survives only if the
-relabelling respects the pairing $u \leftrightarrow 8-u$: relabel $0 \leftrightarrow 1$ alone and the
+relabeling, but a diagonal such as $(t, 8-t, 3)$ survives only if the
+relabeling respects the pairing $u \leftrightarrow 8-u$: relabel $0 \leftrightarrow 1$ alone and the
 cells $(0,8,3), (1,7,3), \ldots$ become $(1,8,3), (0,7,3), \ldots$, which lie on no line.  So
-the relabellings used are those that shuffle the pairs $\lbrace0,8\rbrace, \lbrace1,7\rbrace, \lbrace2,6\rbrace, \lbrace3,5\rbrace$ as blocks and optionally flip each, leaving $4$ fixed — the permutations
+the relabelings used are those that shuffle the pairs $\lbrace0,8\rbrace, \lbrace1,7\rbrace, \lbrace2,6\rbrace, \lbrace3,5\rbrace$ as blocks and optionally flip each, leaving $4$ fixed — the permutations
 that commute with reversal.
 
-Precisely, let $C(r)$ be the centraliser of $r$ in the symmetric group $S_n$
+Precisely, let $C(r)$ be the centralizer of $r$ in the symmetric group $S_n$
 on $[n]$: the permutations $\tau$ of the coordinate values that commute with
 $r$, i.e. with $\tau(r(t)) = r(\tau(t))$ for all $t$.  ($r$ is written `rev` in
 `src/orbits.c`.)  For $\pi \in S_3$, $\varepsilon \in \lbrace\mathrm{id}, r\rbrace^3$ and
@@ -274,7 +284,7 @@ pool graph has a 7-clique.
 no clique computation at all.  An 8-clique contains $\binom{8}{3} = 56$
 triangles, whereas each of the 2 049 root graphs has either $0$ (2 048 of them)
 or $8$ (one).  `pack.c` counts them from the adjacency bitmap of each graph:
-for every edge $ab$ it counts the common neighbours of $a$ and $b$ with a
+for every edge $ab$ it counts the common neighbors of $a$ and $b$ with a
 popcount of the AND of their rows, and the sum over edges counts each triangle
 three times.  `catalogue.py validate` checks the recorded counts against the
 threshold of $56$.
@@ -288,7 +298,7 @@ as implementations.
 
 ### Theorem
 
-> There is no fully diagonalised Latin cube of order 9.
+> There is no fully diagonalized Latin cube of order 9.
 
 *Proof.*  Suppose $A$ is an FDLH of order 9.  Its color classes are nine
 pairwise disjoint supports (Lemma 1).  One of them, $T$, contains the
@@ -345,7 +355,7 @@ support's intersection with $P$ is $\lbrace(0, x_1, p(x_1))\rbrace$ for an admis
 permutation $p$ (Lemma 2), and the shard $S_p$ is the set of supports with that
 row 0.
 
-> Let $H = \lbrace g \in G : g(P) = P \rbrace$ be the setwise stabiliser of $P$ in the group
+> Let $H = \lbrace g \in G : g(P) = P \rbrace$ be the setwise stabilizer of $P$ in the group
 > $G$ of the orbit reduction (Lemma 3).  Then
 >
 > (a) $H$ consists of exactly those $g = g(\pi, \varepsilon, \tau)$ with $\pi(0) = 0$ and
@@ -369,7 +379,7 @@ all $n$ values on $P$ and the image cannot be contained in the plane $x_0 = 0$;
 hence $\pi(0) = 0$,
 and then the image's first coordinate is the constant $\tau(\varepsilon_0(0))$, which
 must be $0$.  Conversely every such $g$ maps $P$ into $P$, and an injection of a
-finite set into itself is onto it.  $H$ is the stabiliser of a subset, hence a
+finite set into itself is onto it.  $H$ is the stabilizer of a subset, hence a
 subgroup, and $[G:H]$ is the size of the $G$-orbit of $P$.  That orbit is
 $\lbrace \lbrace x_a = c\rbrace \rbrace$ with $a$ any of the three axes and $c$ any value of $\tau(0)$ or
 $\tau(n-1)$: since $\tau$ permutes the pairs $\lbrace t, n-1-t\rbrace$ as blocks, $c$ ranges
@@ -439,7 +449,7 @@ independently, so every lemma above is sanity-checked at an order whose answers 
 * $T(8)$ is closed under $G$ and splits into six orbits — Lemma 3 (i);
   clause (ii) is not used, since there is no center;
 * the exact cover of $[8]^3$ by supports has $198\,624$ solutions, i.e.
-  $8! \cdot 198\,624$ labelled cubes — the correspondence of Lemma 1;
+  $8! \cdot 198\,624$ labeled cubes — the correspondence of Lemma 1;
 * for every one of the $13\,056$ supports, the root search finds exactly the
   number of covers through it that the census predicts, and a support lies in
   a cover iff its pool graph has a $7$-clique — Lemma 4 at $n = 8$, checked
@@ -454,7 +464,7 @@ independently, so every lemma above is sanity-checked at an order whose answers 
 
 ### The support catalogue
 
-The expensive artefact is `n9_supports.bin`: all $14\,616\,576$ supports of
+The expensive artifact is `n9_supports.bin`: all $14\,616\,576$ supports of
 $[9]^3$, $81$ bytes each (byte $9 x_0 + x_1$ is $x_2$ for the cell $`(x_0,x_1,x_2)`$),
 $1\,183\,942\,656$ bytes in all.  Because of the size it is not in the repository; a copy is at
 [files.apriiori.com/fdlh/n9/n9_supports.bin](https://files.apriiori.com/fdlh/n9/n9_supports.bin),
@@ -475,7 +485,7 @@ against this one using the canonical byte order above and SHA-256; this reposito
 All three modes run the order-8 controls of step 1.  From there, `full`
 enumerates every shard at step 3; `symmetric` uses steps 3a-3d instead, to
 enumerate the representatives and reconstruct the other shards; `fast` takes a
-supplied catalogue and redoes everything from step 4 on.  Every artefact's
+supplied catalogue and redoes everything from step 4 on.  Every artifact's
 SHA-256 is in `checksums.txt` and is checked by `verify.sh`.
 
 | # | step | program | input | expected output |
@@ -497,11 +507,11 @@ SHA-256 is in `checksums.txt` and is checked by `verify.sh`.
 | 11 | exhaust + cliques | `pack 9 roots` | 2 049 reps, pools | 2 049 EXHAUSTED, 0 covers, max depth 2, 183 625 nodes; max packing 3 (2 048 orbits) and 5 (1 orbit) |
 | 11b | the results say what the theorem needs | `catalogue.py validate` | ledger | 2 049 queries, all EXHAUSTED, 0 covers, cliques ≤ 4, triangles < 56 |
 | 12 | witness | `pack 9 witness` | exceptional orbit | 5 pairwise disjoint supports, re-verified |
-| 13 | checksums | `check.py sha256`, `catalogue.py checksums` | all artefacts | the exact seven names, all matching `checksums.txt` |
+| 13 | checksums | `check.py sha256`, `catalogue.py checksums` | all artifacts | the exact seven names, all matching `checksums.txt` |
 
-### The artefacts and their checksums
+### The artifacts and their checksums
 
-| artefact | size | SHA-256 |
+| artifact | size | SHA-256 |
 |---|---:|---|
 | `n9_supports.bin` (not in the repository) | 1 183 942 656 B | `f9dd54e401c69327d9383567e0050ca65ffd9bfeca7d8b7e8609059508fe3eb8` |
 | `data/n8_supports.bin` | 835 584 B | `f780d243569b1e54d1d7482ffad7c08aa70e2c7caf9849d9c553fac640f15abc` |
@@ -531,9 +541,9 @@ the substantive ones are
   of sizes 768, 768, 2 304, 2 304, 2 304, 4 608;
 * the exact cover of $[8]^3$ by supports has exactly **198 624** solutions, with
   node counts by depth `1, 1 632, 26 016, 60 672, 69 513, 147 292, 154 660,
-  198 624, 198 624`.  Relabelling the eight classes of a partition by two
+  198 624, 198 624`.  Relabeling the eight classes of a partition by two
   different permutations gives two different arrays, so this also counts the
-  labelled cubes: $8! \cdot 198\,624 = 8\,008\,519\,680$ FDLHs of order 8;
+  labeled cubes: $8! \cdot 198\,624 = 8\,008\,519\,680$ FDLHs of order 8;
 * the **root search agrees with the census on every one of the 13 056 supports**
   — for each support, the number of covers containing it, computed once by the
   census and once by the same root machinery that is run at order 9;
@@ -553,7 +563,7 @@ the substantive ones are
   rule that never fires looks exactly like an exhaustion, which is the failure
   a negative result most needs to exclude;
 * the mapping's own guard is tested to fire: one shard in a full-size orbit
-  (where the stabiliser is trivial, so any other element lands its records
+  (where the stabilizer is trivial, so any other element lands its records
   elsewhere) is pointed at the wrong element of the subgroup, and
   `symmetry expand` must refuse it.  A check that never rejects looks exactly
   like agreement.
@@ -567,7 +577,7 @@ resume correctly (see *Reproducing it*).  The audit must reject an empty manifes
 outside the universe, a malformed line, a missing payload digest, a missing
 universe and records out of order; the report validator must reject an empty
 report, a missing one and one covering too few queries; the checksum comparison
-must reject a duplicated name, a malformed digest and a required artefact that
+must reject a duplicated name, a malformed digest and a required artifact that
 is not listed.  And the result validator, handed the order-8 ledger — the case
 where a cube *does* exist — must refuse it.
 
@@ -797,7 +807,7 @@ one.
    rests on correct compilation and execution.
 
 4. **Floating point plays no role**; there is none in the argument.  Wall-clock
-   caps are the only timing-dependent behaviour, and they are configured to
+   caps are the only timing-dependent behavior, and they are configured to
    values the sweep never approaches (the slowest shard measured anywhere takes
    26.0 seconds against a 3 600-second cap), and are separately tested to fire —
    against an injected clock, so the test does not itself depend on wall time.
@@ -825,7 +835,7 @@ one.
 README.md            this file
 Makefile             builds the six C programs into bin/
 verify.sh            full / symmetric / fast / test
-checksums.txt        SHA-256 of every data artefact
+checksums.txt        SHA-256 of every data artifact
 src/lines.h          the lines of [n]^3, from the definition
 src/enum.c           the enumerator: exact cover by dancing links
 src/shards.c         the admissible row-0 permutations (A007016)
@@ -836,7 +846,7 @@ src/symmetry.c       the plane-fixing subgroup, and the shard orbits (Lemma 5)
 src/util.h           record loading and byte-range checks, the clock (real or
                      injected), payload digests and manifest recovery
 src/check.py         definition-level checks in numpy, independent of the C
-src/catalogue.py     assembly, the exhaustion audit, ledger canonicalisation,
+src/catalogue.py     assembly, the exhaustion audit, ledger canonicalization,
                      and the strict validators for results, worker reports and
                      the checksum manifest
 tests/test_n8.py     the order-8 controls

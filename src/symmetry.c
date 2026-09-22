@@ -13,7 +13,7 @@
  * If pi(0) != 0 it varies with a coordinate that is free on the plane, so it
  * cannot be constant; hence pi(0) = 0, and then the condition is
  * tau(eps_0(0)) = 0.  Write H for the set of such elements.  It is the setwise
- * stabiliser of a plane, hence a subgroup, and
+ * stabilizer of a plane, hence a subgroup, and
  *
  *     |H| = |G| / (3 * 2*floor(n/2)) = 9216 / 24 = 384   at n = 8 and n = 9,
  *

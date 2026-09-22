@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The order-8 controls.
 
-Order 8 is where a fully diagonalised Latin cube is known to exist and its
+Order 8 is where a fully diagonalized Latin cube is known to exist and its
 census is known independently, so every step the order-9 argument runs through
 can be checked against an answer that was not produced by this code:
 
@@ -334,7 +334,7 @@ def main():
 
     # A mapping that is never rejected is not a check.  Point one shard at a
     # different element of the subgroup and the guard must fire: in an orbit of
-    # full size the stabiliser is trivial, so any other element lands the
+    # full size the stabilizer is trivial, so any other element lands the
     # representative's records on a different row 0.
     lines = [json.loads(l) for l in open(symorb)]
     big = {r['orbit'] for r in lines
