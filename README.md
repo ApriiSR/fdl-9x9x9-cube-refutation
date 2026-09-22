@@ -13,15 +13,22 @@ Every pair of the $2^d$ corner cells lies on a line, which forces $n \le 1$ or $
 While there is a fully diagonalized Latin cube of order 8 (as shown by Taylor), **there is none of order 9.**  This answers Problem 2 negatively and rules out $M = 2^d$ at $d = 3$; it leaves open the first question of Problem 3, whether *some* $M$ exists in each dimension.  The method does not extend to order 10: the catalogue of candidate color classes would be thousands of times larger (a pilot suggests at least 6 x 10^10 entries and a core-year of enumeration), and the case analysis here relies on the cube having a center cell, which an even cube does not (though the order 8 case is sufficiently small to use as a sanity check anyways).  Settling order 10 seems to need a new idea, though if an order-10 cube exists a search might of course find it long before exhausting anything.
 
 
-The rough outline of this algorithm is as follows:
-1. Enumerate every *support*, a set of cells that could be the locations of a single color within an FDLH (that is, sets containing precisely one cell per line).
-2. Track those supports containing the center cell, one per symmetry class. 
-3. Form the graph of which of them can occur in the same FDLH — two vertices share an edge if they represent disjoint supports.  A 9x9x9 would need eight mutually compatible companions to some fixed center support — that is, an 8-clique in that support's graph.  Any 8-clique contains 56 triangles (mutually compatible triples), so counting triangles is enough: for 2 048 of the 2 049 center supports the graph has no triangles at all, and for the last one it has 8.  No graph can contain an 8-clique, so no center support extends to a 9x9x9, and every 9x9x9 would have to contain one.
+Our proof centers around *supports*, sets $T \subseteq [9]^3$ which contain precisely one cell per line. Supports are potential places a particular color could occur in a cube: if we colored every cell in a given support red, then the cube would have precisely one red cell in each line. Two supports are compatible if they are *disjoint*, or share no elements in common. If we color one support red and another support blue, then if they share a cell there will be some cell we tried to give two different colors — but if they don't share any cells, then we would have an incomplete cube with precisely one red cell and one blue cell in each line.
+
+The basic idea of the proof is to show that is impossible to pick nine supports which are all disjoint. This is conceptually straightforward — the difficult part is choosing and verifying the correctness of an algorithm which rules out possible sets of supports efficiently enough to exhaust the possibilities in a reasonable amount of time.
 
 
-Part I gives the mathematics behind each step, most of all why testing one
-center support per symmetry class is enough.  Part II describes the
-computation:
+The rough outline of our algorithm is as follows:
+1. Enumerate every support. This part is relatively straightforward — there end up being only $14\,616\,576$, so the hard part is working through all the possible sets of several supports. Call a support containing the center cell a *root*.
+2. Pick a symmetry group $G$ that acts on $[9]^3$ and maps supports to supports and roots to roots (and therefore FLDHs to FLDHs).
+3. Use $G$ to divide the supports into symmetry classes. Some of these symmetry classes will contain only roots, and the others will contain only non-roots. From each symmetry class containing roots, pick one representative root $T$.
+4. Form the graph $\Gamma(T)$ consisting of all the supports disjoint with $T$. Connect two supports with an edge iff they are disjoint.
+5. Show for each such $\Gamma(T)$ that it contains no 8-cliques (groups of 8 vertices where every vertex is connected to every other vertex).
+
+An order 9 fully diagonalized Latin cube, if one existed, would have a root $T = A^{-1}(A(4,4,4))$ containing its center cell, and could be transformed with a symmetry from $G$ into a fully diagonalized Latin cube $A'$ whose root $T'$ is whichever root we chose from the symmetry class containing $T$. The other eight supports $A^{-1}(\text{color})$ would then necessarily (i) each be disjoint with $T$ and (ii) all be pairwise disjoint, implying the existence of an 8-clique in the graph $\Gamma(T)$. Because our enumeration shows no such 8-cliques exist, there cannot exist a fully diagonalized Latin cube of order 9.
+
+
+Part I gives the mathematics behind each step, carefully checking each step of the argument that testing one root per symmetry class is enough.  Part II describes the computation:
 
 * **The support catalogue** — the file of all $14\,616\,576$ supports, its
   byte format and canonical order, and where to download it.
