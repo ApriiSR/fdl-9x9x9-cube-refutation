@@ -191,9 +191,9 @@ Axis lines survive any relabeling, but diagonals do not.  Call $u$ and $8 - u$ *
 
 **Each $\sigma_i$ sends partners to partners**: whenever $\sigma_i(u) = v$, also $\sigma_i(8 - u) = 8 - v$.  (Swap just $0$ and $1$ in the first coordinate, and the cells $(0,8,3), (1,7,3), \ldots$ become $(1,8,3), (0,7,3), \ldots$; since $1$ and $8$ are not partners, these lie on no line.)  It helps to fold the values in half at $4$:
 
-| distance from $4$ | $0$ | $1$ | $2$ | $3$ | $4$ |
+| distance from 4 | 0 | 1 | 2 | 3 | 4 |
 |---|:-:|:-:|:-:|:-:|:-:|
-| values | $4$ | $3, 5$ | $2, 6$ | $1, 7$ | $0, 8$ |
+| values | 4 | 3, 5 | 2, 6 | 1, 7 | 0, 8 |
 
 $4$ is its own partner, so a partner-respecting $\sigma$ must fix it.  Every other value belongs to one of the four pairs, and $\sigma$ carries each pair onto a pair.  So choosing $\sigma$ means two independent choices:
 
