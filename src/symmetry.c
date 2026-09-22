@@ -4,31 +4,30 @@
  * The enumeration is sharded by row 0, that is by the support's intersection
  * with the plane x = 0.  An element of the cell group
  *
- *     g(x)_i = tau( eps_i( x_{pi(i)} ) ),      pi in S_3,
- *                                              eps in {id, rev}^3,
- *                                              tau in C_{S_n}(rev),
+ *     g(x)_i = sigma_i( x_{pi(i)} ),     pi in S_3,  sigma_0 in C_{S_n}(rev),
+ *                                        sigma_1, sigma_2 in {sigma_0, sigma_0 . rev}
  *
- * therefore respects the sharding exactly when it maps that plane to itself.
- * Which elements do?  The image's first coordinate is tau(eps_0(x_{pi(0)})).
- * If pi(0) != 0 it varies with a coordinate that is free on the plane, so it
- * cannot be constant; hence pi(0) = 0, and then the condition is
- * tau(eps_0(0)) = 0.  Write H for the set of such elements.  It is the setwise
- * stabilizer of a plane, hence a subgroup, and
+ * (see orbits.c) therefore respects the sharding exactly when it maps that
+ * plane to itself.  Which elements do?  The image's first coordinate is
+ * sigma_0(x_{pi(0)}).  If pi(0) != 0 it varies with a coordinate that is free
+ * on the plane, so it cannot be constant; hence pi(0) = 0, and then the
+ * condition is sigma_0(0) = 0.  Write H for the set of such elements.  It is
+ * the setwise stabilizer of a plane, hence a subgroup, and
  *
  *     |H| = |G| / (3 * 2*floor(n/2)) = 9216 / 24 = 384   at n = 8 and n = 9,
  *
  * the index being the number of planes {x_a = c} in the G-orbit of {x_0 = 0}:
- * three choices of axis, and c = tau(0) or tau(n-1) ranges over everything
- * except the middle symbol of an odd n.
+ * three choices of axis, and c = sigma_0(0) ranges over everything except the
+ * middle symbol of an odd n.
  *
  * On the plane, such an h acts as (0,j,k) -> (0, u(j), v(k)) when pi fixes the
  * last two coordinates and as (0,j,k) -> (0, u(k), v(j)) when pi swaps them,
- * with u = tau . eps_1 and v = tau . eps_2.  So a shard's row 0, the
- * permutation p, is carried to v.p.u^{-1} or to v.p^{-1}.u^{-1}: the image
- * depends on p alone, and H permutes the admissible permutations among
- * themselves.  That is Lemma 5 of the README, and this program is its
- * computational half: `orbits` checks the closure explicitly and `expand`
- * produces each shard's contents as the image of its orbit representative's.
+ * with u = sigma_1 and v = sigma_2.  So a shard's row 0, the permutation p, is
+ * carried to v.p.u^{-1} or to v.p^{-1}.u^{-1}: the image depends on p alone,
+ * and H permutes the admissible permutations among themselves.  That is
+ * Lemma 5 of the README, and this program is its computational half: `orbits`
+ * checks the closure explicitly and `expand` produces each shard's contents as
+ * the image of its orbit representative's.
  *
  * Records are n*n bytes: byte i*n+j is k for the cell (i,j,k), the same format
  * `enum` writes, and images are sorted lexicographically so a mapped shard is
@@ -78,7 +77,7 @@ static void check_capacity(int n)
     long long ctau = 1;
     for (int i = 2; i <= h; i++) ctau *= i;
     for (int i = 0; i < h; i++) ctau *= 2;
-    long long cg = 6 * 8 * ctau / 2;
+    long long cg = 6 * ctau * 4;
     if (ctau > MAXTAU || cg > MAXG) {
         fprintf(stderr,
                 "order %d needs |C(rev)| = %lld and |G| = %lld; this build holds "
@@ -131,9 +130,11 @@ static void build_group(void)
 
     int pi[6][3] = {{0,1,2},{0,2,1},{1,0,2},{1,2,0},{2,0,1},{2,1,0}};
     int *g = fdlh_alloc(sizeof(int) * (size_t)NC, "a group element");
+    long long dups = 0;
     for (int a = 0; a < 6; a++)
-    for (int e = 0; e < 8; e++)
-    for (int ti = 0; ti < ntau; ti++) {
+    for (int ti = 0; ti < ntau; ti++)
+    for (int b = 0; b < 4; b++) {
+        /* sigma_0 = taus[ti]; sigma_i = sigma_0 . rev for i = 1, 2 when bit i-1 of b */
         const int *t = taus[ti];
         for (int x = 0; x < N; x++)
         for (int y = 0; y < N; y++)
@@ -141,7 +142,7 @@ static void build_group(void)
             int src[3] = {x, y, z}, img[3];
             for (int i = 0; i < 3; i++) {
                 int v = src[pi[a][i]];
-                if (e & (1 << i)) v = N - 1 - v;
+                if (i > 0 && (b & (1 << (i - 1)))) v = N - 1 - v;
                 img[i] = t[v];
             }
             g[(x * N + y) * N + z] = (img[0] * N + img[1]) * N + img[2];
@@ -152,10 +153,15 @@ static void build_group(void)
             if (!memcmp(G + (size_t)tab[s] * NC, g, sizeof(int) * (size_t)NC)) { dup = 1; break; }
             s = (s + 1) & (hs - 1);
         }
-        if (dup) continue;
+        if (dup) { dups++; continue; }
         if (NG >= MAXG) { fprintf(stderr, "group too large\n"); exit(1); }
         memcpy(G + (size_t)NG * NC, g, sizeof(int) * (size_t)NC);
         tab[s] = NG++;
+    }
+    /* below n = 2 every map is the identity, so there duplicates are expected */
+    if (N >= 2 && dups) {
+        fprintf(stderr, "%lld parameter choices repeat a map already built\n", dups);
+        exit(1);
     }
     free(g); free(tab);
 }

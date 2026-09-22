@@ -1,29 +1,28 @@
 /* orbits.c -- the cell group of [n]^3, and orbit classification of supports.
  *
- * The main lines of [n]^3 are permuted among themselves by
+ * The lines of [n]^3 are permuted among themselves by the maps
  *
- *     g(x)_i = tau( eps_i( x_{pi(i)} ) ),      pi in S_3,
- *                                              eps in {id, rev}^3,
- *                                              tau in C_{S_n}(rev),
+ *     g(x)_i = sigma_i( x_{pi(i)} ),     pi in S_3,  sigma_0 in C_{S_n}(rev),
+ *                                        sigma_1, sigma_2 in {sigma_0, sigma_0 . rev},
  *
- * where rev(t) = n-1-t.  A coordinate permutation pi maps axis lines to axis
- * lines and diagonals to diagonals; a per-axis reversal eps_i maps each family
- * to itself; and a symbol permutation tau applied to ALL THREE coordinates at
- * once sends a constant coordinate c to tau(c) and the pattern t to tau(t),
- * which is again a legitimate parameter.  It sends the pattern r(t) to
- * tau(rev(t)), and that is rev(tau(t)) -- again a main line -- only when tau
- * commutes with rev, which is exactly the condition defining C(rev).  tau is
- * an arbitrary permutation, not an affine map; the description is cell by cell.
- * So the group maps supports to supports.
+ * where rev(t) = n-1-t and C(rev) is the set of permutations commuting with
+ * it: those sending each pair {t, n-1-t} onto a pair.  Each output coordinate
+ * is one input coordinate, relabeled by its own sigma_i; the three relabelings
+ * must agree up to rev, which is what keeps the two varying coordinates of a
+ * diagonal (always equal, or always partners) in step.  A constant coordinate
+ * c goes to the constant sigma_i(c), and the patterns t and rev(t) go to
+ * sigma_0(t) or rev(sigma_0(t)), so a line goes to a line.  (Reversing one axis
+ * is sigma = (rev, id, id); relabeling every value by the same tau is
+ * sigma_0 = sigma_1 = sigma_2 = tau.)  So the group maps supports to supports.
  *
- * The parametrization is 2-to-1: eps = (rev,rev,rev) with tau = id is the same
- * cell map as eps = id with tau = rev.  Hence
- *     |G| = 6 * 8 * |C(rev)| / 2,
- * and |C(rev)| = 2^{floor(n/2)} * floor(n/2)!  -- 384 at n = 8 and n = 9 --
- * giving |G| = 9216 at both orders.  This program builds G, checks that count
- * by deduplication, and uses a fixed, explicitly named generating set -- six
- * elements chosen for a reason, not searched for -- whose closure is computed
- * and required to be the whole of G.
+ * pi and each sigma_i can be read back off the cell map, so every choice of
+ * parameters gives a different map for n >= 2, and
+ *     |G| = 6 * |C(rev)| * 2 * 2,
+ * with |C(rev)| = 2^{floor(n/2)} * floor(n/2)!  -- 384 at n = 8 and n = 9 --
+ * giving |G| = 9216 at both orders.  This program builds G, refuses a
+ * duplicate map for n >= 2 rather than silently dropping it, and uses a fixed,
+ * explicitly named generating set -- six elements chosen for a reason, not
+ * searched for -- whose closure is computed and required to be the whole of G.
  *
  * symmetry.c constructs the same group again for its own use.  That is
  * duplicated code, deliberately left duplicated: the two programs are compared
@@ -31,7 +30,7 @@
  * sharing the construction would remove that comparison.
  *
  * Every element of G fixes the center cell of an odd cube: rev fixes (n-1)/2
- * and so does every tau in C(rev).  So G acts on the set of supports through
+ * and so does every permutation in C(rev).  So G acts on the set of supports through
  * the center, which is what `classify` is used for.
  *
  * Records are n*n bytes: byte i*n+j is k for the cell (i,j,k).
@@ -59,12 +58,12 @@ static int NGEN;
 #define now_s fdlh_now_s
 
 /* ---- the centralizer of rev in S_n -------------------------------------- */
-/* tau commutes with rev iff it permutes the pairs {t, n-1-t} as blocks,
+/* A permutation commutes with rev iff it permutes the pairs {t, n-1-t} as blocks,
  * possibly flipping each; the middle point of an odd n is fixed. */
 static int taus[MAXTAU][MAXN];
 static int ntau;
 
-/* |C(rev)| = 2^{floor(n/2)} * floor(n/2)!, and |G| = 6 * 8 * |C(rev)| / 2.
+/* |C(rev)| = 2^{floor(n/2)} * floor(n/2)!, and |G| = 6 * |C(rev)| * 4.
  * Both arrays are fixed-size, so refuse an order that would overrun them
  * BEFORE anything is written, rather than after. */
 static void check_capacity(int n)
@@ -73,7 +72,7 @@ static void check_capacity(int n)
     long long ctau = 1;
     for (int i = 2; i <= h; i++) ctau *= i;
     for (int i = 0; i < h; i++) ctau *= 2;
-    long long cg = 6 * 8 * ctau / 2;
+    long long cg = 6 * ctau * 4;
     if (ctau > MAXTAU || cg > MAXG) {
         fprintf(stderr,
                 "order %d needs |C(rev)| = %lld and |G| = %lld; this build holds "
@@ -130,6 +129,25 @@ static uint64_t fnv(const void *p, size_t nbytes)
     return h;
 }
 
+/* g(x)_i = sigma_i(x_{pi(i)}), with sigma_0 = s0 and, for i = 1, 2, sigma_i =
+ * s0 . rev when bit i-1 of b is set and s0 otherwise. */
+static void build_element(const int *pi, const int *s0, int b, int *g)
+{
+    int sig[3][MAXN];
+    for (int t = 0; t < N; t++) {
+        sig[0][t] = s0[t];
+        sig[1][t] = (b & 1) ? s0[N - 1 - t] : s0[t];
+        sig[2][t] = (b & 2) ? s0[N - 1 - t] : s0[t];
+    }
+    for (int x = 0; x < N; x++)
+    for (int y = 0; y < N; y++)
+    for (int z = 0; z < N; z++) {
+        int src[3] = {x, y, z}, img[3];
+        for (int i = 0; i < 3; i++) img[i] = sig[i][src[pi[i]]];
+        g[(x * N + y) * N + z] = (img[0] * N + img[1]) * N + img[2];
+    }
+}
+
 static void build_group(void)
 {
     build_taus();
@@ -142,21 +160,11 @@ static void build_group(void)
 
     int pi[6][3] = {{0,1,2},{0,2,1},{1,0,2},{1,2,0},{2,0,1},{2,1,0}};
     int *g = fdlh_alloc(sizeof(int) * (size_t)NC, "a group element");
+    long long dups = 0;
     for (int a = 0; a < 6; a++)
-    for (int e = 0; e < 8; e++)
-    for (int ti = 0; ti < ntau; ti++) {
-        const int *t = taus[ti];
-        for (int x = 0; x < N; x++)
-        for (int y = 0; y < N; y++)
-        for (int z = 0; z < N; z++) {
-            int src[3] = {x, y, z}, img[3];
-            for (int i = 0; i < 3; i++) {
-                int v = src[pi[a][i]];
-                if (e & (1 << i)) v = N - 1 - v;
-                img[i] = t[v];
-            }
-            g[(x * N + y) * N + z] = (img[0] * N + img[1]) * N + img[2];
-        }
+    for (int ti = 0; ti < ntau; ti++)
+    for (int b = 0; b < 4; b++) {
+        build_element(pi[a], taus[ti], b, g);
         uint64_t h = fnv(g, sizeof(int) * (size_t)NC);
         size_t s = h & (hs - 1);
         int dup = 0;
@@ -164,11 +172,16 @@ static void build_group(void)
             if (!memcmp(G + (size_t)tab[s] * NC, g, sizeof(int) * (size_t)NC)) { dup = 1; break; }
             s = (s + 1) & (hs - 1);
         }
-        if (dup) continue;
+        if (dup) { dups++; continue; }
         if (NG >= MAXG) { fprintf(stderr, "group too large\n"); exit(1); }
         memcpy(G + (size_t)NG * NC, g, sizeof(int) * (size_t)NC);
         tab[s] = NG;
         NG++;
+    }
+    /* below n = 2 every map is the identity, so there duplicates are expected */
+    if (N >= 2 && dups) {
+        fprintf(stderr, "%lld parameter choices repeat a map already built\n", dups);
+        exit(1);
     }
     free(g); free(tab);
 }
@@ -238,36 +251,23 @@ static int closure_size(const int *gens, int ngens)
 /* An explicit generating set -- fixed, not searched for -- with a mathematical
  * reason for each element, and VERIFIED by closure rather than assumed:
  *
- *   A  tau = the flip of the block {0, n-1}          (one reversal of symbols)
- *   B  tau = the transposition of the blocks {0,n-1} and {1,n-2}
- *   C  tau = the cyclic shift of all floor(n/2) blocks
+ *   A  sigma_i = tau for all i, tau the flip of the block {0, n-1}
+ *   B  sigma_i = tau for all i, tau the transposition of the blocks {0,n-1}
+ *      and {1,n-2}
+ *   C  sigma_i = tau for all i, tau the cyclic shift of all floor(n/2) blocks
  *   D  pi = the transposition (x,y,z) -> (y,x,z)
  *   E  pi = the 3-cycle      (x,y,z) -> (y,z,x)
- *   F  eps = reversal of the first coordinate
+ *   F  sigma = (rev, id, id), reversal of the first coordinate
  *
- * A, B, C generate C(rev) (a flip, plus the symmetric group on the blocks);
- * D, E generate S_3 on the coordinates; F, conjugated by D and E, gives the
- * three per-axis reversals.  Together they must therefore be all of G, and the
+ * A, B, C give every sigma_0 = sigma_1 = sigma_2 in C(rev) (a flip, plus the
+ * symmetric group on the blocks); D, E generate S_3 on the coordinates; F,
+ * conjugated by D and E, reverses any one axis, which with the equal-sigma
+ * elements gives every sigma_i in {sigma_0, sigma_0 . rev}.  Together they must therefore be all of G, and the
  * closure computation checks that they are.
  */
-static void build_element(const int *pi, int eps, const int *tau, int *g)
+static void add_generator(const int *pi, const int *s0, int b, int *g)
 {
-    for (int x = 0; x < N; x++)
-    for (int y = 0; y < N; y++)
-    for (int z = 0; z < N; z++) {
-        int src[3] = {x, y, z}, img[3];
-        for (int i = 0; i < 3; i++) {
-            int v = src[pi[i]];
-            if (eps & (1 << i)) v = N - 1 - v;
-            img[i] = tau[v];
-        }
-        g[(x * N + y) * N + z] = (img[0] * N + img[1]) * N + img[2];
-    }
-}
-
-static void add_generator(const int *pi, int eps, const int *tau, int *g)
-{
-    build_element(pi, eps, tau, g);
+    build_element(pi, s0, b, g);
     int j = find_group(g);
     if (j < 0) { fprintf(stderr, "generator is not in the constructed group\n"); exit(1); }
     gen[NGEN++] = j;
@@ -277,20 +277,20 @@ static void pick_generators(void)
 {
     int h = N / 2;
     int id3[3] = {0, 1, 2}, sw[3] = {1, 0, 2}, cy[3] = {1, 2, 0};
-    int idt[MAXN], A[MAXN], B[MAXN], C[MAXN];
+    int idt[MAXN], A[MAXN], B[MAXN], C[MAXN], R[MAXN];
     int *g = fdlh_alloc(sizeof(int) * (size_t)NC, "a generator");
-    for (int t = 0; t < N; t++) idt[t] = A[t] = B[t] = C[t] = t;
+    for (int t = 0; t < N; t++) { idt[t] = A[t] = B[t] = C[t] = t; R[t] = N - 1 - t; }
     A[0] = N - 1; A[N - 1] = 0;
     if (h >= 2) { B[0] = 1; B[1] = 0; B[N - 1] = N - 2; B[N - 2] = N - 1; }
     for (int a = 0; a < h; a++) { int b = (a + 1) % h; C[a] = b; C[N - 1 - a] = N - 1 - b; }
 
     NGEN = 0;
-    add_generator(id3, 0, A, g);
-    if (h >= 2) add_generator(id3, 0, B, g);
-    if (h >= 3) add_generator(id3, 0, C, g);
-    add_generator(sw, 0, idt, g);
-    add_generator(cy, 0, idt, g);
-    add_generator(id3, 1, idt, g);
+    add_generator(id3, A, 0, g);
+    if (h >= 2) add_generator(id3, B, 0, g);
+    if (h >= 3) add_generator(id3, C, 0, g);
+    add_generator(sw, idt, 0, g);
+    add_generator(cy, idt, 0, g);
+    add_generator(id3, R, 3, g);           /* sigma = (rev, rev.rev, rev.rev) */
     free(g);
 
     int c = closure_size(gen, NGEN);
@@ -419,8 +419,8 @@ int main(int argc, char **argv)
     if (!strcmp(mode, "group")) {
         printf("n=%d |C(rev)|=%d |G|=%d generators=%d (%.1f s)\n",
                N, ntau, NG, NGEN, now_s() - t0);
-        int expect = N >= 2 ? 6 * 8 * ntau / 2 : 1;   /* below n = 2 every map is the identity */
-        printf("expected |G| = %s = %d -- %s\n", N >= 2 ? "6*8*|C(rev)|/2" : "1 (n < 2)", expect,
+        int expect = N >= 2 ? 6 * ntau * 4 : 1;   /* below n = 2 every map is the identity */
+        printf("expected |G| = %s = %d -- %s\n", N >= 2 ? "6*|C(rev)|*4" : "1 (n < 2)", expect,
                expect == NG ? "ok" : "MISMATCH");
         if (N % 2) {
             int m = (N - 1) / 2, bad = 0;
