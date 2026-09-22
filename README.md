@@ -144,15 +144,7 @@ An aside, not needed for the proof: all four space diagonals pass through $c_0$.
 
 ### Lemma 3 (orbit reduction)
 
-> The maps $g = g(\pi, \varepsilon, \tau)$ defined below, for $\pi \in S_3$,
-> $\varepsilon \in \lbrace\mathrm{id}, r\rbrace^3$ and $\tau \in C(r)$, form a group $G$ of
-> permutations of $[n]^3$, of order $6 \cdot 8 \cdot \lvert C(r) \rvert / 2$ when $n \ge 2$
-> ($9216$ at $n = 8$ and $n = 9$), and every $g \in G$ (i) maps lines to lines,
-> hence supports to supports; (ii) fixes the center cell $c_0$ when $n$ is odd;
-> (iii) maps partitions of $[n]^3$ into supports to partitions.  Consequently,
-> for odd $n$, a root $T$ lies in a partition iff $gT$ does, for every $g \in G$.
-
-We need test only one root from each symmetry class, for some suitable notion of symmetry classes. For example, if two roots are reflections of each other, ruling out that one of them occurs in an FDLH also implies that the other does not. To maximize the efficiency of our exhaustive enumeration, we wish to use the largest valid choice of symmetry group we can, i.e. the group which maximizes the size of each root's symmetry class while still ensuring that checking one representative from each class is sufficient.
+We need to test only one root from each symmetry class, for some suitable notion of symmetry classes. For example, if two roots are reflections of each other, ruling out that one of them occurs in an FDLH also implies that the other does not. To maximize the efficiency of our exhaustive enumeration, we wish to use the largest valid choice of symmetry group we can, i.e. the group which maximizes the size of each root's symmetry class while still ensuring that checking one representative from each class is sufficient.
 
 The symmetries used here permute the axes, reverse individual axes, and relabel the coordinate *values* by one permutation applied on every axis at once.  Axis lines survive any
 relabelling, but a diagonal such as $(t, 8-t, 3)$ survives only if the
@@ -161,42 +153,41 @@ cells $(0,8,3), (1,7,3), \ldots$ become $(1,8,3), (0,7,3), \ldots$, which lie on
 the relabellings used are those that shuffle the pairs $\lbrace0,8\rbrace, \lbrace1,7\rbrace, \lbrace2,6\rbrace, \lbrace3,5\rbrace$ as blocks and optionally flip each, leaving $4$ fixed — the permutations
 that commute with reversal.
 
-Precisely, let $C(r)$ be the centraliser of $r$ in $S_n$, the symmetric group
-on $[n]$: that is, the set of elements of $S_n$ that communte with $r$. $C(r)$ consists of the permutations $\tau$ of the coordinate values such that $\tau(r(t)) = r(\tau(t))$ for all $t$.  ($r$ is written `rev` in `src/orbits.c`.)  
-
-For $\pi \in S_3$, $\varepsilon \in \lbrace\mathrm{id}, r\rbrace^3$ and $\tau \in C(r)$ define a map $g \colon [n]^3 \to [n]^3$ on cells $x = (x_0, x_1, x_2)$ by
+Precisely, let $C(r)$ be the centraliser of $r$ in the symmetric group $S_n$
+on $[n]$: the permutations $\tau$ of the coordinate values that commute with
+$r$, i.e. with $\tau(r(t)) = r(\tau(t))$ for all $t$.  ($r$ is written `rev` in
+`src/orbits.c`.)  For $\pi \in S_3$, $\varepsilon \in \lbrace\mathrm{id}, r\rbrace^3$ and
+$\tau \in C(r)$, define $g = g(\pi, \varepsilon, \tau) \colon [n]^3 \to [n]^3$ by
 
 $$g(x)_i = \tau\bigl( \varepsilon_i\bigl( x_{\pi(i)} \bigr) \bigr).$$
 
-These form a group $G$ (a subgroup of $`S_{n^3}`$).  The claim is that $G$ 
-(i) permutes the lines, hence maps supports to
-supports; (ii) fixes the center cell (when n is odd); and (iii) maps partitions to partitions.
+> These maps form a group $G$ of permutations of $[n]^3$, of order
+> $6 \cdot 8 \cdot \lvert C(r) \rvert / 2$ when $n \ge 2$ ($9216$ at $n = 8$ and $n = 9$),
+> and every $g \in G$ (i) maps lines to lines, hence supports to supports;
+> (ii) fixes the center cell $c_0$ when $n$ is odd; (iii) maps partitions of
+> $[n]^3$ into supports to partitions.  Consequently, for odd $n$, a root $T$
+> lies in a partition iff $gT$ does, for every $g \in G$, so it suffices to
+> test one root per $G$-orbit.
 
-Consequently a root $T$ lies in a partition iff $gT$ does for some $g$, and it suffices to
-test one root per $G$-orbit.  At $n = 8$ and $n = 9$,
-$\lvert C(r)\rvert = 2^{\lfloor n/2\rfloor} \cdot \lfloor n/2\rfloor! = 384$ and
-$\lvert G\rvert = 6 \cdot 8 \cdot 384 / 2 = \mathbf{9216}$, the $/2$ being proved with the closure below.
-
-*Proof.*  (i)  Describe a line by its triple of patterns (constant $c$,
-$t$, or $`r(t)`$) per coordinate.  $\pi$ permutes which coordinate carries which
-pattern, leaving at least one non-constant.  $\varepsilon_i = r$ sends a constant $c$
-in position $i$ to the constant $r(c)$, the pattern $t$ to $r(t)$, and $r(t)$
-to $t$.  Applying the same $\tau$ to all three coordinates: take a line with, say, one
-constant coordinate and both varying patterns, and follow it through:
+*Proof.*  (i)  Describe a line by its pattern in each coordinate: a constant
+$c$, $t$, or $`r(t)`$.  $\pi$ permutes the coordinates, so it permutes the
+patterns among them and leaves at least one varying.  $\varepsilon_i = r$ replaces a
+constant $c$ in coordinate $i$ by $r(c)$ and swaps the patterns $t$ and $r(t)$
+there.  $\tau$ acts on all three coordinates at once; take for example a line
+with one constant coordinate and both varying patterns:
 
 $$\begin{aligned}
-L   &= \lbrace (c,\ t,\ r(t)) : t \in [n] \rbrace \\
-\tau L  &= \lbrace (\tau(c),\ \tau(t),\ \tau(r(t))) : t \in [n] \rbrace \\
+\ell   &= \lbrace (c,\ t,\ r(t)) : t \in [n] \rbrace \\
+\tau \ell  &= \lbrace (\tau(c),\ \tau(t),\ \tau(r(t))) : t \in [n] \rbrace \\
     &= \lbrace (\tau(c),\ \tau(t),\ r(\tau(t))) : t \in [n] \rbrace \quad\text{since } \tau \text{ commutes with } r \\
     &= \lbrace (\tau(c),\ s,\ r(s)) : s \in [n] \rbrace \quad\text{writing } s = \tau(t);\ \tau \text{ is a bijection, so } s \text{ runs over all of } [n]
 \end{aligned}$$
 
-The result is again a line: the constant went to a constant and the varying
-coordinates still carry the patterns $s$ and $r(s)$.  The middle step is the
-only place the commuting condition is used — without it the third coordinate
-would be $\tau(r(\tau^{-1}(s)))$, which is neither $s$ nor $r(s)$, and $\tau L$ would
-not be a line.  Any other line is the same computation with a different choice
-of pattern per coordinate.  In each case the image is again a line.
+The constant went to a constant and the varying coordinates still carry the
+patterns $s$ and $r(s)$, so $\tau \ell$ is a line.  The middle step is the only
+place commutation is used; without it the third coordinate would be
+$\tau(r(\tau^{-1}(s)))$, in general neither $s$ nor $r(s)$.  Every other line is
+the same computation with a different pattern in each coordinate.
 
 A bijection of cells that permutes the lines carries a set meeting every
 line once to a set meeting every line once, so $G$ maps $T(n)$ to $T(n)$.
@@ -210,7 +201,7 @@ no center; (i) and (iii) are unaffected.)
 (iii)  $g$ is a bijection of the cell set, so $T_1, \ldots, T_n$ are pairwise
 disjoint supports covering the cube iff $gT_1, \ldots, gT_n$ are.
 
-Finally, that these maps form a group, and how many of them there are.
+It remains to show that these maps form a group, and to count them.
 
 *Closure.*  If $g = (\pi, \varepsilon, \tau)$ and $h = (\rho, \delta, \sigma)$, then
 $g \circ h$ (apply $h$ first) is the map with parameters
@@ -264,41 +255,36 @@ all of them. ∎
 > Let $T$ be a support of $[n]^3$, let $P(T)$ be the set of supports disjoint
 > from $T$, and let $\Gamma(T)$ be the graph on $P(T)$ joining two supports when
 > they are disjoint.  Then $T$ lies in a partition of $[n]^3$ into supports iff
-> $\Gamma(T)$ contains a clique of size $n - 1$.  In particular, if
-> $\omega(\Gamma(T)) \lt n - 1$ then $T$ lies in no partition.
+> $\Gamma(T)$ contains a clique of size $n - 1$.  In particular, if its clique
+> number $\omega(\Gamma(T))$ (the size of its largest clique) is less than $n - 1$,
+> then $T$ lies in no partition.
 
-Completing a support $T$ to an FDLH requires $n-1$ further supports, disjoint
-from $T$ and from one another.  Let $P(T) = \lbrace S \in T(n) : S \cap T = \emptyset \rbrace$ be the
-**companion pool** of $T$, and let $\Gamma(T)$ be the graph on $P(T)$ joining
-two companions when they are disjoint.  Because the catalogue is complete,
-every possible companion is in the pool, so $n-1$ such supports are exactly a
-clique of size $n-1$ in $\Gamma(T)$, and any such clique together with $T$ is
-$n$ pairwise disjoint supports, hence a partition (Lemma 1).  Hence, for every $n$,
+*Proof.*  Completing $T$ to a partition takes $n-1$ further supports, disjoint
+from $T$ and from one another: that is, $n-1$ members of $P(T)$ pairwise
+joined in $\Gamma(T)$, a clique.  Conversely any $(n-1)$-clique together with
+$T$ is $n$ pairwise disjoint supports, hence a partition (Lemma 1). ∎
 
-$$T \text{ belongs to a partition} \iff \Gamma(T) \text{ contains a clique of size } n - 1,$$
+Call $P(T)$ the **companion pool** of $T$.  The lemma needs the pool to be
+complete, and it is, because it is computed as a filter over the complete
+catalogue.  At $n = 9$ any bound $\omega(\Gamma(T)) \le 7$ would do.  At $n = 8$
+the control checks the equivalence itself: a support lies in a cover iff its
+pool graph has a 7-clique.
 
-and in particular $\omega(\Gamma(T)) \lt n - 1$ rules $T$ out (here $\omega$ is the
-*clique number*, the size of the largest clique).  At $n = 9$ a bound of
-$\omega(\Gamma(T)) \le 4$ already suffices, and a *triangle-free* $\Gamma(T)$ ($`\omega \le 2`$)
-suffices very comfortably.  At $n = 8$ the control checks the equivalence
-itself: a support lies in a cover iff its pool graph has a 7-clique.
-
-The recorded triangle counts alone rule out every root case, with no clique
-computation at all.  An 8-clique contains $C(8,3) = 56$ triangles, whereas
-every one of the 2 049 computed companion graphs has either $0$ or $8$.  None
-of them can contain an 8-clique, so no root lies in a partition, which would
-require one (Lemma 4).
-Counting triangles is a cheap way to rule out 8-cliques: `pack.c` builds the
-adjacency bitmap of each companion graph, and for every edge $ab$ counts the
-common neighbours of $a$ and $b$ with a popcount over the two rows' AND;
-summing over edges counts each triangle three times.  `catalogue.py validate`
-checks the recorded counts against the $56$ threshold.
+**Triangles.**  The recorded triangle counts alone rule out every root, with
+no clique computation at all.  An 8-clique contains $\binom{8}{3} = 56$
+triangles, whereas each of the 2 049 root graphs has either $0$ (2 048 of them)
+or $8$ (one).  `pack.c` counts them from the adjacency bitmap of each graph:
+for every edge $ab$ it counts the common neighbours of $a$ and $b$ with a
+popcount of the AND of their rows, and the sum over edges counts each triangle
+three times.  `catalogue.py validate` checks the recorded counts against the
+threshold of $56$.
 
 `pack.c` also computes each maximum clique outright, by the recursive branch and
-bound `bk()`, and gets 2 for 2 048 of the orbits and 4 for one.  That is a
-different algorithm from the exact cover — but the two live in the same program
-and share its record loader, its cell masks and its `disjoint()`, so they are
-independent as *algorithms*, not as implementations.
+bound `bk()`: $\omega = 2$ for 2 048 of the root graphs and $4$ for one.  That
+is a different algorithm from the exact-cover search described after the
+theorem, but the two live in the same program and share its record loader, its
+cell masks and its `disjoint()`, so they are independent as *algorithms*, not
+as implementations.
 
 ### Theorem
 
@@ -321,12 +307,12 @@ The computation (Part II) establishes:
 A partition containing $T$ would give a clique of size 8 in $\Gamma(T)$
 (Lemma 4), so $T$ belongs to no partition.  Contradiction. ∎
 
-A second argument, independent of the clique bound (Lemma 4), runs a depth-first exact cover over
-each of the $2\,049$ pools: all $2\,049$ are exhausted, with $0$ covers found,
-and no branch survives past a root plus **one** companion.  That is the depth
-the exact-cover search reaches, not a bound on the size of a disjoint packing:
-the search must cover every cell of the cube and kills a branch as soon as some
-uncovered cell has no surviving candidate. While the exceptional orbit's maximal packings can reach more than two supports, by the second support there is always some cell in the cube which can't be reached by any compatible support.
+A second argument, independent of the clique bound (Lemma 4), runs a
+depth-first exact cover of the cube over each of the $2\,049$ pools.  All
+$2\,049$ are exhausted with $0$ covers found, and no branch survives past the
+root plus **one** companion.  That depth is not a bound on the size of a
+disjoint packing: the search must cover every cell, and it abandons a branch
+as soon as some uncovered cell lies in no remaining compatible support.  While the exceptional orbit's maximal packings can reach more than two supports, by the second support there is always some cell in the cube which can't be reached by any compatible support.
 
 Either argument alone is sufficient.  They are different algorithms run over
 the same pools by the same program; `catalogue.py validate` requires both of
