@@ -138,11 +138,15 @@ plane diagonals, 4 space diagonals), 244 at $n = 8$.
 > Consequently $T(n)$ is the disjoint union of the shards $S_p$ over the
 > admissible permutations $p$.
 
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="figures/latin-depth-dark.svg"><img src="figures/latin-depth-light.svg" width="322" alt="The root in a cube with x0 running down and x1 across, each red cell joined to the front face by a segment"></picture></p>
+
+The root from the figures above, drawn with $x_0$ running down and $x_1$ across, like the rows and columns of a matrix, and $x_2$ running away from the viewer.  Each pillar $\lbrace(x_0, x_1, \ast)\rbrace$ holds exactly one red cell, so the support is a $9 \times 9$ array of depths: the segment from the front face to the cell at $(x_0, x_1)$ crosses $L(x_0, x_1)$ cells.
+
 Supports have the form $\lbrace(x_0, x_1, L(x_0,x_1)) : x_0, x_1 \in [n]\rbrace$ merely due to the requirement that the support contain one cell from each *axis* line — that part of the statement would be true even for supports of merely Latin cubes (i.e. the more general notion of support that permits choosing zero or multiple cells from a diagonal).  The fixed point comes from the requirement that the support hit the positive diagonal of the plane $x_0 = 0$, while the reflected point comes from the requirement to hit the negative diagonal.
 
-<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="figures/latin-square-dark.svg"><img src="figures/latin-square-light.svg" width="744" alt="A support in 3D, its Latin square, and its bottom plane with both diagonals"></picture></p>
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="figures/latin-square-dark.svg"><img src="figures/latin-square-light.svg" width="810" alt="The support with its top plane shaded, that plane from above with a segment to each cell, and the Latin square"></picture></p>
 
-The same root as above.  Left: the cells with $x_0 = 0$, in the shaded plane.  Middle: its Latin square, whose row 0 is the permutation $p$.  Right: the plane $x_0 = 0$ seen from above, with its two diagonals; the support meets each diagonal exactly once, at the fixed point and at the reflected point of $p$.
+Left: the cells with $x_0 = 0$, in the shaded top plane.  Middle: that plane seen from above, with its two diagonals.  Each segment crosses as many cells as the matching entry in row 0 of the Latin square on the right, and the support meets each diagonal exactly once, at the fixed point and at the reflected point of $p$.  Right: the Latin square, whose row 0 is the permutation $p$.
 
 *Proof.*  The pillar $\lbrace(x_0,x_1,\ast)\rbrace$ is a line (third coordinate $t$, the other
 two constant), and $T$ meets it exactly once, which picks out the single value

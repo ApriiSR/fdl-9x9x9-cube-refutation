@@ -308,6 +308,98 @@ def fig_graph(d, theme):
                theme, 'The component of the companion graph containing its 4-cliques')
 
 
+def matrix_projector(u, az=0.36, el=0.30):
+    """Camera above and to the right, for the Latin-square figures: x0 runs top
+    to bottom and x1 left to right, as in a matrix, and x2 runs away from the
+    viewer, so the front face x2 = 0 is where the Latin square sits."""
+    ca, sa, ce, se = math.cos(az), math.sin(az), math.cos(el), math.sin(el)
+    h = (N - 1) / 2
+
+    def P(x0, x1, x2):
+        X, U, D = x1 - h, h - x0, x2 - h
+        Xp, Dp = X * ca + D * sa, -X * sa + D * ca
+        return Xp * u, -(U * ce + Dp * se) * u, Dp * ce - U * se
+    return P
+
+
+def matrix_cube(rec, u, theme, opacity=None, segments=(), plane=False, s=0.62):
+    """The support rec in the matrix view.  opacity(x0) fades cells by row;
+    segments lists the rows whose cells get a line back to the front face."""
+    Th = THEMES[theme]
+    P = matrix_projector(u)
+    lo, hi = -0.5, N - 0.5
+
+    def poly(pts, attrs):
+        return '<polygon points="%s" %s/>' % (' '.join('%.1f,%.1f' % q[:2] for q in pts), attrs)
+    out = []
+    if plane:
+        out.append(poly([P(lo, a, b) for a, b in ((lo, lo), (hi, lo), (hi, hi), (lo, hi))],
+                        'fill="%s" fill-opacity="0.16" stroke="%s" stroke-width="1" '
+                        'stroke-dasharray="3 2"' % (Th['plane'], Th['plane'])))
+    for a in (lo, hi):
+        for b in (lo, hi):
+            for p0, p1 in (((a, b, lo), (a, b, hi)), ((a, lo, b), (a, hi, b)),
+                           ((lo, a, b), (hi, a, b))):
+                A, B = P(*p0), P(*p1)
+                out.append('<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" stroke="%s" '
+                           'stroke-width="1.35"/>' % (A[0], A[1], B[0], B[1], Th['line']))
+    for i in range(1, N):     # the front face as a faint 9 x 9 grid
+        for p0, p1 in (((i - 0.5, lo, lo), (i - 0.5, hi, lo)), ((lo, i - 0.5, lo), (hi, i - 0.5, lo))):
+            A, B = P(*p0), P(*p1)
+            out.append('<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" stroke="%s" '
+                       'stroke-width="0.7"/>' % (A[0], A[1], B[0], B[1], Th['faint']))
+    h = s / 2
+    items = []
+    for x0, x1, x2 in cells_of(rec):
+        op = opacity(x0) if opacity else 1
+
+        def V(d0, d1, d2):
+            return P(x0 + d0, x1 + d1, x2 + d2)
+        g = ''.join(poly(f, 'fill="%s"' % shade(RED, k)) for f, k in (
+            ([V(-h, -h, -h), V(-h, h, -h), V(-h, h, h), V(-h, -h, h)], 1.0),    # top
+            ([V(-h, -h, -h), V(h, -h, -h), V(h, h, -h), V(-h, h, -h)], 0.8),    # front
+            ([V(-h, h, -h), V(h, h, -h), V(h, h, h), V(-h, h, h)], 0.62)))      # right
+        items.append((P(x0, x1, x2)[2], g if op == 1 else '<g opacity="%.2f">%s</g>' % (op, g)))
+        if x0 in segments:
+            # one piece per cell the segment crosses, so it sorts with the cubes
+            ends = [lo] + [k + 0.5 for k in range(x2)]
+            ends[-1:] = [ends[-1]] if x2 == 0 else ends[-1:]
+            stops = [k + 0.5 for k in range(x2 - 1)] + [x2 - h]
+            for z0, z1 in zip([lo] + stops[:-1], stops):
+                A, B = P(x0, x1, z0), P(x0, x1, z1)
+                items.append((P(x0, x1, (z0 + z1) / 2)[2],
+                              '<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" stroke="%s" '
+                              'stroke-width="1.6" stroke-linecap="round"/>'
+                              % (A[0], A[1], B[0], B[1], Th['text'])))
+    items.sort(key=lambda t: -t[0])
+    out += [g for _, g in items]
+    for x0, x1, x2 in cells_of(rec):
+        if x0 in segments:
+            A = P(x0, x1, lo)
+            out.append('<circle cx="%.1f" cy="%.1f" r="2.2" fill="%s"/>'
+                       % (A[0], A[1], Th['text']))
+    # axes: x0 down the left of the front face, x1 along its bottom, x2 away
+    # along the bottom right edge; each label sits past its arrowhead
+    g = 1.0
+    arrows = (((lo, lo - g, lo), (hi, lo - g, lo), '0', (0, 16)),
+              ((hi + g, lo, lo), (hi + g, hi, lo), '1', (14, 4)),
+              ((hi + g, hi + g * 0.6, lo), (hi + g, hi + g * 0.6, hi), '2', (12, 2)))
+    for p0, p1, name, (dx, dy) in arrows:
+        A, B = P(*p0), P(*p1)
+        out.append('<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" stroke="%s" '
+                   'stroke-width="1.2" marker-end="url(#arrow-%s)"/>'
+                   % (A[0], A[1], B[0], B[1], Th['text'], theme))
+        out.append(var(B[0] + dx, B[1] + dy, name, theme))
+    pts = [P(a, b, c) for a in (lo, hi + 2.2) for b in (lo - 1.8, hi + 1.6) for c in (lo, hi)]
+    xs, ys = [q[0] for q in pts], [q[1] for q in pts]
+    return ''.join(out), (min(xs) - 6, min(ys) - 6, max(xs) + 6, max(ys) + 6)
+
+
+def fig_depth(d, theme):
+    frag, box = matrix_cube(d['root'], 21, theme, segments=range(N))
+    return svg(frag, box, theme, 'A support as a Latin square read from the front face')
+
+
 def fig_lemma2(d, theme):
     Th = THEMES[theme]
     T = d['root']
@@ -315,84 +407,80 @@ def fig_lemma2(d, theme):
     fixed = [t for t in range(N) if p[t] == t]
     refl = [t for t in range(N) if p[t] == rev(t)]
     assert len(fixed) == 1 and len(refl) == 1
+    rings = ((fixed[0], ''), (refl[0], ' stroke-dasharray="3 2"'))
     out = []
-    # (a) the cube with the plane x0 = 0 picked out
-    frag, box = cube([(RED, T, 0.28)], 15, theme, axes=True, plane=-0.5)
-    # draw the x0 = 0 layer on top at full strength
-    P = projector(15)
-    h = 0.31
-    layer = []
-    for x1 in range(N):
-        x2 = p[x1]
-        def V(d0, d1, d2):
-            return P(0 + d0, x1 + d1, x2 + d2)[:2]
-        for f, k in (([V(h, -h, -h), V(h, h, -h), V(h, h, h), V(h, -h, h)], 1.0),
-                     ([V(-h, -h, -h), V(h, -h, -h), V(h, h, -h), V(-h, h, -h)], 0.8),
-                     ([V(-h, -h, -h), V(h, -h, -h), V(h, -h, h), V(-h, -h, h)], 0.62)):
-            layer.append((P(0, x1, x2)[2], '<polygon points="%s" fill="%s"/>'
-                          % (' '.join('%.1f,%.1f' % q for q in f), shade(RED, k))))
-    layer.sort(key=lambda t: -t[0])
-    frag += ''.join(s for _, s in layer)
-    w0 = box[2] - box[0]
+    # (a) the cube, with the plane x0 = 0 at full strength and the rest faded
+    frag, box = matrix_cube(T, 15, theme, opacity=lambda x0: 1 if x0 == 0 else 0.25,
+                            segments=(0,), plane=True)
+    w0, ht = box[2] - box[0], box[3] - box[1]
     out.append(place(frag, box, 0, 0))
-    ht = box[3] - box[1]
     out.append(label(w0 / 2, ht + 18, 'the support T, with the plane x₀ = 0', theme, 14))
 
-    # (b) the Latin square, row 0 highlighted
+    # (b) the plane x0 = 0 seen from above: x1 across, x2 away from the front face
     c = 24
-    X = w0 + 40
+    X = w0 + 44
     Y = (ht - N * c) / 2
+    out.append('<rect x="%.1f" y="%.1f" width="%d" height="%d" fill="%s" fill-opacity="0.16"/>'
+               % (X, Y, N * c, N * c, Th['plane']))
+    for i in range(N + 1):
+        out.append('<path d="M%.1f %.1fv%dM%.1f %.1fh%d" stroke="%s" stroke-width="1"/>'
+                   % (X + i * c, Y, N * c, X, Y + i * c, N * c,
+                      Th['line'] if i in (0, N) else Th['faint']))
+
+    def cellxy(x1, x2):
+        return X + x1 * c + c / 2, Y + (N - 1 - x2) * c + c / 2
+    for (a, b), (e, f) in (((0, 0), (N - 1, N - 1)), ((0, N - 1), (N - 1, 0))):
+        (sx, sy), (ex, ey) = cellxy(a, b), cellxy(e, f)
+        out.append('<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" stroke="%s" '
+                   'stroke-width="1.2" opacity="0.45"/>' % (sx, sy, ex, ey, Th['text']))
+    for x1 in range(N):
+        cx, cy = cellxy(x1, p[x1])
+        if p[x1] > 0:
+            out.append('<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" stroke="%s" '
+                       'stroke-width="1.6" stroke-linecap="round"/>'
+                       % (cx, Y + N * c, cx, cy + c / 2 - 3, Th['text']))
+        out.append('<circle cx="%.1f" cy="%.1f" r="2.2" fill="%s"/>' % (cx, Y + N * c, Th['text']))
+        out.append('<rect x="%.1f" y="%.1f" width="%d" height="%d" fill="%s"/>'
+                   % (cx - c / 2 + 3, cy - c / 2 + 3, c - 6, c - 6, RED))
+    for t, dash in rings:
+        cx, cy = cellxy(t, p[t])
+        out.append('<circle cx="%.1f" cy="%.1f" r="14" fill="none" stroke="%s" '
+                   'stroke-width="1.6"%s/>' % (cx, cy, Th['text'], dash))
+    for (x0_, y0_, x1_, y1_), name, (lx, ly) in (
+            ((X, Y + N * c + 12, X + N * c, Y + N * c + 12), '1', (X + N * c + 14, Y + N * c + 17)),
+            ((X - 12, Y + N * c, X - 12, Y), '2', (X - 12, Y - 8))):
+        out.append('<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" stroke="%s" '
+                   'stroke-width="1.2" marker-end="url(#arrow-%s)"/>'
+                   % (x0_, y0_, x1_, y1_, Th['text'], theme))
+        out.append(var(lx, ly, name, theme))
+    out.append(label(X + N * c / 2, ht + 18, 'the plane x₀ = 0 from above', theme, 14))
+
+    # (c) the Latin square, row 0 highlighted
+    X2 = X + N * c + 44
     out.append('<rect x="%.1f" y="%.1f" width="%d" height="%d" fill="%s" fill-opacity="0.18"/>'
-               % (X, Y, N * c, c, Th['plane']))
+               % (X2, Y, N * c, c, Th['plane']))
     for i in range(N + 1):
         out.append('<path d="M%.1f %.1fv%dM%.1f %.1fh%d" stroke="%s" stroke-width="%.1f"/>'
-                   % (X + i * c, Y, N * c, X, Y + i * c, N * c,
+                   % (X2 + i * c, Y, N * c, X2, Y + i * c, N * c,
                       Th['line'] if i in (0, N) else Th['faint'], 1.2 if i in (0, N) else 1))
     for a in range(N):
         for b in range(N):
             out.append('<text x="%.1f" y="%.1f" text-anchor="middle" font-size="13" '
-                       'fill="%s" %s>%d</text>' % (X + b * c + c / 2, Y + a * c + c / 2 + 4.5,
+                       'fill="%s" %s>%d</text>' % (X2 + b * c + c / 2, Y + a * c + c / 2 + 4.5,
                                                    Th['text'], SANS, T[N * a + b]))
-    for t, dash in ((fixed[0], ''), (refl[0], ' stroke-dasharray="3 2"')):
+    for t, dash in rings:
         out.append('<circle cx="%.1f" cy="%.1f" r="10" fill="none" stroke="%s" '
-                   'stroke-width="1.6"%s/>' % (X + t * c + c / 2, Y + c / 2, Th['text'], dash))
-    out.append(label(X - 8, Y + c / 2 + 5, 'row 0', theme, 12, anchor='end'))
-    out.append(label(X + N * c / 2, ht + 18, 'its Latin square L(x₀, x₁) = x₂', theme, 14))
-
-    # (c) the plane x0 = 0 seen from above: x1 across, x2 up
-    X2 = X + N * c + 44
-    out.append('<rect x="%.1f" y="%.1f" width="%d" height="%d" fill="%s" fill-opacity="0.16"/>'
-               % (X2, Y, N * c, N * c, Th['plane']))
-    for i in range(N + 1):
-        out.append('<path d="M%.1f %.1fv%dM%.1f %.1fh%d" stroke="%s" stroke-width="1"/>'
-                   % (X2 + i * c, Y, N * c, X2, Y + i * c, N * c,
-                      Th['line'] if i in (0, N) else Th['faint']))
-
-    def cellxy(x1, x2):
-        return X2 + x1 * c + c / 2, Y + (N - 1 - x2) * c + c / 2
-    for (a, b), (e, f) in ((((0, 0)), (N - 1, N - 1)), ((0, N - 1), (N - 1, 0))):
-        (sx, sy), (ex, ey) = cellxy(a, b), cellxy(e, f)
-        out.append('<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" stroke="%s" '
-                   'stroke-width="1.2" opacity="0.7"/>' % (sx, sy, ex, ey, Th['text']))
-    for x1 in range(N):
-        cx, cy = cellxy(x1, p[x1])
-        out.append('<rect x="%.1f" y="%.1f" width="%d" height="%d" fill="%s"/>'
-                   % (cx - c / 2 + 3, cy - c / 2 + 3, c - 6, c - 6, RED))
-    for t, dash in ((fixed[0], ''), (refl[0], ' stroke-dasharray="3 2"')):
-        cx, cy = cellxy(t, p[t])
-        out.append('<circle cx="%.1f" cy="%.1f" r="14" fill="none" stroke="%s" '
-                   'stroke-width="1.6"%s/>' % (cx, cy, Th['text'], dash))
-    out.append(var(X2 + N * c / 2, Y + N * c + 20, '1', theme))
-    out.append(var(X2 - 14, Y + N * c / 2 + 5, '2', theme))
-    out.append(label(X2 + N * c / 2, ht + 18, 'the plane x₀ = 0 from above', theme, 14))
-    W = X2 + N * c + 6
+                   'stroke-width="1.6"%s/>' % (X2 + t * c + c / 2, Y + c / 2, Th['text'], dash))
+    out.append(label(X2 + N * c + 8, Y + c / 2 + 5, 'row 0', theme, 12, anchor='start'))
+    out.append(label(X2 + N * c / 2, ht + 18, 'its Latin square L(x₀, x₁) = x₂', theme, 14))
+    W = X2 + N * c + 48
     t0, t1 = fixed[0], refl[0]
     out.append(label(W / 2, ht + 44,
                      'solid ring: the one fixed point, p(%d) = %d;  dashed ring: the one '
                      'reflected point, p(%d) = %d = 8 − %d' % (t0, p[t0], t1, p[t1], t1),
                      theme, 13))
-    return svg(''.join(out), (-4, -4, W + 4, ht + 56), theme,
-               'A support, its Latin square, and its plane x0 = 0')
+    return svg(''.join(out), (-4, min(-4, Y - 26), W + 4, ht + 56), theme,
+               'A support, its plane x0 = 0, and its Latin square')
 
 
 ROTATING = {
@@ -402,6 +490,7 @@ ROTATING = {
 FIGURES = {
     'orbit': fig_orbit,
     'companion-graph': fig_graph,
+    'latin-depth': fig_depth,
     'latin-square': fig_lemma2,
 }
 
