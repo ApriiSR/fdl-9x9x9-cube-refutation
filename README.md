@@ -36,7 +36,7 @@ The rough outline of our algorithm is as follows:
 
 The root above and three other members of its symmetry class, each the image under one kind of symmetry in $G$: $\pi$ permutes the axes, $\varepsilon$ reverses an axis, and $\tau$ relabels the values $0, \ldots, 8$ in a way that keeps each pair $\lbrace t, 8 - t\rbrace$ together.  All four contain the center cell.  This root's class has 384 members.
 
-<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="figures/companion-graph-dark.svg"><img src="figures/companion-graph-light.svg" width="740" alt="Eight small cubes in four colors, joined as two 4-cliques and a matching between them"></picture></p>
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="figures/companion-graph-dark.svg"><img src="figures/companion-graph-light.svg" width="590" alt="Eight small cubes in four colors, joined as two 4-cliques and a matching between them"></picture></p>
 
 Part of $\Gamma(T)$ for the same root: supports disjoint from it, joined when they are disjoint from each other, and colored so that no two disjoint supports share a color.  This is the component containing both of the graph's 4-cliques, the two squares with their diagonals; each clique is four pairwise disjoint supports, which together with the red root fill five colors of a cube.  A full cube would need an 8-clique.  The top-left blue support is the one in the figure above.  Of the graph's 1 504 vertices, 960 have no edges at all.
 

@@ -306,7 +306,7 @@ def fig_graph(d, theme):
                    % (x - r, y - r, 2 * r, 2 * r, Th['bg'], Th['line']))
         w, h = box[2] - box[0], box[3] - box[1]
         out.append(place(frag, box, x - w / 2, y - h / 2))
-    return svg(''.join(out), (-r - 6, -r - 48, 3 * side + gap + r + 6, side + r + 48),
+    return svg(''.join(out), (-r - 6, -r - 48, 2 * side + gap + r + 6, side + r + 48),
                theme, 'The component of the companion graph containing its 4-cliques')
 
 
