@@ -15,6 +15,13 @@ While there is a fully diagonalized Latin cube of order 8 (as shown by Taylor), 
 
 Our proof centers around *supports*, sets $T \subseteq [9]^3$ which contain precisely one cell per line. Supports are potential places a particular color could occur in a cube: if we colored every cell in a given support red, then the cube would have precisely one red cell in each line. Two supports are compatible if they are *disjoint*, or share no elements in common. If we color one support red and another support blue, then if they share a cell there will be some cell we tried to give two different colors — but if they don't share any cells, then we would have an incomplete cube with precisely one red cell and one blue cell in each line.
 
+<p align="center">
+<picture><source media="(prefers-color-scheme: dark)" srcset="figures/support-dark.gif"><img src="figures/support-light.gif" width="260" alt="A rotating cube with 81 red cells, one on each line"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="figures/two-supports-dark.gif"><img src="figures/two-supports-light.gif" width="260" alt="The same cube with 81 red and 81 blue cells, none shared"></picture>
+</p>
+
+Left: a support of $[9]^3$, 81 cells with exactly one on each of the 301 lines.  It contains the center cell $(4, 4, 4)$, which makes it a *root* (see the outline below); it is the representative of the exceptional orbit described in Part I.  Right: the same support with a blue one disjoint from it, so that every line holds exactly one red cell and one blue cell.
+
 The basic idea of the proof is to show that is impossible to pick nine supports which are all disjoint. This is conceptually straightforward — the difficult part is choosing and verifying the correctness of an algorithm which rules out possible sets of supports efficiently enough to exhaust the possibilities in a reasonable amount of time.
 
 
@@ -24,6 +31,14 @@ The rough outline of our algorithm is as follows:
 3. Use $G$ to divide the supports into symmetry classes. Some of these symmetry classes will contain only roots, and the others will contain only non-roots. From each symmetry class containing roots, pick one representative root $T$.
 4. Form the graph $\Gamma(T)$ consisting of all the supports disjoint with $T$. Connect two supports with an edge iff they are disjoint.
 5. Show for each such $\Gamma(T)$ that it contains no 8-cliques (groups of 8 vertices where every vertex is connected to every other vertex).
+
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="figures/orbit-dark.svg"><img src="figures/orbit-light.svg" width="670" alt="The root and its images under three symmetries"></picture></p>
+
+The root above and three other members of its symmetry class, each the image under one kind of symmetry in $G$: $\pi$ permutes the axes, $\varepsilon$ reverses an axis, and $\tau$ relabels the values $0, \ldots, 8$ in a way that keeps each pair $\lbrace t, 8 - t\rbrace$ together.  All four contain the center cell.  This root's class has 384 members.
+
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="figures/companion-graph-dark.svg"><img src="figures/companion-graph-light.svg" width="740" alt="Eight small cubes in four colors, joined as two 4-cliques and a matching between them"></picture></p>
+
+Part of $\Gamma(T)$ for the same root: supports disjoint from it, joined when they are disjoint from each other, and colored so that no two disjoint supports share a color.  This is the component containing both of the graph's 4-cliques, the two squares with their diagonals; each clique is four pairwise disjoint supports, which together with the red root fill five colors of a cube.  A full cube would need an 8-clique.  The top-left blue support is the one in the figure above.  Of the graph's 1 504 vertices, 960 have no edges at all.
 
 An order 9 fully diagonalized Latin cube, if one existed, would have a root $T = A^{-1}(A(4,4,4))$ containing its center cell, and could be transformed with a symmetry from $G$ into a fully diagonalized Latin cube $A'$ whose root $T'$ is whichever root we chose from the symmetry class containing $T$. The other eight supports $A^{-1}(\text{color})$ would then necessarily (i) each be disjoint with $T$ and (ii) all be pairwise disjoint, implying the existence of an 8-clique in the graph $\Gamma(T)$. Because our enumeration shows no such 8-cliques exist, there cannot exist a fully diagonalized Latin cube of order 9.
 
@@ -124,6 +139,10 @@ plane diagonals, 4 space diagonals), 244 at $n = 8$.
 > admissible permutations $p$.
 
 Supports have the form $\lbrace(x_0, x_1, L(x_0,x_1)) : x_0, x_1 \in [n]\rbrace$ merely due to the requirement that the support contain one cell from each *axis* line — that part of the statement would be true even for supports of merely Latin cubes (i.e. the more general notion of support that permits choosing zero or multiple cells from a diagonal).  The fixed point comes from the requirement that the support hit the positive diagonal of the plane $x_0 = 0$, while the reflected point comes from the requirement to hit the negative diagonal.
+
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="figures/latin-square-dark.svg"><img src="figures/latin-square-light.svg" width="744" alt="A support in 3D, its Latin square, and its bottom plane with both diagonals"></picture></p>
+
+The same root as above.  Left: the cells with $x_0 = 0$, in the shaded plane.  Middle: its Latin square, whose row 0 is the permutation $p$.  Right: the plane $x_0 = 0$ seen from above, with its two diagonals; the support meets each diagonal exactly once, at the fixed point and at the reflected point of $p$.
 
 *Proof.*  The pillar $\lbrace(x_0,x_1,\ast)\rbrace$ is a line (third coordinate $t$, the other
 two constant), and $T$ meets it exactly once, which picks out the single value
@@ -791,6 +810,7 @@ src/catalogue.py     assembly, the exhaustion audit, ledger canonicalization,
                      and the strict validators for results, worker reports and
                      the checksum manifest
 tests/test_n8.py     the order-8 controls
+figures/             the README figures, and make_figures.py, which draws them
 data/n8_supports.bin          the 13 056 supports of [8]^3            (835 KB)
 data/n9_orbit_reps.bin        the 2 049 root orbit representatives    (166 KB)
 data/n9_orbit_sizes.jsonl     their orbit sizes
