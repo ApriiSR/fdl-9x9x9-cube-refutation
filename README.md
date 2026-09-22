@@ -36,9 +36,6 @@ computation:
   resource use on two machines.
 * **Reproducing it** — options, resuming an interrupted run, and requirements.
 
-After Part II, *What still rests on trust* lists what the computation does
-not establish by itself.
-
 Start with `make` and `./verify.sh test`, then pick a mode according to how
 much you want to recompute:
 
@@ -480,6 +477,16 @@ This repository contains one support enumerator, `enum`.  Both `full` and
 enumerator.  A catalogue produced by another implementation can be compared
 against this one using the canonical byte order above and SHA-256; this repository's cleaner and more efficient reimplementation agrees with our private search that initially ruled out the 9x9x9.
 
+Completeness therefore rests on `enum`.  The checks after it show that every
+record it produced is a support and that the set is closed under $G$, so a
+missing support would have had to be missed together with its whole orbit, but
+neither shows that nothing is missing.  The evidence for that is agreement:
+with the private search, and at order 8 with the census (13 056 supports,
+198 624 covers), though those order-8 values also come from that earlier
+search.  Both the C programs and the numpy checker work from the same reading
+of "line", so it is worth checking that reading directly: `src/lines.h` and
+`main_lines()` in `src/check.py` are about twenty lines each.
+
 ### What each step does
 
 All three modes run the order-8 controls of step 1.  From there, `full`
@@ -753,79 +760,6 @@ sends anything anywhere.  All output goes under `--work` (default `./work`),
 with two exceptions: `make` writes the six binaries into `bin/`, and the order-8
 suite makes its scratch directory under `--work` when `verify.sh` runs it and
 under the system temporary directory when run on its own.
-
----
-
-## What still rests on trust
-
-Part I reduces the theorem to three computational premises: that the catalogue
-contains every support, that every root orbit is represented, and that the
-2 049 companion graphs were built and bounded correctly.  Those premises
-remain, and the checks above do not all speak to them equally.  Checking every
-stored record establishes validity, not completeness; closure under the group
-does not exclude a whole missing orbit; and a matching checksum establishes
-agreement with reference bytes rather than exhaustion.
-
-`full` establishes completeness by exhaustive search over every admissible row.
-`symmetric` uses exhaustive representative searches together with the shard
-symmetry (Lemma 5).
-`fast` **assumes** the supplied catalogue is complete, checking its reference
-digest before performing anything downstream.
-
-In every mode the sweep is audited against the shard universe: the manifest
-must cover it exactly, every record must carry its own shard's row 0, and the
-records must be in strict lexicographic order within each shard and the shards
-in strict row order between them.  That is an exhaustion audit rather than a
-digest comparison, and it explains a discrepancy instead of merely detecting
-one.
-
-1. **That the programs implement the definitions.**  The lines are built
-   twice — in C from the pattern description, and independently in numpy — and
-   the two are compared as *sets of lines*, in canonical form, not by their
-   counts; every record ever produced is checked against the numpy version of
-   the definition.  But the definition itself is written down twice by the same
-   author, and a reader who disagrees with the definition of a line will
-   disagree with everything downstream.  Read `src/lines.h` and `main_lines()`
-   in `src/check.py`; they are about twenty lines each.
-
-2. **That the exhaustive enumeration is exhaustive.**  At order 8 the identical
-   pipeline reproduces a census whose values — 13 056 supports, 198 624 covers,
-   the node profile, the six-orbit decomposition — are supplied to the suite as
-   regression targets rather than derived by it; they are the author's, quoted
-   from an earlier run, so they check that the pipeline still computes what it
-   computed and are not an independent authority.  And the enumerated $T(9)$ is
-   *closed under the order-9216 group* (87 699 456 images checked, none
-   missing), so a missing support would have had to be missed together with its
-   whole orbit.
-
-3. **Common-mode error in the model.**  Both the exact-cover enumerator and the
-   definition-level checker are built on the same reading of "line" and of
-   the record format.  The Python checker is a separate implementation of the
-   same definitions, checking data the C programs produced; the two packing
-   algorithms share their representation code and their input.  These checks
-   corroborate; they do not eliminate a common error, and the argument still
-   rests on correct compilation and execution.
-
-4. **Floating point plays no role**; there is none in the argument.  Wall-clock
-   caps are the only timing-dependent behavior, and they are configured to
-   values the sweep never approaches (the slowest shard measured anywhere takes
-   26.0 seconds against a 3 600-second cap), and are separately tested to fire —
-   against an injected clock, so the test does not itself depend on wall time.
-
-5. **Which mode was run.**  `full` and `fast` rest on the clique bound and what leads to it (Lemmata 1-4) only.
-   `symmetric` additionally rests on the shard symmetry (Lemma 5) and on `src/symmetry.c`
-   implementing it: a wrong subgroup, element index or record image would mean
-   48 755 of the 48 912 shards came from an untrusted map rather than a search.
-   Three things stand against that, all described under Lemma 5: the n = 8
-   census reproduced the same way and 320 mapped shards re-enumerated
-   byte-identically, which are samples, and the canonical SHA-256 of the whole
-   catalogue, which is not.  A reader who wants to rely on no lemma beyond 1–4
-   should run `full`.
-
-6. **The scope.**  This computation establishes nonexistence at order 9 in
-   dimension 3.  It does not determine existence at order 10 or order 12, says
-   nothing about dimension 4 or above, and establishes no general existence
-   threshold.
 
 ---
 
