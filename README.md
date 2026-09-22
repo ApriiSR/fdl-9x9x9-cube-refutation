@@ -22,7 +22,7 @@ Our proof centers around *supports*, sets $T \subseteq [9]^3$ which contain prec
 
 Left: a support of $[9]^3$, 81 cells with exactly one on each of the 301 lines.  It contains the center cell $(4, 4, 4)$, which makes it a *root* (see the outline below); it is the representative of the exceptional orbit described in Part I.  Right: the same support with a blue one disjoint from it, so that every line holds exactly one red cell and one blue cell.
 
-The basic idea of the proof is to show that is impossible to pick nine supports which are all disjoint. This is conceptually straightforward — the difficult part is choosing and verifying the correctness of an algorithm which rules out possible sets of supports efficiently enough to exhaust the possibilities in a reasonable amount of time.
+The basic idea of the proof is to show that it is impossible to pick nine supports which are all disjoint. This is conceptually straightforward — the difficult part is choosing and verifying the correctness of an algorithm which rules out possible sets of supports efficiently enough to exhaust the possibilities in a reasonable amount of time.
 
 
 The rough outline of our algorithm is as follows:
@@ -183,7 +183,9 @@ An aside, not needed for the proof: all four space diagonals pass through $c_0$.
 
 We need to test only one root from each symmetry class, for some suitable notion of symmetry classes. For example, if two roots are reflections of each other, ruling out that one of them occurs in an FDLH also implies that the other does not. To maximize the efficiency of our exhaustive enumeration, we wish to use the largest valid choice of symmetry group we can, i.e. the group which maximizes the size of each root's symmetry class while still ensuring that checking one representative from each class is sufficient.
 
-The symmetries used here permute the axes, reverse individual axes, and relabel the coordinate *values*: pick a permutation $\tau$ of $\lbrace 0, \ldots, 8\rbrace$ and apply it to every coordinate of every cell at once.
+The symmetries used here include permutations of the axes and reversals of individual axes. It should be intuitively clear that those both preserve all the properties we need: they just amount to choosing a different set of axes to use for describing your cube, and all the diagonals are still diagonals regardless of what set of axes you choose. 
+
+We also use some particular relabellings of the coordinate *values*: we pick a permutation $\tau$ of $\lbrace 0, \ldots, 8\rbrace$ and apply it to every coordinate of every cell at once. 
 
 Call $u$ and $8 - u$ **partners**.  Axis lines survive any relabeling, but diagonals do not: along the diagonal $(t, 8-t, 3)$ the first two coordinates are always partners, so after relabeling they still have to be.  That is the whole condition on $\tau$: it must send partners to partners, so that whenever $\tau(u) = v$, also $\tau(8 - u) = 8 - v$.  (Swap just $0$ and $1$, and the cells $(0,8,3), (1,7,3), \ldots$ become $(1,8,3), (0,7,3), \ldots$; since $1$ and $8$ are not partners, these lie on no line.)
 
