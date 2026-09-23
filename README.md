@@ -187,7 +187,7 @@ The symmetries used here include permutations of the axes and reversals of indiv
 
 Reversing an axis is one example of a more general move: relabeling the *values* along each axis.  Pick permutations $\sigma = (\sigma_0, \sigma_1, \sigma_2)$ of $\lbrace 0, \ldots, 8\rbrace$ for each coordinate $i$, and replace the $i$-th coordinate $x_i$ of every cell by $\sigma_i(x_i)$, i.e. $\sigma(x_0, x_1, x_2)$ = $(\sigma_0(x_0), \sigma_1(x_1), \sigma_2(x_2))$.  Reversing axis $i$ is the relabeling $\sigma_i = r$, $t \mapsto 8 - t$, with the other two left alone.
 
-Axis lines survive any relabeling, but diagonals do not.  Call $u$ and $8 - u$ **partners**.  Along a diagonal, the two varying coordinates are either always partners, as in $(t, 8 - t, 3)$, or always equal, as in $(t, t, 3)$. After we apply $\sigma = (\sigma_1, \sigma_2, \sigma_3)$, we will still want diagonals to fall on diagonals, so they will have to still be one of those two options. This takes two conditions:
+Axis lines survive any relabeling, but diagonals do not.  Call $u$ and $8 - u$ **partners**.  Along a diagonal, the two varying coordinates are either always partners, as in $(t, 8 - t, 3)$, or always equal, as in $(t, t, 3)$. After we apply $\sigma = (\sigma_0, \sigma_1, \sigma_2)$, we will still want diagonals to fall on diagonals, so they will have to still be one of those two options. This takes two conditions:
 
 **(a): Each $\sigma_i$ sends partners to partners**: whenever $\sigma_i(u) = v$, also $\sigma_i(8 - u) = 8 - v$.  (Swap just $0$ and $1$ in the first coordinate, and the cells $(0,8,3), (1,7,3), \ldots$ become $(1,8,3), (0,7,3), \ldots$; since $1$ and $8$ are not partners, these lie on no line.)  It helps to fold the values in half at $4$:
 
@@ -200,9 +200,11 @@ $4$ is its own partner, so a partner-respecting $\sigma_i$ must fix it.  Every o
 1. where each pair goes: any rearrangement of the four pairs, $4! = 24$ ways;
 2. for each pair, which of its two values goes to which value of its new pair: $2^4 = 16$ ways.
 
-That makes $24 \cdot 16 = 384$ partner-respecting permutations.  For example, the relabeling in the figure above swaps the pairs $\lbrace 0, 8\rbrace$ and $\lbrace 1, 7\rbrace$, sending $0 \to 1$ and $8 \to 7$ and back; the one that leaves every pair in place and flips only $\lbrace 3, 5\rbrace$ swaps $3$ and $5$ and fixes everything else; and leaving every pair in place but flipping all four is $r$ itself.  In symbols, "partners go to partners" is $\sigma_i(r(t)) = r(\sigma_i(t))$ for every $t$: $\sigma_i$ of $t$'s partner is the partner of $\sigma_i(t)$.  The permutations satisfying it are the ones that commute with $r$, known as the centralizer $C(r)$ or $r$.
+That makes $24 \cdot 16 = 384$ partner-respecting permutations.  For example, the relabeling in the figure above swaps the pairs $\lbrace 0, 8\rbrace$ and $\lbrace 1, 7\rbrace$, sending $0 \to 1$ and $8 \to 7$ and back; the one that leaves every pair in place and flips only $\lbrace 3, 5\rbrace$ swaps $3$ and $5$ and fixes everything else; and leaving every pair in place but flipping all four is $r$ itself.  In symbols, "partners go to partners" is $\sigma_i(r(t)) = r(\sigma_i(t))$ for every $t$: $\sigma_i$ of $t$'s partner is the partner of $\sigma_i(t)$.  The permutations satisfying it are the ones that commute with $r$, known as the centralizer $C(r)$ of $r$.
 
-**(b): The three $\sigma_i$ agree up to $r$**: for each $i, j$, either $\sigma_i = \sigma_j$ or $\sigma_i = r \sigma_j (= \sigma_j r)$. Equivalently, we can fix $\sigma_0$ and then say that $\sigma_1$ and $\sigma_2$ are each either $\sigma_0$ or $r \sigma_0$.  Partner-respecting relabelings chosen independently are not enough, so we need this additional condition.  For example, swap $3$ and $5$ in the second coordinate only, and $(t, t, 3)$ becomes $(3, 5, 3)$ at $t = 3$ but $(0, 0, 3)$ at $t = 0$: its first two coordinates are neither always equal nor always partners.
+**(b): The three $\sigma_i$ agree up to $r$**: for each $i, j$, either $\sigma_i = \sigma_j$ or $\sigma_i = r \sigma_j (= \sigma_j r)$. In general, for functions $f, h \colon [n] \to [n]$, write $f \sim h$, and say that $f$ and $h$ agree up to $r$, when $f = h$ or $f = r \circ h$; so the condition is $\sigma_0 \sim \sigma_1 \sim \sigma_2$.  Equivalently, $\sigma_i = \varepsilon_i \sigma_0$ for each $i$, with $\varepsilon_0 = \mathrm{id}$ and $\varepsilon_1, \varepsilon_2 \in \lbrace \mathrm{id}, r\rbrace$.  Partner-respecting relabelings chosen independently are not enough, so we need this additional condition.  For example, swap $3$ and $5$ in the second coordinate only, and $(t, t, 3)$ becomes $(3, 5, 3)$ at $t = 3$ but $(0, 0, 3)$ at $t = 0$: its first two coordinates are neither always equal nor always partners.
+
+Two facts about $\sim$ get used below.  It is an equivalence relation: its classes are the cosets $\lbrace h, r \circ h\rbrace$ of the subgroup $\lbrace \mathrm{id}, r\rbrace$.  And it is preserved by composing on the left with any $\sigma \in C(r)$: if $f = r \circ h$, then $\sigma \circ f = \sigma \circ r \circ h = r \circ \sigma \circ h$, because $\sigma$ commutes with $r$.
 
 So a symmetry permutes the axes by some $\pi$ and then relabels coordinate $i$ by $\sigma_i$, subject to those two conditions.  Reversing $x_0$ is $\sigma = (r, \mathrm{id}, \mathrm{id})$, and relabeling every axis the same way is $\sigma_0 = \sigma_1 = \sigma_2$.
 
@@ -210,8 +212,8 @@ More precisely:
 
 > Let $C(r)$ be the centralizer of $r$ in the symmetric group $S_n$ on $[n]$:
 > the permutations $\sigma$ of the coordinate values with $\sigma(r(t)) = r(\sigma(t))$
-> for all $t$.  For $\pi \in S_3$ and $\sigma \in C(r)^3$ with
-> $\sigma_1, \sigma_2 \in \lbrace \sigma_0, \sigma_0 \circ r \rbrace$, define
+> for all $t$.  For $\pi \in S_3$ and $\sigma \in C(r)^3$ whose components all
+> agree up to $r$, define
 > $g = g(\pi; \sigma_0, \sigma_1, \sigma_2) \colon [n]^3 \to [n]^3$ by
 >
 > $$g(x)_i = \sigma_i\bigl( x_{\pi(i)} \bigr).$$
@@ -224,11 +226,11 @@ More precisely:
 > lies in a partition iff $gT$ does, for every $g \in G$, so it suffices to
 > test one root per $G$-orbit.
 
-Throughout the proof, write $\sigma_i = \sigma_0 \circ \varepsilon_i$ with $\varepsilon_0 = \mathrm{id}$ and $\varepsilon_1, \varepsilon_2 \in \lbrace \mathrm{id}, r\rbrace$.
+Throughout the proof, write $\sigma_i = \varepsilon_i \sigma_0$ as in (b), with $\varepsilon_0 = \mathrm{id}$ and $\varepsilon_1, \varepsilon_2 \in \lbrace \mathrm{id}, r\rbrace$.
 
 *Proof.*  (i)  Consider a line in $[n]^3$. We can write any such line as the image of a function $\ell = (\ell_0, \ell_1, \ell_2): [n] \to [n]^3$. It is natural to think of a line as moving between adjacent cells as the index variable $t$ increases, so that $\ell(t)$ and $\ell(t+1)$ are orthogonally or diagonally adjacent cells, but in fact $\ell$ can pick out the cells in the line in a totally arbitrary order: formally, for a permutation $\kappa \in S_n$, we have $\kappa([n]) = [n]$, and so $(\ell \circ \kappa)([n]) = \ell([n])$.
 
-We can divide $\ell$ into *fixed coordinates*, where $\ell_i$ is a constant function, and *varying coordinates*, where $\ell_i$ is some permutation of $[n]$. For functions $f, h \colon [n] \to [n]$, write $f \sim h$, and say that $f$ and $h$ agree up to $r$, when $f = h$ or $f = r \circ h$.  This is an equivalence relation: its classes are the cosets $\lbrace h, r \circ h\rbrace$ of the subgroup $\lbrace \mathrm{id}, r\rbrace$.  It is also preserved by composing on the left with any $\sigma \in C(r)$: if $f = r \circ h$, then $\sigma \circ f = \sigma \circ r \circ h = r \circ \sigma \circ h$, because $\sigma$ commutes with $r$.
+We can divide $\ell$ into *fixed coordinates*, where $\ell_i$ is a constant function, and *varying coordinates*, where $\ell_i$ is some permutation of $[n]$.
 
 **Claim.**  A set of cells is a line iff it is the image of a map $\ell \colon [n] \to [n]^3$ whose coordinates are each fixed or varying, with at least one varying, and whose varying coordinates all agree up to $r$.
 
@@ -265,10 +267,10 @@ $$(g \circ h)(x)_i = \sigma_i\bigl(h(x)_{\pi(i)}\bigr) = \sigma_i\bigl(\sigma'_{
 
 so $g \circ h$ has coordinate permutation $`\pi' \circ \pi`$ and relabelings
 $`\sigma_i \circ \sigma'_{\pi(i)}`$.  Each relabeling $`\sigma_i \circ \sigma'_{\pi(i)}`$ is in $C(r)$, and they still agree up
-to $r$: writing $\sigma_i = \sigma_0 \varepsilon_i$ and $`\sigma'_j = \sigma'_0 \varepsilon'_j`$, and moving the
-reversals past $`\sigma'_0`$ (they commute with it),
-$`\sigma_i \circ \sigma'_{\pi(i)} = \sigma_0 \sigma'_0 \, \varepsilon_i \varepsilon'_{\pi(i)}`$, where each $`\varepsilon_i \varepsilon'_{\pi(i)}`$ is $\mathrm{id}$ or $r$.  So
-the three relabelings are each $`\sigma_0 \sigma'_0`$ or $`\sigma_0 \sigma'_0 \circ r`$, and $g \circ h$ is again in $G$.  The identity
+to $r$: writing $\sigma_i = \varepsilon_i \sigma_0$ and $`\sigma'_j = \varepsilon'_j \sigma'_0`$, and moving
+$`\varepsilon'_{\pi(i)}`$ past $\sigma_0$ (they commute),
+$`\sigma_i \circ \sigma'_{\pi(i)} = \varepsilon_i \varepsilon'_{\pi(i)} \, \sigma_0 \sigma'_0`$, where each $`\varepsilon_i \varepsilon'_{\pi(i)}`$ is $\mathrm{id}$ or $r$.  So
+the three relabelings all agree up to $r$ with $`\sigma_0 \sigma'_0`$, hence with each other, and $g \circ h$ is again in $G$.  The identity
 is $g(\mathrm{id}; \mathrm{id}, \mathrm{id}, \mathrm{id})$, and a finite composition-closed family of
 bijections of a finite set contains inverses.  So $G$ is a group.  Explicitly,
 the inverse of $g$ is
@@ -425,7 +427,7 @@ the plane whatever else it does.)
 the two displayed forms.  The graph $\lbrace(x_1, p(x_1))\rbrace$ is carried to
 $\lbrace(u(x_1), v(p(x_1)))\rbrace$, the graph of $v \circ p \circ u^{-1}$, or to $\lbrace(u(p(x_1)), v(x_1))\rbrace$, the
 graph of $v \circ p^{-1} \circ u^{-1}$.  For admissibility, note that $u$ and $v$ are each
-$\sigma_0$ or $\sigma_0 \circ r$, and that $\sigma_0$ commutes with $r$.  Take the first form and
+$\sigma_0$ or $r \circ \sigma_0$, and that $\sigma_0$ commutes with $r$.  Take the first form and
 put $s = u^{-1}(t)$.  Then $t$ is a fixed point of $p^h$ iff $v(p(s)) = u(s)$,
 and a reflected point iff $v(p(s)) = r(u(s))$.  Canceling $\sigma_0$ from both
 sides — legitimate because $\sigma_0$ is a bijection commuting with $r$ — turns
