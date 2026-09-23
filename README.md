@@ -259,11 +259,11 @@ disjoint supports covering the cube iff $gT_1, \ldots, gT_n$ are.
 
 It remains to show that these maps form a group, and to count them.
 
-*Closure.*  Let $g = g(\pi; \sigma_0, \sigma_1, \sigma_2)$ and $`h = g(\rho; \sigma'_0, \sigma'_1, \sigma'_2)`$.  Then, applying $h$ first,
+*Closure.*  Let $g = g(\pi; \sigma_0, \sigma_1, \sigma_2)$ and $`h = g(\pi'; \sigma'_0, \sigma'_1, \sigma'_2)`$.  Then, applying $h$ first,
 
-$$(g \circ h)(x)_i = \sigma_i\bigl(h(x)_{\pi(i)}\bigr) = \sigma_i\bigl(\sigma'_{\pi(i)}\bigl(x_{\rho(\pi(i))}\bigr)\bigr),$$
+$$(g \circ h)(x)_i = \sigma_i\bigl(h(x)_{\pi(i)}\bigr) = \sigma_i\bigl(\sigma'_{\pi(i)}\bigl(x_{\pi'(\pi(i))}\bigr)\bigr),$$
 
-so $g \circ h$ has coordinate permutation $\rho \circ \pi$ and relabelings
+so $g \circ h$ has coordinate permutation $`\pi' \circ \pi`$ and relabelings
 $`\sigma''_i = \sigma_i \circ \sigma'_{\pi(i)}`$.  Each $`\sigma''_i`$ is in $C(r)$, and they still agree up
 to $r$: writing $\sigma_i = \sigma_0 \varepsilon_i$ and $`\sigma'_j = \sigma'_0 \varepsilon'_j`$, and moving the
 reversals past $`\sigma'_0`$ (they commute with it),
