@@ -20,25 +20,17 @@ Our proof centers around *supports*, sets $T \subseteq [9]^3$ which contain prec
 <picture><source media="(prefers-color-scheme: dark)" srcset="figures/two-supports-dark.gif"><img src="figures/two-supports-light.gif" width="260" alt="The same cube with 81 red and 81 blue cells, none shared"></picture>
 </p>
 
-Left: a support of $[9]^3$, 81 cells with exactly one on each of the 301 lines.  It contains the center cell $(4, 4, 4)$, which makes it a *root* (see the outline below); it is the representative of the exceptional orbit described in Part I.  Right: the same support with a blue one disjoint from it, so that every line holds exactly one red cell and one blue cell.
-
 The basic idea of the proof is to show that it is impossible to pick nine supports which are all disjoint. This is conceptually straightforward — the difficult part is choosing and verifying the correctness of an algorithm which rules out possible sets of supports efficiently enough to exhaust the possibilities in a reasonable amount of time.
 
 
 The rough outline of our algorithm is as follows:
 1. Enumerate every support. This part is relatively straightforward — there end up being only $14\,616\,576$, so the hard part is working through all the possible sets of several supports. Call a support containing the center cell a *root*.
 2. Pick a symmetry group $G$ that acts on $[9]^3$ and maps supports to supports and roots to roots (and therefore FDLHs to FDLHs).
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="figures/orbit-dark.svg"><img src="figures/orbit-light.svg" width="670" alt="The root and its images under three symmetries"></picture></p>
 3. Use $G$ to divide the supports into symmetry classes. Some of these symmetry classes will contain only roots, and the others will contain only non-roots. From each symmetry class containing roots, pick one representative root $T$.
 4. Form the graph $\Gamma(T)$ consisting of all the supports disjoint with $T$. Connect two supports with an edge iff they are disjoint.
-5. Show for each such $\Gamma(T)$ that it contains no 8-cliques (groups of 8 vertices where every vertex is connected to every other vertex).
-
-<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="figures/orbit-dark.svg"><img src="figures/orbit-light.svg" width="670" alt="The root and its images under three symmetries"></picture></p>
-
-The root above and three other members of its symmetry class, each its image under one simple element of $G$: one that cycles the axes, one that reverses the axis $x_0$, and one that relabels the values $0, \ldots, 8$ on every axis at once, in a way that keeps each pair $\lbrace t, 8 - t\rbrace$ together.  All four contain the center cell.  This root's class has 384 members.
-
 <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="figures/companion-graph-dark.svg"><img src="figures/companion-graph-light.svg" width="590" alt="Eight small cubes in four colors, joined as two 4-cliques and a matching between them"></picture></p>
-
-Part of $\Gamma(T)$ for the same root: supports disjoint from it, joined when they are disjoint from each other, and colored so that no two disjoint supports share a color.  The top two rows are the component containing both of the graph's 4-cliques, the two squares with their diagonals; each clique is four pairwise disjoint supports, which together with the red root fill five colors of a cube.  A full cube would need an 8-clique.  The top-left blue support is the one in the figure above.  Below them are two smaller components: a single edge, one of 144 in this graph, and a vertex with no edges, one of 960 among its 1 504 vertices.
+5. Show for each such $\Gamma(T)$ that it contains no 8-cliques (groups of 8 vertices where every vertex is connected to every other vertex).
 
 An order 9 fully diagonalized Latin cube, if one existed, would have a root $T = A^{-1}(A(4,4,4))$ containing its center cell, and could be transformed with a symmetry from $G$ into a fully diagonalized Latin cube $A'$ whose root $T'$ is whichever root we chose from the symmetry class containing $T$. The other eight supports $A^{-1}(\text{color})$ would then necessarily (i) each be disjoint with $T$ and (ii) all be pairwise disjoint, implying the existence of an 8-clique in the graph $\Gamma(T)$. Because our enumeration shows no such 8-cliques exist, there cannot exist a fully diagonalized Latin cube of order 9.
 
@@ -140,13 +132,9 @@ plane diagonals, 4 space diagonals), 244 at $n = 8$.
 
 <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="figures/latin-depth-dark.svg"><img src="figures/latin-depth-light.svg" width="584" alt="The root in a cube with x0 running down and x1 across, each red cell joined to the front face by a segment"></picture></p>
 
-The root from the figures above, drawn with $x_0$ running down and $x_1$ across, like the rows and columns of a matrix, and $x_2$ running away from the viewer.  Each pillar $\lbrace(x_0, x_1, \ast)\rbrace$ holds exactly one red cell, so the support is a $9 \times 9$ array of depths: the number written on the front face at $(x_0, x_1)$ is $L(x_0, x_1)$, and the segment from it to the red cell crosses exactly that many cells.  The same numbers, read as a grid, are the Latin square on the right.
-
 Supports have the form $\lbrace(x_0, x_1, L(x_0,x_1)) : x_0, x_1 \in [n]\rbrace$ merely due to the requirement that the support contain one cell from each *axis* line — that part of the statement would be true even for supports of merely Latin cubes (i.e. the more general notion of support that permits choosing zero or multiple cells from a diagonal).  The fixed point comes from the requirement that the support hit the positive diagonal of the plane $x_0 = 0$, while the reflected point comes from the requirement to hit the negative diagonal.
 
 <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="figures/latin-square-dark.svg"><img src="figures/latin-square-light.svg" width="810" alt="The support with its top plane shaded, that plane from above with a segment to each cell, and the Latin square"></picture></p>
-
-Left: the cells with $x_0 = 0$, in the shaded top plane.  Middle: that plane seen from above, with its two diagonals.  Each segment crosses as many cells as the matching entry in row 0 of the Latin square on the right, and the support meets each diagonal exactly once, at the fixed point and at the reflected point of $p$.  Right: the Latin square, whose row 0 is the permutation $p$.
 
 *Proof.*  The pillar $\lbrace(x_0,x_1,\ast)\rbrace$ is a line (third coordinate $t$, the other
 two constant), and $T$ meets it exactly once, which picks out the single value
