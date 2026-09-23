@@ -360,93 +360,79 @@ set of **five** pairwise disjoint supports of $[9]^3$, written out explicitly in
 This is a maximum packing *containing a root*, which is all the computation
 bounds; we have not ruled out the possibility of a packing containing six pairwise disjoint supports such that none of them contain $(4, 4, 4)$.
 
-### Lemma 5 (the plane-fixing subgroup, and the shard orbits)
+### Lemma 5 (shard orbits)
 
 This optional lemma is what `verify.sh symmetric` rests on; **the theorem
-above does not depend on it**, and neither do `full` and `fast`.  It groups the
-shards into orbits under the symmetries that preserve the plane $x_0 = 0$, so
-that once one shard in an orbit has been enumerated, every other shard in that
-orbit is its image and can be written down with no further search.  At order 9
-there are 157 such orbits.  Nothing downstream changes: roots, pools and
-cliques are computed from the reconstructed catalogue exactly as `full`
-computes them from the searched one, and the reconstructed catalogue must have
-the same SHA-256.
+above does not depend on it**, and neither do `full` and `fast`.  It lets the
+enumeration skip most shards: many shards are images of one another under a
+symmetry, and the image of an enumerated shard can be written down with no
+further search.
 
-Write $P = \lbrace x_0 = 0\rbrace$ for the plane whose contents define a shard: a
-support's intersection with $P$ is $\lbrace(0, x_1, p(x_1))\rbrace$ for an admissible
-permutation $p$ (Lemma 2), and the shard $S_p$ is the set of supports with that
-row 0.
+Write $P = \lbrace x_0 = 0\rbrace$ for the plane whose contents define a shard.  A
+support's intersection with $P$ is its **row** $\lbrace(0, x_1, p(x_1))\rbrace$, for an
+admissible permutation $p$ (Lemma 2), and the shard $S_p$ is the set of
+supports with that row.  The symmetries used are those that map $P$ to itself:
 
-> Let $H = \lbrace g \in G : g(P) = P \rbrace$ be the setwise stabilizer of $P$ in the group
-> $G$ of the orbit reduction (Lemma 3).  Then
->
-> (a) $H$ consists of exactly those $g = g(\pi; \sigma_0, \sigma_1, \sigma_2)$ with $\pi(0) = 0$ and
-> $\sigma_0(0) = 0$, and
->
-> $$\lvert H \rvert = \lvert G \rvert / (3 \cdot 2\lfloor n/2 \rfloor) = 9216 / 24 = 384 \quad \text{at } n = 8 \text{ and } n = 9;$$
->
-> (b) an $h \in H$ acts on $P$
-> by $(0,x_1,x_2) \to (0, \sigma_1(x_1), \sigma_2(x_2))$ if $\pi$ fixes the last two coordinates and by
-> $(0,x_1,x_2) \to (0, \sigma_1(x_2), \sigma_2(x_1))$ if $\pi$ swaps them; so it carries the row $p$ to
-> $p^h = \sigma_2 \circ p \circ \sigma_1^{-1}$ or $\sigma_2 \circ p^{-1} \circ \sigma_1^{-1}$, which is again admissible.  Hence the
-> shard universe is closed under $H$, which permutes it;
->
-> (c) for every $h \in H$ and every $p$, $h(S_p) = S_{p^h}$ — the image of a shard
-> is the whole of the image shard, record by record and cell by cell.  In
-> particular $\lvert S_p\rvert = \lvert S_{p^h}\rvert$.
+$$H = \lbrace h \in G : h(P) = P \rbrace.$$
 
-*Proof.*  (a)  The image's first coordinate is $\sigma_0(x_{\pi(0)})$.  On $P$
-the coordinates $x_1, x_2$ are free, so if $\pi(0) \ne 0$ that expression takes
-all $n$ values on $P$ and the image cannot be contained in the plane $x_0 = 0$;
-hence $\pi(0) = 0$,
-and then the image's first coordinate is the constant $\sigma_0(0)$, which
-must be $0$.  Conversely every such $g$ maps $P$ into $P$, and an injection of a
-finite set into itself is onto it.  $H$ is the stabilizer of a subset, hence a
-subgroup, and $[G:H]$ is the size of the $G$-orbit of $P$.  That orbit is
-$\lbrace \lbrace x_a = c\rbrace \rbrace$ with $a$ any of the three axes and $c$ any value of $\sigma(0)$ for
-a $\sigma \in C(r)$: since $\sigma$ carries the pair $\lbrace 0, n-1\rbrace$ onto any pair, either way round, $c$ ranges
-over every value except the middle one of an odd $n$, so over $2\lfloor n/2 \rfloor$
-values.  Hence $[G:H] = 3 \cdot 2\lfloor n/2 \rfloor = 24$ and $\lvert H\rvert = 384$.  (`symmetry group` recomputes both by construction: it selects the elements of
-$G$ that fix $P$, exhibits the 24 planes, and forms all $384^2 = 147\,456$
-products of pairs of selected elements, requiring each to be **an element of the
-selected set**, found by lookup.  Checking instead that a product preserves $P$
-would check nothing, since a composition of two plane-preserving maps preserves
-the plane whatever else it does.)
+$H$ is a subgroup of $G$, since the elements of a group that fix a given set
+form a subgroup.  An $h \in H$ maps the plane to itself *as a set*, but it
+moves cells around within it, so it can move a row to a different row.  For
+example, swapping the axes $x_1$ and $x_2$ is in $H$; it sends each cell
+$(0, a, b)$ of $P$ to $(0, b, a)$, and so turns the row of $p$ into the row
+of $p^{-1}$.
 
-(b)  With $\pi(0) = 0$, $\pi$ restricts to a permutation of $\lbrace1, 2\rbrace$, which gives
-the two displayed forms.  The graph $\lbrace(x_1, p(x_1))\rbrace$ is carried to
-$\lbrace(\sigma_1(x_1), \sigma_2(p(x_1)))\rbrace$, the graph of $\sigma_2 \circ p \circ \sigma_1^{-1}$, or to $\lbrace(\sigma_1(p(x_1)), \sigma_2(x_1))\rbrace$, the
-graph of $\sigma_2 \circ p^{-1} \circ \sigma_1^{-1}$.  For admissibility, note that $\sigma_1$ and $\sigma_2$ are each
-$\sigma_0$ or $r \circ \sigma_0$, and that $\sigma_0$ commutes with $r$.  Take the first form and
-put $s = \sigma_1^{-1}(t)$.  Then $t$ is a fixed point of $p^h$ iff $\sigma_2(p(s)) = \sigma_1(s)$,
-and a reflected point iff $\sigma_2(p(s)) = r(\sigma_1(s))$.  Canceling $\sigma_0$ from both
-sides — legitimate because $\sigma_0$ is a bijection commuting with $r$ — turns
-those two conditions into $p(s) = s$ and $p(s) = r(s)$, in that order when
-$\sigma_1 = \sigma_2$ and in the opposite order when not.  Each has exactly one
-solution because $p$ is admissible, so $p^h$ has exactly one fixed and exactly
-one reflected point.  The second form is the same computation after the
-substitution $s = p^{-1}(\sigma_1^{-1}(t))$.  So $p^h$ is admissible, and
-$h \to (p \to p^h)$ is an action of $H$ on the $48\,912$ admissible permutations.
-(`symmetry orbits` checks all $48\,912 \times 384 = 18\,782\,208$ images one by one —
-every row against every subgroup element, not only the 157 representatives —
-requiring each to be admissible and to be present in the brute-force shard
-list.  It reports the number of images it checked, and stops if that is not
-$\text{shards} \times \lvert H \rvert$.)
+One reformulation makes the lemma easy.  The lines lying inside $P$ are the
+lines $(0, c, t)$ and $(0, t, c)$ along its two axes, and its two diagonals
+$(0, t, t)$ and $(0, t, r(t))$.  A set of cells of $P$ meets each of those lines exactly once
+iff it is the row of an admissible permutation: meeting each $(0, c, t)$ once
+makes it the graph of a function $p$, meeting each $(0, t, c)$ once makes $p$ a
+permutation, and the two diagonals give its one fixed and one reflected point.
+So the rows of admissible permutations are exactly the "supports of the plane".
 
-(c)  $h$ is a bijection of the cells with $h(P) = P$, so for any set $T$,
-$h(T) \cap P = h(T \cap P)$.  Let $T$ be a support whose row 0 is $p$.  Then
-$hT$ is a support, since $G$ maps supports to supports (Lemma 3), and its row 0 is $h(T \cap P) = p^h$ by (b).  Hence
-$h(S_p) \subseteq S_{p^h}$.  Applying the same to $h^{-1}$, which is in $H$ because $H$
-is a group, gives $h^{-1}(S_{p^h}) \subseteq S_p$, i.e. $S_{p^h} \subseteq h(S_p)$.  The two
-are therefore equal. ∎
+> Let $h \in H$ and let $p$ be admissible.  Then $h$ maps the row of $p$ to
+> the row of an admissible permutation $p'$, and $h(S_p) = S_{p'}$.  In
+> particular $\lvert S_p\rvert = \lvert S_{p'}\rvert$.
+
+*Proof.*  $h$ maps lines to lines (Lemma 3) and $P$ to $P$, so it maps lines
+lying in $P$ to lines lying in $P$; so does $h^{-1}$, which is also in $H$, so
+$h$ permutes the lines lying in $P$.  A set meeting each of them exactly once
+is therefore carried to a set meeting each of them exactly once, so $h$ maps
+the row of $p$ to the row of some admissible $p'$.
+
+Since $h$ is a bijection with $h(P) = P$, for any set of cells $T$ we have
+$h(T) \cap P = h(T \cap P)$.  If $T \in S_p$, then $h(T)$ is a support (Lemma 3)
+and its row is $h(\text{row of } p)$, the row of $p'$; so $h(S_p) \subseteq S_{p'}$.  The
+same argument for $h^{-1}$, which maps the row of $p'$ back to the row of $p$,
+gives $h^{-1}(S_{p'}) \subseteq S_p$, that is, $S_{p'} \subseteq h(S_p)$. ∎
+
+So $H$ permutes the admissible permutations, the shards fall into $H$-orbits,
+and every shard in an orbit is the image of any other under some element of
+$H$, with the same number of supports.
+
+Two facts about $H$ are not needed for the lemma but are checked by the code.
+First, in the notation of Lemma 3, $h = g(\pi; \sigma_0, \sigma_1, \sigma_2)$ is in $H$ iff
+$\pi(0) = 0$ and $\sigma_0(0) = 0$, and it then acts on $P$ by
+$(0, x_1, x_2) \mapsto (0, \sigma_1(x_1), \sigma_2(x_2))$, or by $(0, x_1, x_2) \mapsto (0, \sigma_1(x_2), \sigma_2(x_1))$
+when $\pi$ swaps the last two axes; so it sends $p$ to $\sigma_2 \circ p \circ \sigma_1^{-1}$ or to
+$\sigma_2 \circ p^{-1} \circ \sigma_1^{-1}$.  Second, $\lvert H\rvert = 384$: $G$ can move $P$ to $24$
+planes $\lbrace x_a = c\rbrace$ (three axes, and any $c$ except the middle value of an
+odd $n$: eight values at $n = 8$ and at $n = 9$), so $H$ has index $24$ in $G$.  `symmetry group` finds $H$ by brute force, as the
+elements of $G$ that keep $P$, confirms the $24$ planes, and forms all
+$384^2 = 147\,456$ products of two elements of $H$, requiring each to be **an
+element of the selected set**, found by lookup.  (Checking instead that a
+product keeps $P$ would check nothing, since a composition of two maps that
+keep $P$ keeps $P$ whatever else it does.)  `symmetry orbits` then maps every
+one of the $48\,912$ rows by every element of $H$, $18\,782\,208$ images, and
+requires each to be admissible and present in the brute-force shard list.
 
 At $n = 9$ the $48\,912$ shards fall into **157** $H$-orbits, of sizes 384 (107
 orbits), 192 (36), 96 (8), 48 (2) and 12 (4); at $n = 8$ the $5\,568$ shards fall
-into 25.  By (c) the number of supports in a shard is constant on an orbit, and
+into 25.  By the lemma the number of supports in a shard is constant on an orbit, and
 that is visible in the finished catalogue: across all 157 orbits, no orbit
 contains two shards with different support counts.
 
-`verify.sh symmetric` does exactly what (c) licenses: it enumerates the 157
+`verify.sh symmetric` does exactly what the lemma licenses: it enumerates the 157
 representatives with the same exact-cover search `full` uses, writes every other
 shard as the image of its representative's payload under a recorded element of
 $H$, and then checks
@@ -801,7 +787,7 @@ src/shards.c         the admissible row-0 permutations (A007016)
 src/orbits.c         the order-9216 cell group; closure and orbit classification
 src/pools.c          companion pools as a filter over a complete catalogue
 src/pack.c           exhaustive exact cover, and the packing ceiling
-src/symmetry.c       the plane-fixing subgroup, and the shard orbits (Lemma 5)
+src/symmetry.c       the subgroup H keeping the plane x0 = 0, and the shard orbits (Lemma 5)
 src/util.h           record loading and byte-range checks, the clock (real or
                      injected), payload digests and manifest recovery
 src/check.py         definition-level checks in numpy, independent of the C
