@@ -234,9 +234,9 @@ Because $g$ is a bijection, it maps a nonconstant function to a nonconstant func
 
 $$\begin{align}
 (g \circ \ell)_i(t) &= \sigma_i \bigl( \ell_{\pi(i)}(t) \bigr)\\
-&= (\sigma_0 \circ \varepsilon_i) \bigl( \ell_{\pi(i)}(t) \bigr) \tag{Condition (b)}\\
+&= (\sigma_0 \circ \varepsilon_i) \bigl( \ell_{\pi(i)}(t) \bigr)\\
 &= \sigma_0 \bigl(\varepsilon_i \bigl( \ell_{\pi(i)}(t) \bigr)\bigr)\\
-&= \varepsilon_i \bigl(\sigma_0 \bigl( \ell_{\pi(i)}(t) \bigr)\bigr) \tag{Condition (a)}
+&= \varepsilon_i \bigl(\sigma_0 \bigl( \ell_{\pi(i)}(t) \bigr)\bigr)
 \end{align}$$
 
 A bijection of cells that permutes the lines carries a set meeting every
