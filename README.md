@@ -185,7 +185,7 @@ We need to test only one root from each symmetry class, for some suitable notion
 
 The symmetries used here include permutations of the axes and reversals of individual axes. It should be intuitively clear that those both preserve all the properties we need: they just amount to choosing a different set of axes to use for describing your cube, and all the diagonals are still diagonals regardless of what set of axes you choose. 
 
-Reversing an axis is one example of a more general move: relabeling the *values* along each axis.  Pick a permutation $\sigma_i$ of $\lbrace 0, \ldots, 8\rbrace$ for each coordinate $i$, and replace the $i$-th coordinate $x_i$ of every cell by $\sigma_i(x_i)$.  Reversing axis $i$ is the relabeling $\sigma_i = r$, $t \mapsto 8 - t$, with the other two left alone.
+Reversing an axis is one example of a more general move: relabeling the *values* along each axis.  Pick permutations $\sigma = (\sigma_0, \sigma_1, \sigma_2)$ of $\lbrace 0, \ldots, 8\rbrace$ for each coordinate $i$, and replace the $i$-th coordinate $x_i$ of every cell by $\sigma_i(x_i)$, i.e. $\sigma(x_0, x_1, x_2)$ = $(\sigma_0(x_0), \sigma_1(x_1), \sigma_2(x_2))$.  Reversing axis $i$ is the relabeling $\sigma_i = r$, $t \mapsto 8 - t$, with the other two left alone.
 
 Axis lines survive any relabeling, but diagonals do not.  Call $u$ and $8 - u$ **partners**.  Along a diagonal, the two varying coordinates are either always partners, as in $(t, 8 - t, 3)$, or always equal, as in $(t, t, 3)$. After we apply $\sigma = (\sigma_1, \sigma_2, \sigma_3)$, we will still want diagonals to fall on diagonals, so they will have to still be one of those two options. This takes two conditions:
 
@@ -195,12 +195,12 @@ Axis lines survive any relabeling, but diagonals do not.  Call $u$ and $8 - u$ *
 |---|:-:|:-:|:-:|:-:|:-:|
 | values | 4 | 3, 5 | 2, 6 | 1, 7 | 0, 8 |
 
-$4$ is its own partner, so a partner-respecting $\sigma$ must fix it.  Every other value belongs to one of the four pairs, and $\sigma$ carries each pair onto a pair.  So choosing $\sigma$ means two independent choices:
+$4$ is its own partner, so a partner-respecting $\sigma_i$ must fix it.  Every other value belongs to one of the four pairs, and $\sigma_i$ carries each pair onto a pair.  So choosing $\sigma_i$ means two independent choices:
 
 1. where each pair goes: any rearrangement of the four pairs, $4! = 24$ ways;
 2. for each pair, which of its two values goes to which value of its new pair: $2^4 = 16$ ways.
 
-That makes $24 \cdot 16 = 384$ partner-respecting permutations.  For example, the relabeling in the figure above swaps the pairs $\lbrace 0, 8\rbrace$ and $\lbrace 1, 7\rbrace$, sending $0 \to 1$ and $8 \to 7$ and back; the one that leaves every pair in place and flips only $\lbrace 3, 5\rbrace$ swaps $3$ and $5$ and fixes everything else; and leaving every pair in place but flipping all four is $r$ itself.  In symbols, "partners go to partners" is $\sigma(r(t)) = r(\sigma(t))$ for every $t$: $\sigma$ of $t$'s partner is the partner of $\sigma(t)$.  The permutations satisfying it are the ones that commute with $r$, which group theory calls the centralizer of $r$.
+That makes $24 \cdot 16 = 384$ partner-respecting permutations.  For example, the relabeling in the figure above swaps the pairs $\lbrace 0, 8\rbrace$ and $\lbrace 1, 7\rbrace$, sending $0 \to 1$ and $8 \to 7$ and back; the one that leaves every pair in place and flips only $\lbrace 3, 5\rbrace$ swaps $3$ and $5$ and fixes everything else; and leaving every pair in place but flipping all four is $r$ itself.  In symbols, "partners go to partners" is $\sigma_i(r(t)) = r(\sigma_i(t))$ for every $t$: $\sigma_i$ of $t$'s partner is the partner of $\sigma_i(t)$.  The permutations satisfying it are the ones that commute with $r$, known as the centralizer $C(r)$ or $r$.
 
 **The three $\sigma_i$ agree up to $r$**: for each $i, j$, either $\sigma_i = \sigma_j$ or $\sigma_i = r \sigma_j (= \sigma_j r)$. Equivalently, we can fix $\sigma_0$ and then say that $\sigma_1$ and $\sigma_2$ are each either $\sigma_0$ or $r \sigma_0$.  Partner-respecting relabelings chosen independently are not enough, so we need this additional condition.  For example, swap $3$ and $5$ in the second coordinate only, and $(t, t, 3)$ becomes $(3, 5, 3)$ at $t = 3$ but $(0, 0, 3)$ at $t = 0$: its first two coordinates are neither always equal nor always partners.
 
