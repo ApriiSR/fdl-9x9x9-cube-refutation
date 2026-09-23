@@ -226,13 +226,15 @@ More precisely:
 
 Throughout the proof, write $\sigma_i = \sigma_0 \circ \varepsilon_i$ with $\varepsilon_0 = \mathrm{id}$ and $\varepsilon_1, \varepsilon_2 \in \lbrace \mathrm{id}, r\rbrace$.
 
-*Proof.*  (i)  Consider a line in $[n]^3$. We can write any such line as the image of a function $\ell = (\ell_0, \ell_1, \ell_2): [n] \to [n]^3$. It is natural to think of a line as moving between adjacent cells as the index variable $t$ increases, so that $\ell(t)$ and $\ell(t+1)$ are orthogonally or diagonally adjacent cells, but in fact $\ell$ can pick out the cells in the line in a totally arbitrary order: formally, for a permutation $\sigma_i \in S_n$, we have $\sigma_i([n]) = [n]$, and so $(\ell \circ \sigma_i)([n]) = \ell([n])$.
+*Proof.*  (i)  Consider a line in $[n]^3$. We can write any such line as the image of a function $\ell = (\ell_0, \ell_1, \ell_2): [n] \to [n]^3$. It is natural to think of a line as moving between adjacent cells as the index variable $t$ increases, so that $\ell(t)$ and $\ell(t+1)$ are orthogonally or diagonally adjacent cells, but in fact $\ell$ can pick out the cells in the line in a totally arbitrary order: formally, for a permutation $\kappa \in S_n$, we have $\kappa([n]) = [n]$, and so $(\ell \circ \kappa)([n]) = \ell([n])$.
 
 For a given $g \in G$, we wish to show that (the image of) $(g \circ \ell)$ is a line. We can divide $\ell$ into *fixed coordinates*, where $\ell_i$ is a constant function, and *varying coordinates*, where $\ell_i$ is some permutation of $[n]$. For functions $f, h \colon [n] \to [n]$, write $f \sim h$, and say that $f$ and $h$ agree up to $r$, when $f = h$ or $f = r \circ h$.  This is an equivalence relation: its classes are the cosets $\lbrace h, r \circ h\rbrace$ of the subgroup $\lbrace \mathrm{id}, r\rbrace$.  It is also preserved by composing on the left with any $\sigma \in C(r)$: if $f = r \circ h$, then $\sigma \circ f = \sigma \circ r \circ h = r \circ \sigma \circ h$, because $\sigma$ commutes with $r$.
 
-It is "obviously" the case that $\ell$ is a line if and only if $\ell$ is nonconstant and all the varying coordinates $\ell_i$ agree up to $r$.
+**Claim.**  A set of cells is a line iff it is the image of a map $\ell \colon [n] \to [n]^3$ whose coordinates are each fixed or varying, with at least one varying, and whose varying coordinates all agree up to $r$.
 
-Because $g$ is a bijection, it maps a nonconstant function to a nonconstant function. And for any two varying coordinates $(g \circ \ell)_i$ and $(g \circ \ell)_j$, we have
+By definition a line is the image of a map $\lambda$ whose coordinates are each a constant, $\mathrm{id}$ (the pattern $t$) or $r$ (the pattern $`r(t)`$), with at least one not constant; since $\mathrm{id} \sim r$, such a $\lambda$ satisfies the conditions.  Conversely, given such an $\ell$, let $\kappa$ be one of its varying coordinates.  Every other varying coordinate is $\kappa$ or $r \circ \kappa$, so $\ell = \lambda \circ \kappa$, where $\lambda_i$ is the constant $\ell_i$ when $\ell_i$ is fixed and $\mathrm{id}$ or $r$ when it is varying.  So $\ell$ is the line $\lambda$ with its cells taken in the order $\kappa$, and since $\kappa$ is a bijection, $\ell([n]) = \lambda([n])$ is a line.
+
+So it suffices to check the conditions of the claim for $g \circ \ell$.  Each coordinate $`(g \circ \ell)_i = \sigma_i \ell_{\pi(i)}`$ is fixed or varying, as $\ell_{\pi(i)}$ is, and because $\pi$ is a bijection at least one is varying. And for any two varying coordinates $(g \circ \ell)_i$ and $(g \circ \ell)_j$, we have
 
 $$\begin{aligned}
 (g \circ \ell)_i &= \sigma_i \ell_{\pi(i)} \\
