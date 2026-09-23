@@ -410,7 +410,7 @@ So $H$ permutes the admissible permutations, the shards fall into $H$-orbits,
 and every shard in an orbit is the image of any other under some element of
 $H$, with the same number of supports.
 
-Two facts about $H$ are not needed for the lemma but are checked by the code.
+Two facts about $H$ are not needed for the lemma but are nonetheless checked by the code.
 First, in the notation of Lemma 3, $h = g(\pi; \sigma_0, \sigma_1, \sigma_2)$ is in $H$ iff
 $\pi(0) = 0$ and $\sigma_0(0) = 0$, and it then acts on $P$ by
 $(0, x_1, x_2) \mapsto (0, \sigma_1(x_1), \sigma_2(x_2))$, or by $(0, x_1, x_2) \mapsto (0, \sigma_1(x_2), \sigma_2(x_1))$
@@ -428,13 +428,13 @@ requires each to be admissible and present in the brute-force shard list.
 
 At $n = 9$ the $48\,912$ shards fall into **157** $H$-orbits, of sizes 384 (107
 orbits), 192 (36), 96 (8), 48 (2) and 12 (4); at $n = 8$ the $5\,568$ shards fall
-into 25.  By the lemma the number of supports in a shard is constant on an orbit, and
-that is visible in the finished catalogue: across all 157 orbits, no orbit
+into 25.  By the lemma the number of supports in a shard is constant on an orbit, which
+is visible in the finished catalogue: across all 157 orbits, no orbit
 contains two shards with different support counts.
 
 `verify.sh symmetric` does exactly what the lemma licenses: it enumerates the 157
 representatives with the same exact-cover search `full` uses, writes every other
-shard as the image of its representative's payload under a recorded element of
+shard as the image of its representative's shard under a recorded element of
 $H$, and then checks
 
 * that at $n = 8$ the same construction from 25 enumerated shards reproduces
@@ -448,8 +448,7 @@ $H$, and then checks
 
 ### What the order-8 control checks
 
-Order 8 is where a cube exists and the census (Part II) is known
-independently, so every lemma above is sanity-checked at an order whose answers we had already determined with earlier code.  Each check is an instance of a lemma at $n = 8$:
+Order 8 is where a cube exists and where the cubes have been enumerated independently, so every lemma above is sanity-checked at an order whose answers we had already determined with earlier code.  Each check is an instance of a lemma at $n = 8$:
 
 * the catalogue is built from the $5\,568$ admissible first rows — Lemma 2's
   shard universe at $n = 8$ — and every record passes the definition of a
