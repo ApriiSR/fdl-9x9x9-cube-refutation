@@ -292,9 +292,11 @@ from $T$ and from one another: that is, $n-1$ members of $P(T)$ pairwise
 joined in $\Gamma(T)$, a clique.  Conversely any $(n-1)$-clique together with
 $T$ is $n$ pairwise disjoint supports, hence a partition (Lemma 1). ∎
 
-Call $P(T)$ the **companion pool** of $T$.  The lemma needs the pool to be
-complete, and it is, because it is computed as a filter over the complete
-catalogue.  At $n = 9$ any bound $\omega(\Gamma(T)) \le 7$ would do.  At $n = 8$
+Call $P(T)$ the **companion pool** of $T$.  In the lemma it means *every*
+support disjoint from $T$.  The program `pools` computes it by scanning the
+catalogue for supports disjoint from $T$, so the computed pool is the true
+$P(T)$ exactly when the catalogue contains every support; a support missing
+from the catalogue could be a missing vertex of a clique.  At $n = 9$ any bound $\omega(\Gamma(T)) \le 7$ would do.  At $n = 8$
 the control checks the equivalence itself: a support lies in a cover iff its
 pool graph has a 7-clique.
 
