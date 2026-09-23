@@ -385,10 +385,10 @@ row 0.
 >
 > $$\lvert H \rvert = \lvert G \rvert / (3 \cdot 2\lfloor n/2 \rfloor) = 9216 / 24 = 384 \quad \text{at } n = 8 \text{ and } n = 9;$$
 >
-> (b) writing $u = \sigma_1$ and $v = \sigma_2$, an $h \in H$ acts on $P$
-> by $(0,x_1,x_2) \to (0, u(x_1), v(x_2))$ if $\pi$ fixes the last two coordinates and by
-> $(0,x_1,x_2) \to (0, u(x_2), v(x_1))$ if $\pi$ swaps them; so it carries the row $p$ to
-> $p^h = v \circ p \circ u^{-1}$ or $v \circ p^{-1} \circ u^{-1}$, which is again admissible.  Hence the
+> (b) an $h \in H$ acts on $P$
+> by $(0,x_1,x_2) \to (0, \sigma_1(x_1), \sigma_2(x_2))$ if $\pi$ fixes the last two coordinates and by
+> $(0,x_1,x_2) \to (0, \sigma_1(x_2), \sigma_2(x_1))$ if $\pi$ swaps them; so it carries the row $p$ to
+> $p^h = \sigma_2 \circ p \circ \sigma_1^{-1}$ or $\sigma_2 \circ p^{-1} \circ \sigma_1^{-1}$, which is again admissible.  Hence the
 > shard universe is closed under $H$, which permutes it;
 >
 > (c) for every $h \in H$ and every $p$, $h(S_p) = S_{p^h}$ — the image of a shard
@@ -415,17 +415,17 @@ the plane whatever else it does.)
 
 (b)  With $\pi(0) = 0$, $\pi$ restricts to a permutation of $\lbrace1, 2\rbrace$, which gives
 the two displayed forms.  The graph $\lbrace(x_1, p(x_1))\rbrace$ is carried to
-$\lbrace(u(x_1), v(p(x_1)))\rbrace$, the graph of $v \circ p \circ u^{-1}$, or to $\lbrace(u(p(x_1)), v(x_1))\rbrace$, the
-graph of $v \circ p^{-1} \circ u^{-1}$.  For admissibility, note that $u$ and $v$ are each
+$\lbrace(\sigma_1(x_1), \sigma_2(p(x_1)))\rbrace$, the graph of $\sigma_2 \circ p \circ \sigma_1^{-1}$, or to $\lbrace(\sigma_1(p(x_1)), \sigma_2(x_1))\rbrace$, the
+graph of $\sigma_2 \circ p^{-1} \circ \sigma_1^{-1}$.  For admissibility, note that $\sigma_1$ and $\sigma_2$ are each
 $\sigma_0$ or $r \circ \sigma_0$, and that $\sigma_0$ commutes with $r$.  Take the first form and
-put $s = u^{-1}(t)$.  Then $t$ is a fixed point of $p^h$ iff $v(p(s)) = u(s)$,
-and a reflected point iff $v(p(s)) = r(u(s))$.  Canceling $\sigma_0$ from both
+put $s = \sigma_1^{-1}(t)$.  Then $t$ is a fixed point of $p^h$ iff $\sigma_2(p(s)) = \sigma_1(s)$,
+and a reflected point iff $\sigma_2(p(s)) = r(\sigma_1(s))$.  Canceling $\sigma_0$ from both
 sides — legitimate because $\sigma_0$ is a bijection commuting with $r$ — turns
 those two conditions into $p(s) = s$ and $p(s) = r(s)$, in that order when
-$u = v$ and in the opposite order when not.  Each has exactly one
+$\sigma_1 = \sigma_2$ and in the opposite order when not.  Each has exactly one
 solution because $p$ is admissible, so $p^h$ has exactly one fixed and exactly
 one reflected point.  The second form is the same computation after the
-substitution $s = p^{-1}(u^{-1}(t))$.  So $p^h$ is admissible, and
+substitution $s = p^{-1}(\sigma_1^{-1}(t))$.  So $p^h$ is admissible, and
 $h \to (p \to p^h)$ is an action of $H$ on the $48\,912$ admissible permutations.
 (`symmetry orbits` checks all $48\,912 \times 384 = 18\,782\,208$ images one by one —
 every row against every subgroup element, not only the 157 representatives —

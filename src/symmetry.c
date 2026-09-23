@@ -20,14 +20,14 @@
  * three choices of axis, and c = sigma_0(0) ranges over everything except the
  * middle symbol of an odd n.
  *
- * On the plane, such an h acts as (0,j,k) -> (0, u(j), v(k)) when pi fixes the
- * last two coordinates and as (0,j,k) -> (0, u(k), v(j)) when pi swaps them,
- * with u = sigma_1 and v = sigma_2.  So a shard's row 0, the permutation p, is
- * carried to v.p.u^{-1} or to v.p^{-1}.u^{-1}: the image depends on p alone,
- * and H permutes the admissible permutations among themselves.  That is
- * Lemma 5 of the README, and this program is its computational half: `orbits`
- * checks the closure explicitly and `expand` produces each shard's contents as
- * the image of its orbit representative's.
+ * On the plane, such an h acts as (0,j,k) -> (0, sigma_1(j), sigma_2(k)) when
+ * pi fixes the last two coordinates and as (0,j,k) -> (0, sigma_1(k),
+ * sigma_2(j)) when pi swaps them.  So a shard's row 0, the permutation p, is
+ * carried to sigma_2.p.sigma_1^{-1} or to sigma_2.p^{-1}.sigma_1^{-1}: the
+ * image depends on p alone, and H permutes the admissible permutations among
+ * themselves.  That is Lemma 5 of the README, and this program is its
+ * computational half: `orbits` checks the closure explicitly and `expand`
+ * produces each shard's contents as the image of its orbit representative's.
  *
  * Records are n*n bytes: byte i*n+j is k for the cell (i,j,k), the same format
  * `enum` writes, and images are sorted lexicographically so a mapped shard is
