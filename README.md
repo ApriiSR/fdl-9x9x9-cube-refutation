@@ -269,14 +269,11 @@ to $r$: writing $\sigma_i = \sigma_0 \varepsilon_i$ and $`\sigma'_j = \sigma'_0 
 reversals past $`\sigma'_0`$ (they commute with it),
 $`\sigma''_i = \sigma_0 \sigma'_0 \, \varepsilon_i \varepsilon'_{\pi(i)}`$, where each $`\varepsilon_i \varepsilon'_{\pi(i)}`$ is $\mathrm{id}$ or $r$.  So
 every $`\sigma''_i`$ is $`\sigma''_0`$ or $`\sigma''_0 \circ r`$, and $g \circ h$ is again in $G$.  The identity
-is $g(\mathrm{id}; \mathrm{id}, \mathrm{id}, \mathrm{id})$.  For the inverse, if $y = g(x)$ then
-$y_i = \sigma_i(x_{\pi(i)})$, so $x_{\pi(i)} = \sigma_i^{-1}(y_i)$; that is,
+is $g(\mathrm{id}; \mathrm{id}, \mathrm{id}, \mathrm{id})$, and a finite composition-closed family of
+bijections of a finite set contains inverses.  So $G$ is a group.  Explicitly,
+the inverse of $g$ is
 
 $$g^{-1} = g\bigl(\pi^{-1};\ \sigma^\ast_0, \sigma^\ast_1, \sigma^\ast_2\bigr), \qquad \sigma^\ast_j = \sigma_{\pi^{-1}(j)}^{-1}.$$
-
-Each $\sigma^\ast_j$ is in $C(r)$, and they agree up to $r$, because
-$`\sigma_i^{-1} = (\sigma_0 \varepsilon_i)^{-1} = \sigma_0^{-1} \varepsilon_i`$ (using $\varepsilon_i^{-1} = \varepsilon_i$ and that $\varepsilon_i$
-commutes with $\sigma_0^{-1}$).  So $g^{-1}$ is in $G$ too, and $G$ is a group.
 
 *The count.*  For $n \ge 2$ a map $g$ determines its parameters: output
 coordinate $i$ depends on input coordinate $\pi(i)$ alone, which fixes $\pi$, and
