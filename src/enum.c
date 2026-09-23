@@ -35,6 +35,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <errno.h>
+#include <limits.h>
 #include <time.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -229,6 +231,58 @@ static int run_one(const int *p, int collect, long long *count,
     return timed_out ? 1 : 0;
 }
 
+/* A shard-file line is "idx p0 p1 ... p<n-1>": exactly n+1 non-negative
+ * decimal integers separated by blanks.  Returns 1 for such a line (filling idx
+ * and p), 0 for a blank or comment line, and -1 for anything else. */
+static int parse_shard_line(const char *line, int *idx, int *p)
+{
+    long v[MAXN + 1];
+    int k = 0;
+    const char *s = line;
+    char *end;
+    if (*s == '#') return 0;
+    for (;;) {
+        while (*s == ' ' || *s == '\t' || *s == '\r' || *s == '\n') s++;
+        if (!*s) break;
+        if (k == N + 1) return -1;                      /* too many fields */
+        errno = 0;
+        v[k] = strtol(s, &end, 10);
+        if (end == s || errno || v[k] < 0 || v[k] > INT_MAX) return -1;
+        if (*end && *end != ' ' && *end != '\t' && *end != '\r' && *end != '\n') return -1;
+        s = end;
+        k++;
+    }
+    if (k == 0) return 0;
+    if (k != N + 1) return -1;                          /* too few fields */
+    *idx = (int)v[0];
+    for (int j = 0; j < N; j++) p[j] = (int)v[j + 1];
+    return 1;
+}
+
+/* Read the whole shard file once before any work is done, so that a malformed
+ * line stops the sweep up front instead of silently dropping a shard. */
+static int check_shard_file(FILE *sf, const char *name)
+{
+    char line[4096];
+    long long lineno = 0;
+    int idx, p[MAXN];
+    while (fgets(line, sizeof line, sf)) {
+        lineno++;
+        if (!strchr(line, '\n') && !feof(sf)) {
+            fprintf(stderr, "%s:%lld: line too long\n", name, lineno);
+            return 1;
+        }
+        if (parse_shard_line(line, &idx, p) < 0) {
+            fprintf(stderr, "%s:%lld: malformed shard line (expected an index and "
+                            "the %d entries of row 0)\n", name, lineno, N);
+            return 1;
+        }
+    }
+    if (ferror(sf)) { perror(name); return 1; }
+    rewind(sf);
+    return 0;
+}
+
 static int write_records(const char *path)
 {
     FILE *f = fopen(path, "wb");
@@ -383,30 +437,23 @@ int main(int argc, char **argv)
          * in the optional merged one.  A completion record is trusted only if
          * it has the exact shape a writer produces AND its payload is still on
          * disk at the recorded length and digest; anything else is redone. */
+        FILE *sf = fopen(shardfile, "r");
+        if (!sf) { perror(shardfile); return 1; }
+        if (check_shard_file(sf, shardfile)) return 2;
+
         struct fdlh_done done;
         fdlh_done_init(&done, 1 << 17);
         fdlh_done_read(&done, manifest);
         if (donefile) fdlh_done_read(&done, donefile);
         mkdir(outdir, 0777);
-        FILE *sf = fopen(shardfile, "r");
-        if (!sf) { perror(shardfile); return 1; }
         FILE *out_mf = fdlh_manifest_append(manifest);
         if (!out_mf) { perror(manifest); return 1; }
 
         char line[4096];
         long long seen = 0;
         while (fgets(line, sizeof line, sf)) {
-            if (line[0] == '#' || line[0] == '\n') continue;
-            int idx, p[MAXN], ok = 1;
-            char *tok = strtok(line, " \t\n");
-            if (!tok) continue;
-            idx = atoi(tok);
-            for (int j = 0; j < N; j++) {
-                tok = strtok(NULL, " \t\n");
-                if (!tok) { ok = 0; break; }
-                p[j] = atoi(tok);
-            }
-            if (!ok) continue;
+            int idx, p[MAXN];
+            if (parse_shard_line(line, &idx, p) == 0) continue;   /* blank or comment */
             if ((seen++ % slice_w) != slice_k) continue;
 
             char sub[1024], path[1200], tmp[1300];

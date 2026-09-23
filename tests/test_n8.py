@@ -408,6 +408,22 @@ def main():
           ok and 'companion pool' in r.stderr,
           (r.stderr.strip().splitlines() or ['no message'])[-1])
 
+    # (c2) a shard file with a malformed line must stop the sweep before any
+    # work is done.  Skipping the line instead would drop that shard without a
+    # word, and only the audit downstream would notice.
+    with open(shardfile) as f:
+        good = f.readlines()[:3]
+    badshards = f'{tmp}/badshards.txt'
+    with open(badshards, 'w') as f:
+        f.write(good[0] + ' '.join(good[1].split()[:-1]) + '\n' + good[2])
+    ok, r = failing([f'{BIN}/enum', '8', 'shards', badshards, f'{tmp}/badshards_out',
+                     f'{tmp}/badshards_man.jsonl'])
+    check('enum shards refuses a malformed shard line before doing any work',
+          ok and 'malformed shard line' in r.stderr
+          and not os.path.exists(f'{tmp}/badshards_man.jsonl')
+          and not os.path.exists(f'{tmp}/badshards_out'),
+          (r.stderr.strip().splitlines() or ['no message'])[-1])
+
     # (d) resume after a real kill, and after corruption.  A shard that was in
     # flight leaves a torn manifest line; a shard whose payload has been damaged
     # is recorded as done but no longer matches its digest.  Both must be redone

@@ -490,10 +490,7 @@ against this one using the canonical byte order above and SHA-256; this reposito
 Completeness therefore rests on `enum`.  The checks after it show that every
 record it produced is a support and that the set is closed under $G$, so a
 missing support would have had to be missed together with its whole orbit, but
-neither shows that nothing is missing.  The evidence for that is agreement:
-with the private search, and at order 8 with the census (13 056 supports,
-198 624 covers), though those order-8 values also come from that earlier
-search.  Both the C programs and the numpy checker work from the same reading
+neither shows that nothing is missing.  The main external evidence for `enum`'s correctness is agreement with the initial private searches on both the 8x8x8 case and the 9x9x9 case, but mostly one should carefully verify that the code in `enum.c` is correct.  Both the C programs and the numpy checker work from the same reading
 of "line", so it is worth checking that reading directly: `src/lines.h` and
 `main_lines()` in `src/check.py` are about twenty lines each.
 
@@ -507,7 +504,7 @@ SHA-256 is in `checksums.txt` and is checked by `verify.sh`.
 
 | # | step | program | input | expected output |
 |---|------|---------|-------|-----------------|
-| 1 | order-8 controls | `tests/test_n8.py` | — | 39 checks pass (below) |
+| 1 | order-8 controls | `tests/test_n8.py` | — | 40 checks pass (below) |
 | 2 | shard universe | `shards 9 list` | — | 48 912 admissible rows = A007016(9) |
 | 3 | enumerate `T(9)` | `enum 9 shards` | shard list | 48 912 shards EXHAUSTED, 14 616 576 supports |
 | 3a | *(`symmetric` only)* the plane-fixing subgroup | `symmetry 9 group` | — | `\|H\| = 384`, index 24, all 147 456 products elements of `H` |
@@ -546,7 +543,7 @@ byte; the raw output with wall times is left beside it as `n9_results_raw.jsonl`
 ### The order-8 controls
 
 *What the order-8 control checks*, at the end of Part I, says which lemma each
-control exercises; this is the detail.  `./verify.sh test` runs 39 checks, and
+control exercises; this is the detail.  `./verify.sh test` runs 40 checks, and
 the substantive ones are
 
 * $T(8)$ enumerated from nothing is **13 056** supports, set-equal *and*
@@ -554,7 +551,7 @@ the substantive ones are
 * all 13 056 pass the definition-level check against the 244 lines, and the
   C and numpy constructions of the lines agree as *sets of lines*, in
   canonical form — at $n = 8$ and at $n = 9$;
-* $T(8)$ is closed under the order-9216 cell group and falls into **6** orbits,
+* $T(8)$ is closed under the order-9216 cell group $G$ and falls into **6** orbits,
   of sizes 768, 768, 2 304, 2 304, 2 304, 4 608;
 * the exact cover of $[8]^3$ by supports has exactly **198 624** solutions, with
   node counts by depth `1, 1 632, 26 016, 60 672, 69 513, 147 292, 154 660,
@@ -589,7 +586,8 @@ The rest of the suite is failure paths, for the same reason.  A record byte that
 is not a coordinate in $[n]$ must be refused by all five programs that load
 records, before it is used as an index; an order beyond the compiled capacities
 must be refused before any construction; a pool whose members meet their own
-query must be refused rather than searched; a killed and damaged sweep must
+query must be refused rather than searched; a shard file with a malformed line
+must stop `enum` before it does any work; a killed and damaged sweep must
 resume correctly (see *Reproducing it*).  The audit must reject an empty manifest, a shard
 outside the universe, a malformed line, a missing payload digest, a missing
 universe and records out of order; the report validator must reject an empty
@@ -817,17 +815,13 @@ curl -O https://files.apriiori.com/fdlh/n9/n9_supports.bin      # 1 183 942 656 
 ## Provenance
 
 The strategy of the proof was proposed by GPT-6 Astra (OpenAI), consulted during the
-original, private search: enumerate every support completely, then use the fact
+original, private search for a hypothetical 9x9x9: enumerate every support completely, then use the fact
 that every cube has exactly one support through the center cell, testing one
 such root per symmetry class against the supports disjoint from it.  Astra also
 refereed the resulting proof in that search.  The clique and triangle bounds
-came afterwards.
+came afterwards, mostly to make the proof cleaner — the initial search simply exhausted all the roots without finding any 9x9x9s.
 
-The programs, the verification script and this README were written with
-Claude Code (Anthropic), working from the mathematics above; the lemmata, the
-checks and the checksums were reviewed by a human before being published, and
-the point of the three verification modes is that nothing here need be taken
-on trust from either.
+The programs and the verification script were written with Claude Code (Anthropic), working from the mathematics above. I (April) heavily edited this README and rewrote substantial portions of it, but the initial draft was written by Claude. The lemmata, the checks and the checksums were thoroughly reviewed before being published.
 
 ## References
 
