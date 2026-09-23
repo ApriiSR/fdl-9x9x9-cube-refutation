@@ -233,9 +233,12 @@ For some $g \in G$, we wish to show that $(g \circ \ell)([n])$ is a line. We can
 Because $g$ is a bijection, it maps a nonconstant function to a nonconstant function. And for any two varying coordinates $(g \circ \ell)_i$ and $(g \circ \ell)_j$, we have
 
 $$\begin{align}
-(g \circ \ell)_i(t) &= \sigma_i \bigl( \ell_{\pi(i)} \bigr)\\
-&\cong \sigma_j \bigl( \ell_{\pi(i)} \bigr) \pmod r
+(g \circ \ell)_i &= \sigma_i \ell_{\pi(i)} \\
+&\cong \sigma_j \ell_{\pi(i)} \pmod r\\
+&\cong \sigma_j \ell_{\pi(j)} \pmod r\\
+&= (g \circ \ell)_j.
 \end{align}$$
+The third step follows because, since $(g \circ \ell)_i$ and $(g \circ \ell)_j$ are nonconstant, so must $\ell_{\pi(i)}$ and $\ell_{\pi(j)}$ be, and therefore $\ell_{\pi(i)}$ and $\ell_{\pi(j)}$ are congruent modulo $r$.
 
 A bijection of cells that permutes the lines carries a set meeting every
 line once to a set meeting every line once, so $G$ maps $T(n)$ to $T(n)$.
