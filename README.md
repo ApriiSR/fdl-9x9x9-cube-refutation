@@ -264,7 +264,7 @@ It remains to show that these maps form a group, and to count them.
 $$(g \circ h)(x)_i = \sigma_i\bigl(h(x)_{\pi(i)}\bigr) = \sigma_i\bigl(\sigma'_{\pi(i)}\bigl(x_{\pi'(\pi(i))}\bigr)\bigr),$$
 
 so $g \circ h$ has coordinate permutation $`\pi' \circ \pi`$ and relabelings
-$`\sigma_i \circ \sigma'_{\pi(i)}`$.  Each of these is in $C(r)$, and they still agree up
+$`\sigma_i \circ \sigma'_{\pi(i)}`$.  Each relabeling $`\sigma_i \circ \sigma'_{\pi(i)}`$ is in $C(r)$, and they still agree up
 to $r$: writing $\sigma_i = \sigma_0 \varepsilon_i$ and $`\sigma'_j = \sigma'_0 \varepsilon'_j`$, and moving the
 reversals past $`\sigma'_0`$ (they commute with it),
 $`\sigma_i \circ \sigma'_{\pi(i)} = \sigma_0 \sigma'_0 \, \varepsilon_i \varepsilon'_{\pi(i)}`$, where each $`\varepsilon_i \varepsilon'_{\pi(i)}`$ is $\mathrm{id}$ or $r$.  So
