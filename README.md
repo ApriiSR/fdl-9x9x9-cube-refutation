@@ -264,11 +264,11 @@ It remains to show that these maps form a group, and to count them.
 $$(g \circ h)(x)_i = \sigma_i\bigl(h(x)_{\pi(i)}\bigr) = \sigma_i\bigl(\sigma'_{\pi(i)}\bigl(x_{\pi'(\pi(i))}\bigr)\bigr),$$
 
 so $g \circ h$ has coordinate permutation $`\pi' \circ \pi`$ and relabelings
-$`\sigma''_i = \sigma_i \circ \sigma'_{\pi(i)}`$.  Each $`\sigma''_i`$ is in $C(r)$, and they still agree up
+$`\sigma_i \circ \sigma'_{\pi(i)}`$.  Each of these is in $C(r)$, and they still agree up
 to $r$: writing $\sigma_i = \sigma_0 \varepsilon_i$ and $`\sigma'_j = \sigma'_0 \varepsilon'_j`$, and moving the
 reversals past $`\sigma'_0`$ (they commute with it),
-$`\sigma''_i = \sigma_0 \sigma'_0 \, \varepsilon_i \varepsilon'_{\pi(i)}`$, where each $`\varepsilon_i \varepsilon'_{\pi(i)}`$ is $\mathrm{id}$ or $r$.  So
-every $`\sigma''_i`$ is $`\sigma''_0`$ or $`\sigma''_0 \circ r`$, and $g \circ h$ is again in $G$.  The identity
+$`\sigma_i \circ \sigma'_{\pi(i)} = \sigma_0 \sigma'_0 \, \varepsilon_i \varepsilon'_{\pi(i)}`$, where each $`\varepsilon_i \varepsilon'_{\pi(i)}`$ is $\mathrm{id}$ or $r$.  So
+the three relabelings are each $`\sigma_0 \sigma'_0`$ or $`\sigma_0 \sigma'_0 \circ r`$, and $g \circ h$ is again in $G$.  The identity
 is $g(\mathrm{id}; \mathrm{id}, \mathrm{id}, \mathrm{id})$, and a finite composition-closed family of
 bijections of a finite set contains inverses.  So $G$ is a group.  Explicitly,
 the inverse of $g$ is
