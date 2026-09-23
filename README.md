@@ -273,7 +273,7 @@ is $g(\mathrm{id}; \mathrm{id}, \mathrm{id}, \mathrm{id})$, and a finite composi
 bijections of a finite set contains inverses.  So $G$ is a group.  Explicitly,
 the inverse of $g$ is
 
-$$g^{-1} = g\bigl(\pi^{-1};\ \sigma^\ast_0, \sigma^\ast_1, \sigma^\ast_2\bigr), \qquad \sigma^\ast_j = \sigma_{\pi^{-1}(j)}^{-1}.$$
+$$g^{-1} = g\bigl(\pi^{-1};\ \sigma_{\pi^{-1}(0)}^{-1}, \sigma_{\pi^{-1}(1)}^{-1}, \sigma_{\pi^{-1}(2)}^{-1}\bigr).$$
 
 *The count.*  For $n \ge 2$ a map $g$ determines its parameters: output
 coordinate $i$ depends on input coordinate $\pi(i)$ alone, which fixes $\pi$, and
