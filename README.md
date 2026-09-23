@@ -368,7 +368,7 @@ enumeration skip most shards: many shards are images of one another under a
 symmetry, and the image of an enumerated shard can be written down with no
 further search.
 
-Write $P = \lbrace x_0 = 0\rbrace$ for the plane whose contents define a shard.  A
+Write $P = \lbrace x : x_0 = 0\rbrace$ for the plane whose contents define a shard.  A
 support's intersection with $P$ is its **row** $\lbrace(0, x_1, p(x_1))\rbrace$, for an
 admissible permutation $p$ (Lemma 2), and the shard $S_p$ is the set of
 supports with that row.  The symmetries used are those that map $P$ to itself:
