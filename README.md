@@ -451,7 +451,7 @@ $H$, and then checks
 Order 8 is where a cube exists and where the cubes have been enumerated independently, so every lemma above is sanity-checked at an order whose answers we had already determined with earlier code.  Each check is an instance of a lemma at $n = 8$:
 
 * the catalogue is built from the $5\,568$ admissible first rows — Lemma 2's
-  shard universe at $n = 8$ — and every record passes the definition of a
+  shards at $n = 8$ — and every record passes the definition of a
   support against the $244$ lines (Lemma 1's definition);
 * $T(8)$ is closed under $G$ and splits into six orbits — Lemma 3 (i);
   clause (ii) is not used, since there is no center;
