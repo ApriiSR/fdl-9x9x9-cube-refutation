@@ -237,10 +237,13 @@ $$\sigma_0(r(t)) = r(\sigma_0(t))$$
 
 because $\sigma_0$ commutes with $r$.  So writing $s = \sigma_0(t)$, which runs over
 all of $[n]$ as $t$ does, every varying coordinate of the image is $s$ or $r(s)$,
-and the image is again a line.  That displayed step is the only place
-commutation is used.  Without it $\sigma_0(r(t))$ would be $\sigma_0(r(\sigma_0^{-1}(s)))$,
-in general neither $s$ nor $r(s)$; and if the $\sigma_i$ did not all agree with
-$\sigma_0$ up to $r$, different coordinates would need different substitutions.
+and the image is again a line.  What makes it a line is that every varying
+coordinate is $s$ or $r(s)$ for one and the same $s$, and each condition on the
+$\sigma_i$ is used once to get there.  Commutation is the displayed step, which
+turns $\sigma_0(r(t))$ into $r(s)$.  Agreement up to $r$ is what makes every
+coordinate a function of $\sigma_0(t)$ in the first place: a coordinate relabeled
+by an unrelated $\sigma_1$ would read $\sigma_1(t) = \sigma_1(\sigma_0^{-1}(s))$, in general
+neither $s$ nor $r(s)$.
 
 A bijection of cells that permutes the lines carries a set meeting every
 line once to a set meeting every line once, so $G$ maps $T(n)$ to $T(n)$.
