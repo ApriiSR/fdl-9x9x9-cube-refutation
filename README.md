@@ -246,7 +246,7 @@ $$\begin{aligned}
 The second step holds because $\sigma_i \sim \sigma_j$.  The third step follows because, since $`(g \circ \ell)_i`$ and $`(g \circ \ell)_j`$ are nonconstant, $`\ell_{\pi(i)}`$ and $`\ell_{\pi(j)}`$ must also be nonconstant. Thus $`\ell_{\pi(i)} \sim \ell_{\pi(j)}`$ (since $\ell$ is a line); composing on the left with $\sigma_j$ preserves that.
 
 A bijection of cells that permutes the lines carries a set meeting every
-line once to a set meeting every line once, so $G$ maps $T(n)$ to $T(n)$.
+line once to a set meeting every line once, so any $g \in G$ maps $T(n)$ to $T(n)$.
 
 (ii)  For odd $n$, $r$ has the unique fixed point $m = (n-1)/2$, and
 $\sigma r = r \sigma$ forces each $\sigma \in C(r)$ to permute the fixed points of $r$, so
