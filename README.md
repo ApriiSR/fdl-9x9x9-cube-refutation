@@ -189,7 +189,7 @@ Reversing an axis is one example of a more general move: relabeling the *values*
 
 Axis lines survive any relabeling, but diagonals do not.  Call $u$ and $8 - u$ **partners**.  Along a diagonal, the two varying coordinates are either always partners, as in $(t, 8 - t, 3)$, or always equal, as in $(t, t, 3)$. After we apply $\sigma = (\sigma_1, \sigma_2, \sigma_3)$, we will still want diagonals to fall on diagonals, so they will have to still be one of those two options. This takes two conditions:
 
-**Each $\sigma_i$ sends partners to partners**: whenever $\sigma_i(u) = v$, also $\sigma_i(8 - u) = 8 - v$.  (Swap just $0$ and $1$ in the first coordinate, and the cells $(0,8,3), (1,7,3), \ldots$ become $(1,8,3), (0,7,3), \ldots$; since $1$ and $8$ are not partners, these lie on no line.)  It helps to fold the values in half at $4$:
+**(a): Each $\sigma_i$ sends partners to partners**: whenever $\sigma_i(u) = v$, also $\sigma_i(8 - u) = 8 - v$.  (Swap just $0$ and $1$ in the first coordinate, and the cells $(0,8,3), (1,7,3), \ldots$ become $(1,8,3), (0,7,3), \ldots$; since $1$ and $8$ are not partners, these lie on no line.)  It helps to fold the values in half at $4$:
 
 | distance from 4 | 0 | 1 | 2 | 3 | 4 |
 |---|:-:|:-:|:-:|:-:|:-:|
@@ -202,7 +202,7 @@ $4$ is its own partner, so a partner-respecting $\sigma_i$ must fix it.  Every o
 
 That makes $24 \cdot 16 = 384$ partner-respecting permutations.  For example, the relabeling in the figure above swaps the pairs $\lbrace 0, 8\rbrace$ and $\lbrace 1, 7\rbrace$, sending $0 \to 1$ and $8 \to 7$ and back; the one that leaves every pair in place and flips only $\lbrace 3, 5\rbrace$ swaps $3$ and $5$ and fixes everything else; and leaving every pair in place but flipping all four is $r$ itself.  In symbols, "partners go to partners" is $\sigma_i(r(t)) = r(\sigma_i(t))$ for every $t$: $\sigma_i$ of $t$'s partner is the partner of $\sigma_i(t)$.  The permutations satisfying it are the ones that commute with $r$, known as the centralizer $C(r)$ or $r$.
 
-**The three $\sigma_i$ agree up to $r$**: for each $i, j$, either $\sigma_i = \sigma_j$ or $\sigma_i = r \sigma_j (= \sigma_j r)$. Equivalently, we can fix $\sigma_0$ and then say that $\sigma_1$ and $\sigma_2$ are each either $\sigma_0$ or $r \sigma_0$.  Partner-respecting relabelings chosen independently are not enough, so we need this additional condition.  For example, swap $3$ and $5$ in the second coordinate only, and $(t, t, 3)$ becomes $(3, 5, 3)$ at $t = 3$ but $(0, 0, 3)$ at $t = 0$: its first two coordinates are neither always equal nor always partners.
+**(b): The three $\sigma_i$ agree up to $r$**: for each $i, j$, either $\sigma_i = \sigma_j$ or $\sigma_i = r \sigma_j (= \sigma_j r)$. Equivalently, we can fix $\sigma_0$ and then say that $\sigma_1$ and $\sigma_2$ are each either $\sigma_0$ or $r \sigma_0$.  Partner-respecting relabelings chosen independently are not enough, so we need this additional condition.  For example, swap $3$ and $5$ in the second coordinate only, and $(t, t, 3)$ becomes $(3, 5, 3)$ at $t = 3$ but $(0, 0, 3)$ at $t = 0$: its first two coordinates are neither always equal nor always partners.
 
 So a symmetry permutes the axes by some $\pi$ and then relabels coordinate $i$ by $\sigma_i$, subject to those two conditions.  Reversing $x_0$ is $\sigma = (r, \mathrm{id}, \mathrm{id})$, and relabeling every axis the same way is $\sigma_0 = \sigma_1 = \sigma_2$.
 
@@ -226,7 +226,18 @@ More precisely:
 
 Throughout the proof, write $\sigma_i = \sigma_0 \circ \varepsilon_i$ with $\varepsilon_0 = \mathrm{id}$ and $\varepsilon_1, \varepsilon_2 \in \lbrace \mathrm{id}, r\rbrace$.  Two facts do all the work: every element of $C(r)$ commutes with $r$ by definition, and $C(r)$ is closed under composition and inverses, being a centralizer.
 
-*Proof.*  (i)  Consider a line in $[n]^3$. We can write any such line as the image of a function $\ell = (\ell_0, \ell_1, \ell_2): [n] \to [n]^3$. It is natural to think of a line as moving between adjacent cells as the index variable $t$ increases, so that $\ell(t)$ and $\ell(t+1)$ are orthogonally or diagonally adjacent cells, but in fact $\ell$ can pick out the cells in the line in a totally arbitrary order: that is to say, for a permutation $\sigma_i \in S_n$, $\sigma_i([n]) = [n]$, so $(\ell \circ \sigma_i)([n]) = \ell([n])$.
+*Proof.*  (i)  Consider a line in $[n]^3$. We can write any such line as the image of a function $\ell = (\ell_0, \ell_1, \ell_2): [n] \to [n]^3$. It is natural to think of a line as moving between adjacent cells as the index variable $t$ increases, so that $\ell(t)$ and $\ell(t+1)$ are orthogonally or diagonally adjacent cells, but in fact $\ell$ can pick out the cells in the line in a totally arbitrary order: formally, for a permutation $\sigma_i \in S_n$, we have $\sigma_i([n]) = [n]$, and so $(\ell \circ \sigma_i)([n]) = \ell([n])$.
+
+For some $g \in G$, we wish to show that $(g \circ \ell)([n])$ is a line. We can divide $\ell$ into *fixed coordinates*, where $\ell_i$ is a constant function, and *varying coordinates*, where $\ell_i$ is some permutation of $[n]$. It is "obviously" the case that $\ell$ is a line if and only if $\ell$ is nonconstant and all the varying coordinates $\ell_i$ are equal modulo $r$.
+
+Because $g$ is a bijection, it maps a nonconstant function to a nonconstant function. And for any two varying coordinates $(g \circ \ell)_i$ and $(g \circ \ell)_j$, we have
+
+$$\begin{align}
+(g \circ \ell)_i(t) &= \sigma_i \bigl( \ell_{\pi(i)}(t) \bigr)\\
+&= (\sigma_0 \circ \varepsilon_i) \bigl( \ell_{\pi(i)}(t) \bigr) \tag{Condition (b)}\\
+&= \sigma_0 \bigl(\varepsilon_i \bigl( \ell_{\pi(i)}(t) \bigr)\bigr)\\
+&= \varepsilon_i \bigl(\sigma_0 \bigl( \ell_{\pi(i)}(t) \bigr)\bigr) \tag{Condition (a)}
+\end{align}$$
 
 A bijection of cells that permutes the lines carries a set meeting every
 line once to a set meeting every line once, so $G$ maps $T(n)$ to $T(n)$.
