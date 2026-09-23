@@ -239,7 +239,7 @@ $$\begin{align}
 &= (g \circ \ell)_j.
 \end{align}$$
 
-The third step follows because, since $(g \circ \ell)_i$ and $(g \circ \ell)_j$ are nonconstant, so must $\ell_{\pi(i)}$ and $\ell_{\pi(j)}$ be, and therefore $\ell_{\pi(i)}$ and $\ell_{\pi(j)}$ are congruent modulo $r$.
+The third step follows because, since $`(g \circ \ell)_i`$ and $`(g \circ \ell)_j`$ are nonconstant, so must $`\ell_{\pi(i)}`$ and $`\ell_{\pi(j)}`$ be, and therefore $`\ell_{\pi(i)}`$ and $`\ell_{\pi(j)}`$ are congruent modulo $r$.
 
 A bijection of cells that permutes the lines carries a set meeting every
 line once to a set meeting every line once, so $G$ maps $T(n)$ to $T(n)$.
