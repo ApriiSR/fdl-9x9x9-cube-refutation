@@ -211,7 +211,7 @@ More precisely:
 > Let $C(r)$ be the centralizer of $r$ in the symmetric group $S_n$ on $[n]$:
 > the permutations $\sigma$ of the coordinate values with $\sigma(r(t)) = r(\sigma(t))$
 > for all $t$.  For $\pi \in S_3$ and $\sigma \in C(r)^3$ with
-> $\sigma_1, \sigma_2 \in \lbrace \sigma_0, \sigma_0 \circ r$, define
+> $\sigma_1, \sigma_2 \in \lbrace \sigma_0, \sigma_0 \circ r \rbrace$, define
 > $g = g(\pi; \sigma_0, \sigma_1, \sigma_2) \colon [n]^3 \to [n]^3$ by
 >
 > $$g(x)_i = \sigma_i\bigl( x_{\pi(i)} \bigr).$$
