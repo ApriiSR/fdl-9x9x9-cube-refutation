@@ -816,6 +816,13 @@ curl -O https://files.apriiori.com/fdlh/n9/n9_supports.bin      # 1 183 942 656 
 
 ## Provenance
 
+The strategy of the proof was proposed by GPT-6 (OpenAI), consulted during the
+original, private search: enumerate every support completely, then use the fact
+that every cube has exactly one support through the center cell, testing one
+such root per symmetry class against the supports disjoint from it.  GPT-6 also
+refereed the resulting proof in that search.  The clique and triangle bounds
+came afterwards.
+
 The programs, the verification script and this README were written with
 Claude Code (Anthropic), working from the mathematics above; the lemmata, the
 checks and the checksums were reviewed by a human before being published, and
