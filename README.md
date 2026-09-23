@@ -499,7 +499,7 @@ of "line", so it is worth checking that reading directly: `src/lines.h` and
 All three modes run the order-8 controls of step 1.  From there, `full`
 enumerates every shard at step 3; `symmetric` uses steps 3a-3d instead, to
 enumerate the representatives and reconstruct the other shards; `fast` takes a
-supplied catalogue and redoes everything from step 4 on.  Every artifact's
+supplied catalogue, checks its SHA-256, and redoes everything from step 5 on.  Every artifact's
 SHA-256 is in `checksums.txt` and is checked by `verify.sh`.
 
 | # | step | program | input | expected output |

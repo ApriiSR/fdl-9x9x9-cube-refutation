@@ -280,7 +280,7 @@ static void pick_generators(void)
     int idt[MAXN], A[MAXN], B[MAXN], C[MAXN], R[MAXN];
     int *g = fdlh_alloc(sizeof(int) * (size_t)NC, "a generator");
     for (int t = 0; t < N; t++) { idt[t] = A[t] = B[t] = C[t] = t; R[t] = N - 1 - t; }
-    A[0] = N - 1; A[N - 1] = 0;
+    if (N >= 2) { A[0] = N - 1; A[N - 1] = 0; }
     if (h >= 2) { B[0] = 1; B[1] = 0; B[N - 1] = N - 2; B[N - 2] = N - 1; }
     for (int a = 0; a < h; a++) { int b = (a + 1) % h; C[a] = b; C[N - 1 - a] = N - 1 - b; }
 

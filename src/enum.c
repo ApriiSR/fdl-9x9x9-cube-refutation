@@ -443,11 +443,15 @@ int main(int argc, char **argv)
 
         struct fdlh_done done;
         fdlh_done_init(&done, 1 << 17);
+        /* Open (and so repair) the manifest before reading it: a line torn
+         * between its closing brace and its newline would otherwise be read
+         * as done here and then truncated, and the shard would be skipped
+         * with no record left of it. */
+        FILE *out_mf = fdlh_manifest_append(manifest);
+        if (!out_mf) { perror(manifest); return 1; }
         fdlh_done_read(&done, manifest);
         if (donefile) fdlh_done_read(&done, donefile);
         mkdir(outdir, 0777);
-        FILE *out_mf = fdlh_manifest_append(manifest);
-        if (!out_mf) { perror(manifest); return 1; }
 
         char line[4096];
         long long seen = 0;

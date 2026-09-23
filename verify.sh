@@ -194,7 +194,22 @@ eta_watch() {
 # resumable state and are kept; the aggregate is never one of the inputs, so a
 # rerun cannot read its own truncated output.
 merge_manifests() {
-    local dir=$1 pattern=$2 out=$3
+    local dir=$1 pattern=$2 out=$3 f
+    # A worker killed mid-write leaves a final line with no newline.  `enum`
+    # repairs its own manifest when it reopens it, but a resume at a LOWER
+    # worker count never reopens the others, so repair every input here.
+    for f in "$dir"/$pattern; do
+        [ -s "$f" ] || continue
+        [ "$(tail -c 1 "$f" | od -An -tx1 | tr -d ' \n')" = "0a" ] && continue
+        "$PY" -c '
+import sys
+p = sys.argv[1]
+b = open(p, "rb").read()
+cut = b.rfind(b"\n") + 1
+open(p, "wb").write(b[:cut])
+print(f"{p}: discarding a torn final line of {len(b) - cut} bytes", file=sys.stderr)
+' "$f"
+    done
     { cat "$dir"/$pattern 2>/dev/null || true; } > "$out.tmp"
     mv "$out.tmp" "$out"
 }
@@ -421,7 +436,7 @@ t0=$(date +%s)
 k=0; JOBS=()
 while [ "$k" -lt "$WORKERS" ]; do
     ${NICER+"${NICER[@]}"} "$BIN/pack" 9 roots "$WORK/n9_orbit_reps.bin" "$WORK/pools" \
-        "$WORK/res_$k.jsonl" --slice "$k" "$WORKERS" --cap 600 &
+        "$WORK/res_$k.jsonl" --slice "$k" "$WORKERS" --cap "$CAP" &
     JOBS+=($!)
     k=$((k + 1))
 done

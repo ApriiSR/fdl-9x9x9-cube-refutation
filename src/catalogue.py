@@ -435,6 +435,16 @@ def cmd_validate(a):
         if r['max_companion_clique'] > n - 2:
             problems.append(f'query {j}: companion clique {r["max_companion_clique"]}, '
                             f'which does not rule out a partition')
+        # The graph fields must describe a computed graph, not the placeholders
+        # a run with the clique stage switched off leaves: a nonempty pool has a
+        # clique of size at least 1, an edge makes it at least 2, a triangle 3.
+        w = r['max_companion_clique']
+        if r['pool'] > 0 and w < 1:
+            problems.append(f'query {j}: clique number {w} for a pool of {r["pool"]}; '
+                            f'the clique computation did not run')
+        if (r['edges'] > 0) != (w >= 2) or (r['triangles'] > 0) != (w >= 3):
+            problems.append(f'query {j}: clique number {w} is inconsistent with '
+                            f'{r["edges"]} edges and {r["triangles"]} triangles')
         if r['max_packing_with_query'] != r['max_companion_clique'] + 1:
             problems.append(f'query {j}: packing and clique disagree')
         if r['max_depth'] > 2:
@@ -507,7 +517,7 @@ def cmd_reports(a):
             problems.append(f'{os.path.basename(p)}: slice {r["part"]} reported twice')
         seen_parts.add(r['part'])
         if a.kind == 'pools':
-            if r.get('disagreements'):
+            if not isinstance(r.get('disagreements'), int) or r['disagreements'] != 0:
                 problems.append(f'{os.path.basename(p)}: {r["disagreements"]} pools '
                                 f'disagree with the re-derivation {r.get("disagreeing")}')
             if not r.get('complete'):

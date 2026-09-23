@@ -374,6 +374,10 @@ static int cmd_group(void)
             if (ok) { planes++; break; }
         }
     }
+    if (N < 2) {    /* every map is the identity, and the plane formula does not apply */
+        printf("n=%d |G|=%d |H|=%d (below n = 2 the cell group is trivial)\n", N, NG, NH);
+        return (NG == 1 && NH == 1) ? 0 : 1;
+    }
     int expect = 3 * 2 * (N / 2);
     printf("n=%d |G|=%d |H|=%d index=%d (%.1f s)\n", N, NG, NH, NG / NH, now_s() - t0);
     printf("planes in the orbit of {x=0}: %d -- expected 3*2*floor(n/2) = %d -- %s\n",
@@ -527,13 +531,14 @@ static int cmd_expand(const char *orbfile, const char *sharddir, const char *man
      * payload is still on disk at the recorded length and digest. */
     struct fdlh_done done;
     fdlh_done_init(&done, 1 << 17);
+    /* Repair a torn manifest tail before reading it (see enum.c). */
+    FILE *out_mf = fdlh_manifest_append(manifest);
+    if (!out_mf) { perror(manifest); return 1; }
     fdlh_done_read(&done, manifest);
     if (donefile) fdlh_done_read(&done, donefile);
 
     FILE *of = fopen(orbfile, "r");
     if (!of) { perror(orbfile); return 1; }
-    FILE *out_mf = fdlh_manifest_append(manifest);
-    if (!out_mf) { perror(manifest); return 1; }
 
     char line[8192];
     long long seen = 0, made = 0, records = 0;

@@ -208,7 +208,7 @@ def main():
                                f'{tmp}/roots_{k}.jsonl', '--slice', str(k), str(W)],
                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
              for k in range(W)]
-    [p.wait() for p in procs]
+    codes = [p.wait() for p in procs]
     t_roots = time.time() - t0
     res = {}
     for k in range(W):
@@ -217,8 +217,9 @@ def main():
             res[r['j']] = r
     agree = sum(1 for j, r in res.items() if r['covers'] == tallies[j])
     check('root search agrees with the census on every one of the 13 056 supports',
-          len(res) == 13056 and agree == 13056,
-          f'{agree}/{len(res)} in {t_roots:.1f} s')
+          len(res) == 13056 and agree == 13056 and codes == [0] * W
+          and all(r['status'] == 'EXHAUSTED' for r in res.values()),
+          f'{agree}/{len(res)} in {t_roots:.1f} s, worker exits {sorted(set(codes))}')
     eight = [j * 1632 for j in range(8)]
     check('the eight sampled root cases, spelled out',
           all(res[j]['covers'] == tallies[j] for j in eight),

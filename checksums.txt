@@ -13,7 +13,7 @@
 #
 # The catalogue is the supports in lexicographic order, 81 bytes each, so its
 # hash depends only on the set -- not on which program found it or in what
-# order.  See README section "The catalogue is a canonical object".
+# order.  See the README section "The support catalogue".
 1c4fd1c21289ac11f1d569d929bead3a13b155e17cd07b4a0a97bbd30f028549  exceptional_packing.json
 f780d243569b1e54d1d7482ffad7c08aa70e2c7caf9849d9c553fac640f15abc  n8_supports.bin
 36fcd900c16adb496c5132b8205826e1ad99a90075058419ac379881008bdb80  n9_orbit_reps.bin

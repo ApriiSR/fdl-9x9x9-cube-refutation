@@ -158,7 +158,7 @@ static void bk(uint64_t *cand, int size)
     int nc = popcnt(cand);
     if (size + nc <= best_clique) return;
     if (!nc) {
-        if (size > best_clique) { best_clique = size; memcpy(best_set, cur_set, sizeof(int) * (size_t)size); }
+        if (size > best_clique) { best_clique = size; memcpy(best_set, cur_set, sizeof(int) * (size_t)(size < 64 ? size : 64)); }
         return;
     }
     for (int w = 0; w < AW; w++) {
@@ -177,7 +177,7 @@ static void bk(uint64_t *cand, int size)
             if (timed_out) return;
         }
     }
-    if (size > best_clique) { best_clique = size; memcpy(best_set, cur_set, sizeof(int) * (size_t)size); }
+    if (size > best_clique) { best_clique = size; memcpy(best_set, cur_set, sizeof(int) * (size_t)(size < 64 ? size : 64)); }
 }
 
 static void usage(int rc)
