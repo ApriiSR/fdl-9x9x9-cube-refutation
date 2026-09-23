@@ -298,10 +298,12 @@ catalogue.  At $n = 9$ any bound $\omega(\Gamma(T)) \le 7$ would do.  At $n = 8$
 the control checks the equivalence itself: a support lies in a cover iff its
 pool graph has a 7-clique.
 
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="figures/companion-graph-dark.svg"><img src="figures/companion-graph-light.svg" width="590" alt="Eight small cubes in four colors, joined as two 4-cliques and a matching between them"></picture></p>
+
 **Triangles.**  The recorded triangle counts alone rule out every root, with
 no clique computation at all.  An 8-clique contains $\binom{8}{3} = 56$
 triangles, whereas each of the 2 049 root graphs has either $0$ (2 048 of them)
-or $8$ (one).  `pack.c` counts them from the adjacency bitmap of each graph:
+or $8$ (one, all eight visible in the portion of the graph shown above).  `pack.c` counts them from the adjacency bitmap of each graph:
 for every edge $ab$ it counts the common neighbors of $a$ and $b$ with a
 popcount of the AND of their rows, and the sum over edges counts each triangle
 three times.  `catalogue.py validate` checks the recorded counts against the
