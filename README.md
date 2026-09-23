@@ -601,7 +601,7 @@ where a cube *does* exist — must refuse it.
 Two machines, both arm64.
 
 * **A** — a 20-core Linux box (Cortex-X925 + Cortex-A725, 121 GB), 14 workers
-  at `nice -n 10`, with other jobs of its owner's also running.
+  at `nice -n 10`, with other jobs also running.
 * **B** — a 16-core macOS laptop (64 GB), 6 workers at `nice -n 10`, kept
   deliberately below its core count so the machine stays usable.
 
@@ -656,7 +656,7 @@ slowest session's per-shard cost the sweep would take 13 h.
 | exhaust 2 049 root cases and compute their cliques | < 1 s | 3 s |
 | the 5-packing, the validators and the checksums | 1 s | 2 s |
 
-**Enumeration is the whole expense; the refutation is free.**  Building the
+Essentially the entire computational cost comes from enumerating the supports and the companion pools.  Building the
 catalogue costs 35-43 core-hours.  Exhausting all 2 049 root cases costs
 1.70 CPU-seconds, and the separate maximum-clique computation another 4.5.
 
@@ -747,7 +747,7 @@ Every parallel stage requires each of its workers to exit 0, and every stage
 that writes one report per worker requires exactly one complete report from
 each, together covering the whole universe of work: all 2 049 query ids for
 the pool re-derivation, all 14 616 576 records for the definition check.  A
-killed or out-of-memory worker is a failure, not a silence.
+killed or out-of-memory worker is a failure, not silently ignored.
 
 Requirements: a 64-bit POSIX platform, and GCC or Clang.  The C is C99 plus
 POSIX 2001 (`clock_gettime(CLOCK_MONOTONIC)`, `mkdir`, `ftruncate`, `unlink`)
@@ -821,7 +821,7 @@ such root per symmetry class against the supports disjoint from it.  Astra also
 refereed the resulting proof in that search.  The clique and triangle bounds
 came afterwards, mostly to make the proof cleaner — the initial search simply exhausted all the roots without finding any 9x9x9s.
 
-The programs and the verification script were written with Claude Code (Anthropic), working from the mathematics above. I (April) heavily edited this README and rewrote substantial portions of it, but the initial draft was written by Claude. The lemmata, the checks and the checksums were reviewed before being published, and I vouch for them — any remaining errors are my own.
+The programs and the verification script were written with Claude Code (Anthropic), working from the mathematics above. I (April) heavily edited this README and rewrote substantial portions of it, but the initial draft was written by Claude and substantial portions are still Claude's words (Pangram says it's XX% human). The lemmata, the checks and the checksums were reviewed before being published, and I vouch for them — any remaining errors are my own.
 
 I looked over all the code in the repository too, not just the checks, but I do not i.e. know how to implement Knuth's Algorithm X in C like the back of my hand — so if there were an issue I'm not certain I'd have caught it. Nonetheless, I believe most of the code is routine enough that it is highly implausible for there to be any bugs that result in i.e. the catalogue of supports being incorrect.
 
