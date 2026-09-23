@@ -821,7 +821,9 @@ such root per symmetry class against the supports disjoint from it.  Astra also
 refereed the resulting proof in that search.  The clique and triangle bounds
 came afterwards, mostly to make the proof cleaner — the initial search simply exhausted all the roots without finding any 9x9x9s.
 
-The programs and the verification script were written with Claude Code (Anthropic), working from the mathematics above. I (April) heavily edited this README and rewrote substantial portions of it, but the initial draft was written by Claude. The lemmata, the checks and the checksums were thoroughly reviewed before being published.
+The programs and the verification script were written with Claude Code (Anthropic), working from the mathematics above. I (April) heavily edited this README and rewrote substantial portions of it, but the initial draft was written by Claude. The lemmata, the checks and the checksums were reviewed before being published, and I vouch for them — any remaining errors are my own.
+
+I looked over all the code in the repository too, not just the checks, but I do not i.e. know how to implement Knuth's Algorithm X in C like the back of my hand — so if there were an issue I'm not certain I'd have caught it. Nonetheless, I believe most of the code is routine enough that it is highly implausible for there to be any bugs that result in i.e. the catalogue of supports being incorrect.
 
 ## References
 
