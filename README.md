@@ -359,8 +359,6 @@ set of **five** pairwise disjoint supports of $[9]^3$, written out explicitly in
 
 <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="figures/five-supports-dark.gif"><img src="figures/five-supports-light.gif" width="260" alt="A rotating cube with five sets of 81 cells in five colors, none sharing a cell"></picture></p>
 
-The five pairwise disjoint supports in one cube: the exceptional orbit's root in red, and one of the 4-cliques of its companion graph in the colors of the graph figure above (the blue one is the blue support from the two-support figure).  Every line holds exactly one cell of each of the five colors.  Filling the other 324 cells would take four more supports, and no support is disjoint from all five, since that would be a 5-clique.
-
 This is a maximum packing *containing a root*, which is all the computation
 bounds; we have not ruled out the possibility of a packing containing six pairwise disjoint supports such that none of them contain $(4, 4, 4)$.
 
