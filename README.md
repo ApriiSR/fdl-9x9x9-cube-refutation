@@ -583,8 +583,9 @@ the substantive ones are
   like agreement.
 
 The rest of the suite is failure paths, for the same reason.  A record byte that
-is not a coordinate in $[n]$ must be refused by all five programs that load
-records, before it is used as an index; an order beyond the compiled capacities
+is not a coordinate in $[n]$ must be refused by every program that loads
+records (five C commands and two `check.py` commands), before it is used as
+an index; an order beyond the compiled capacities
 must be refused before any construction; a pool whose members meet their own
 query must be refused rather than searched; a shard file with a malformed line
 must stop `enum` before it does any work; a killed and damaged sweep must

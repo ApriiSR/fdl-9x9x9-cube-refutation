@@ -65,7 +65,13 @@ def load_records(path, n):
         sys.exit(f'{path}: size {size} is not a multiple of {w}')
     if size == 0:
         return np.zeros((0, w), dtype=np.uint8)
-    return np.memmap(path, dtype=np.uint8, mode='r', shape=(size // w, w))
+    recs = np.memmap(path, dtype=np.uint8, mode='r', shape=(size // w, w))
+    # Every byte is a coordinate in [n]; anything else would index a different
+    # cell or fall off the cube.  Checked in blocks to keep memory bounded.
+    for lo in range(0, recs.shape[0], 1 << 20):
+        if int(recs[lo:lo + (1 << 20)].max()) >= n:
+            sys.exit(f'{path}: a record byte is not a coordinate in [{n}]')
+    return recs
 
 
 def cells_of(recs, n):

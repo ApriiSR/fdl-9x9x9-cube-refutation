@@ -375,13 +375,16 @@ def main():
                             f'{tmp}/pools1', f'{tmp}/badroots.jsonl']),
             ('orbits closure', [f'{BIN}/orbits', '8', 'closure', f'{tmp}/corrupt.bin']),
             ('orbits classify', [f'{BIN}/orbits', '8', 'classify', f'{tmp}/corrupt.bin',
-                                 f'{tmp}/bad.jsonl', f'{tmp}/bad.bin'])):
+                                 f'{tmp}/bad.jsonl', f'{tmp}/bad.bin']),
+            ('check.py verify', [PY, f'{ROOT}/src/check.py', 'verify', '8', f'{tmp}/corrupt.bin']),
+            ('check.py pools', [PY, f'{ROOT}/src/check.py', 'pools', '8', f'{tmp}/corrupt.bin',
+                                f'{tmp}/q1.bin', f'{tmp}/pools1'])):
         ok, r = failing(args)
         refusals.append((name, ok, 'coordinate' in r.stderr))
     check('a corrupt record byte is refused by every program that loads records, '
           'before it is used as an index',
           all(ok and said for _, ok, said in refusals),
-          ', '.join(n for n, ok, said in refusals if not (ok and said)) or 'all five refuse')
+          ', '.join(n for n, ok, said in refusals if not (ok and said)) or 'all seven refuse')
 
     # (b) an order beyond the compiled capacities must be refused up front, not
     # after an array has already been overrun.
