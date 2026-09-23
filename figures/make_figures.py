@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Draw the README figures, each in a light and a dark variant.
 
-    python3 figures/make_figures.py extract   # needs work/pools/ from a run
-    python3 figures/make_figures.py draw      # the static SVGs
-    python3 figures/make_figures.py gif       # the two rotating GIFs; needs
-                                              # Chrome, ImageMagick and ffmpeg
+    python3 figures/make_figures.py extract        # needs work/pools/ from a run
+    python3 figures/make_figures.py draw           # the static SVGs
+    python3 figures/make_figures.py gif [NAME...]  # the rotating GIFs (all, or
+                                                   # the named ones); needs
+                                                   # Chrome, ImageMagick, ffmpeg
 
 `extract` pulls the few supports the figures show out of a finished run and
 writes them to figures/figure_data.json, which is committed, so `draw` works
@@ -235,6 +236,16 @@ def fig_pair(d, theme, az=0.52):
     frag, box = cube([(RED, d['root'], 1), (COMPANIONS[0], blue, 1)], 17, theme,
                      axes=True, az=az)
     return svg(frag, box, theme, 'Two disjoint supports in one cube')
+
+
+def fig_packing(d, theme, az=0.52):
+    # the root and the four members of one 4-clique of its companion graph,
+    # colored as in the companion-graph figure (greedy coloring gives the
+    # clique members colors 0..3 in this order)
+    layers = [(RED, d['root'], 1)] + [(COMPANIONS[k], d['component'][str(v)], 1)
+                                      for k, v in enumerate(d['packing'])]
+    frag, box = cube(layers, 17, theme, axes=True, az=az)
+    return svg(frag, box, theme, 'Five pairwise disjoint supports in one cube')
 
 
 def fig_orbit(d, theme):
@@ -536,6 +547,7 @@ def fig_lemma2(d, theme):
 ROTATING = {
     'support': fig_root,
     'two-supports': fig_pair,
+    'five-supports': fig_packing,
 }
 FIGURES = {
     'orbit': fig_orbit,
@@ -555,7 +567,7 @@ def draw():
     print('wrote %d figures' % (2 * len(FIGURES)))
 
 
-def gif(frames=90, fps=15, scale=2, cols=10):
+def gif(*names, frames=90, fps=15, scale=2, cols=10):
     """One full turn about the x0 axis per figure and theme.  Frames are laid
     out on one page, rendered by headless Chrome in a single screenshot, cut
     apart with ImageMagick and assembled by ffmpeg with a fitted palette."""
@@ -567,6 +579,8 @@ def gif(frames=90, fps=15, scale=2, cols=10):
         'CHROME', '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
     d = json.load(open(DATA))
     for name, fn in ROTATING.items():
+        if names and name not in names:
+            continue
         for theme in THEMES:
             svgs = [fn(d, theme, az=0.52 + 2 * math.pi * k / frames) for k in range(frames)]
             w, h = (int(v) for v in re.search(r'width="(\d+)" height="(\d+)"',
@@ -608,4 +622,4 @@ def gif(frames=90, fps=15, scale=2, cols=10):
 
 if __name__ == '__main__':
     {'extract': extract, 'draw': draw, 'gif': gif}[sys.argv[1] if len(sys.argv) > 1
-                                                   else 'draw']()
+                                                   else 'draw'](*sys.argv[2:])
