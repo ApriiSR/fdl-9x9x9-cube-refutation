@@ -824,7 +824,7 @@ came afterwards, mostly to make the proof cleaner — the initial search simply 
 
 The programs and the verification script were written with Claude Code (Anthropic), working from the mathematics above. I (April) heavily edited this README and rewrote substantial portions of it, but the initial draft was written by Claude and substantial portions are still Claude's words (Pangram says it's XX% human). The lemmata, the checks and the checksums were reviewed before being published, and I vouch for them — any remaining errors are my own.
 
-I looked over all the code in the repository too, not just the checks, but I do not i.e. know how to implement Knuth's Algorithm X in C like the back of my hand — so if there were an issue I'm not certain I'd have caught it. Nonetheless, I believe most of the code is routine enough that it is highly implausible for there to be any bugs that result in i.e. the catalogue of supports being incorrect.
+I looked over all the code in the repository too, not just the checks, but I do not i.e. know how to implement Knuth's Algorithm X in C like the back of my hand — so if there were an issue I'm not certain I'd have caught it. Nonetheless, I believe most of the code is routine enough that it is unlikely there are any bugs that result in i.e. the catalogue of supports being incorrect.
 
 ## References
 
