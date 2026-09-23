@@ -2,7 +2,7 @@
 
 This repository aims to cleanly demonstrate a negative answer to a question which was (to my knowledge) first posed by Walter Taylor in a 1972 paper.
 
-A d-dimensional **fully diagonalized Latin hypercube** (FDLH) (called *completely Latin* by Arkin, Hoggatt and Straus) is a coloring $A : [n]^d \to [n]$, where $[n] = \lbrace0, 1, \ldots, n-1\rbrace$, in which each color occurs exactly once on every *line*.  A line is obtained by letting $t$ run over $[n]$ and taking each coordinate to be a constant, $t$, or $n-1-t$, with at least one coordinate varying.  In dimension 3 the lines are the rows, the columns and the pillars, the diagonals of every planar cross-section of the cube, and the four space diagonals; each must therefore contain every color.
+A d-dimensional **fully diagonalized Latin hypercube** (FDLH) (called *completely Latin* by Arkin, Hoggatt and Straus) is a coloring $A : [n]^d \to [n]$, where $[n] = \lbrace0, 1, \ldots, n-1\rbrace$, in which each color occurs exactly once on every *line*.  A line is a subset of $[n]^d$ which can be obtained by letting $t$ run over $[n]$ and taking each coordinate to be a constant, $t$, or $n-1-t$, with at least one coordinate varying.  In dimension 3 the lines are the rows, the columns and the pillars, the diagonals of every planar cross-section of the cube, and the four space diagonals; each must therefore contain every color.
 
 Every pair of the $2^d$ corner cells lies on a line, which forces $n \le 1$ or $n \ge 2^d$ (Taylor's Proposition 4).  Taylor writes $P(m, n)$ for the existence of such an $n$-dimensional cube of order $m$, and his Problem 3 asks two questions: "For every $n$ does there exist $M$ such that $P(m, n)$ whenever $m \ge M$?  May one take $M = 2^n$?"  His Problem 2 asks in particular about order 9 in dimension 3.
 
@@ -226,24 +226,7 @@ More precisely:
 
 Throughout the proof, write $\sigma_i = \sigma_0 \circ \varepsilon_i$ with $\varepsilon_0 = \mathrm{id}$ and $\varepsilon_1, \varepsilon_2 \in \lbrace \mathrm{id}, r\rbrace$.  Two facts do all the work: every element of $C(r)$ commutes with $r$ by definition, and $C(r)$ is closed under composition and inverses, being a centralizer.
 
-*Proof.*  (i)  Describe a line by its pattern in each coordinate: a constant
-$c$, $t$, or $`r(t)`$, with at least one varying.  Coordinate $i$ of the image is
-$\sigma_i$ applied to coordinate $\pi(i)$ of the line, and $\pi$ is a bijection, so
-at least one image coordinate still varies.  A constant $c$ becomes the constant
-$\sigma_i(c)$.  A varying pattern $q(t) \in \lbrace t, r(t)\rbrace$ becomes
-$\sigma_0(\varepsilon_i(q(t)))$, where $\varepsilon_i(q(t))$ is again $t$ or $r(t)$, and
-
-$$\sigma_0(r(t)) = r(\sigma_0(t))$$
-
-because $\sigma_0$ commutes with $r$.  So writing $s = \sigma_0(t)$, which runs over
-all of $[n]$ as $t$ does, every varying coordinate of the image is $s$ or $r(s)$,
-and the image is again a line.  What makes it a line is that every varying
-coordinate is $s$ or $r(s)$ for one and the same $s$, and each condition on the
-$\sigma_i$ is used once to get there.  Commutation is the displayed step, which
-turns $\sigma_0(r(t))$ into $r(s)$.  Agreement up to $r$ is what makes every
-coordinate a function of $\sigma_0(t)$ in the first place: a coordinate relabeled
-by an unrelated $\sigma_1$ would read $\sigma_1(t) = \sigma_1(\sigma_0^{-1}(s))$, in general
-neither $s$ nor $r(s)$.
+*Proof.*  (i)  Consider a line in $[n]^3$. We can write any such line as the image of a function $\ell = (\ell_0, \ell_1, \ell_2): [n] \to [n]^3$. It is natural to think of a line as moving between adjacent cells as the index variable $t$ increases, so that $\ell(t)$ and $\ell(t+1)$ are orthogonally or diagonally adjacent cells, but in fact $\ell$ can pick out the cells in the line in a totally arbitrary order: that is to say, for a permutation $\sigma_i \in S_n$, $\sigma_i([n]) = [n]$, so $(\ell \circ \sigma_i)([n]) = \ell([n])$.
 
 A bijection of cells that permutes the lines carries a set meeting every
 line once to a set meeting every line once, so $G$ maps $T(n)$ to $T(n)$.
