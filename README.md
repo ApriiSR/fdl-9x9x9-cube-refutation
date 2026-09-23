@@ -228,18 +228,20 @@ Throughout the proof, write $\sigma_i = \sigma_0 \circ \varepsilon_i$ with $\var
 
 *Proof.*  (i)  Consider a line in $[n]^3$. We can write any such line as the image of a function $\ell = (\ell_0, \ell_1, \ell_2): [n] \to [n]^3$. It is natural to think of a line as moving between adjacent cells as the index variable $t$ increases, so that $\ell(t)$ and $\ell(t+1)$ are orthogonally or diagonally adjacent cells, but in fact $\ell$ can pick out the cells in the line in a totally arbitrary order: formally, for a permutation $\sigma_i \in S_n$, we have $\sigma_i([n]) = [n]$, and so $(\ell \circ \sigma_i)([n]) = \ell([n])$.
 
-For some $g \in G$, we wish to show that $(g \circ \ell)([n])$ is a line. We can divide $\ell$ into *fixed coordinates*, where $\ell_i$ is a constant function, and *varying coordinates*, where $\ell_i$ is some permutation of $[n]$. It is "obviously" the case that $\ell$ is a line if and only if $\ell$ is nonconstant and all the varying coordinates $\ell_i$ are equal modulo $r$.
+For some $g \in G$, we wish to show that $(g \circ \ell)([n])$ is a line. We can divide $\ell$ into *fixed coordinates*, where $\ell_i$ is a constant function, and *varying coordinates*, where $\ell_i$ is some permutation of $[n]$. For functions $f, h \colon [n] \to [n]$, write $f \sim h$, and say that $f$ and $h$ agree up to $r$, when $f = h$ or $f = r \circ h$.  This is an equivalence relation: its classes are the cosets $\lbrace h, r \circ h\rbrace$ of the subgroup $\lbrace \mathrm{id}, r\rbrace$.  It is also preserved by composing on the left with any $\sigma \in C(r)$: if $f = r \circ h$, then $\sigma \circ f = \sigma \circ r \circ h = r \circ \sigma \circ h$, because $\sigma$ commutes with $r$.
+
+It is "obviously" the case that $\ell$ is a line if and only if $\ell$ is nonconstant and all the varying coordinates $\ell_i$ agree up to $r$.
 
 Because $g$ is a bijection, it maps a nonconstant function to a nonconstant function. And for any two varying coordinates $(g \circ \ell)_i$ and $(g \circ \ell)_j$, we have
 
-$$\begin{align}
+$$\begin{aligned}
 (g \circ \ell)_i &= \sigma_i \ell_{\pi(i)} \\
-&\cong \sigma_j \ell_{\pi(i)} \pmod r\\
-&\cong \sigma_j \ell_{\pi(j)} \pmod r\\
+&\sim \sigma_j \ell_{\pi(i)} \\
+&\sim \sigma_j \ell_{\pi(j)} \\
 &= (g \circ \ell)_j.
-\end{align}$$
+\end{aligned}$$
 
-The third step follows because, since $`(g \circ \ell)_i`$ and $`(g \circ \ell)_j`$ are nonconstant, so must $`\ell_{\pi(i)}`$ and $`\ell_{\pi(j)}`$ be, and therefore $`\ell_{\pi(i)}`$ and $`\ell_{\pi(j)}`$ are congruent modulo $r$.
+The second step holds because $\sigma_i$ and $\sigma_j$ are each $\sigma_0$ or $\sigma_0 \circ r$, so $\sigma_i$ is $\sigma_j$ or $\sigma_j \circ r$; in the second case $`\sigma_j r \ell_{\pi(i)} = r \sigma_j \ell_{\pi(i)}`$, because $\sigma_j$ commutes with $r$.  The third step follows because, since $`(g \circ \ell)_i`$ and $`(g \circ \ell)_j`$ are nonconstant, so must $`\ell_{\pi(i)}`$ and $`\ell_{\pi(j)}`$ be, and therefore $`\ell_{\pi(i)} \sim \ell_{\pi(j)}`$; composing on the left with $\sigma_j$ preserves that.
 
 A bijection of cells that permutes the lines carries a set meeting every
 line once to a set meeting every line once, so $G$ maps $T(n)$ to $T(n)$.
